@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  providedAppointments Appointment[] @relation("ProviderAppointments")
+  createdAppointments  Appointment[] @relation("CreatorAppointments")
+}
+
+model Patient {
+  id            Int      @id @default(autoincrement())
+  firstName     String
+  lastName      String
+  phone         String
+  email         String?
+  ahcNumber     String?
+  reminderOptIn Boolean  @default(true)
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  appointments Appointment[]
+}
+
+model Appointment {
+  id        Int      @id @default(autoincrement())
+  status    String
+  type      String
+  startTime DateTime
+  endTime   DateTime
+
+  patientId Int
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  providerId Int?
+  provider   User? @relation("ProviderAppointments", fields: [providerId], references: [id])
+
+  createdByUserId Int?
+  createdBy       User? @relation("CreatorAppointments", fields: [createdByUserId], references: [id])
+
+  requestMessage String?
+  adminNotes     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  payment Payment?
+}
+
+model Payment {
+  id            Int      @id @default(autoincrement())
+  amount        Decimal
+  paymentType   String
+  receiptSent   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  appointmentId Int        @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id])
+}
