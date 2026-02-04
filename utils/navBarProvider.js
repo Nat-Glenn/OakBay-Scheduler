@@ -5,10 +5,9 @@ import { useContext, createContext, useState } from "react";
 const NavBarContext = createContext();
 
 export const NavBarContextProvider = ({ children }) => {
-    const [boolClick, setBoolCLick] = useState(false);
-    const handleBool = () => { setBoolCLick((prev) => !prev) }
+    const [boolClick, setBoolCLick] = useState(true);
     return (
-        <NavBarContext.Provider value={{ boolClick, handleBool }}>
+        <NavBarContext.Provider value={{ boolClick }}>
             {children}
         </NavBarContext.Provider>
     );

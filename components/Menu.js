@@ -1,18 +1,37 @@
 import Link from "next/link";
 import Image from "next/image";
-import { GrMenu } from "react-icons/gr";
+import { GrMoney, GrPower, GrScorecard, GrSettingsOption, GrTask, GrUserManager } from "react-icons/gr";
 
-export default function MenuComp({ closeNav }) {
+export default function MenuComp() {
     return (
-        <div onClick={closeNav} className="fixed inset-0 flex bg-gray-700/60 items-start  z-2">
-            <div onClick={(event) => event.stopPropagation()} className="w-1/4 h-full flex flex-col bg-[#00AEEF] p-4 gap-4">
-                <GrMenu onClick={closeNav} className='absolute left-10 top-5 w-6 h-6' />
-                <Image className="self-center" src="/logo.png" alt="Logo" width={100} height={50}></Image>
-                <Link className="mx-4" href="./Appointments/">Appointments</Link>
-                <Link className="mx-4" href="">Billing</Link>
-                <Link className="mx-4" href="">Practitioners</Link>
-                <Link className="mx-4" href="">Summary</Link>
+            <div onClick={(event) => event.stopPropagation()} className="flex flex-col bg-[#00AEEF]">
+                <Link href="/" className="self-center p-4">
+                    <Image src="/logo.png" alt="Logo" width={100} height={50}></Image>
+                </Link>
+                <Link href="./Appointments/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                    <GrScorecard width={6} height={6} />
+                    Appointments
+                </Link> 
+                <Link href="" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                    <GrMoney width={6} height={6} />
+                    Billing
+                </Link>
+                <Link href="" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                    <GrUserManager width={6} height={6} />
+                    Practitioners
+                </Link> 
+                <Link href="" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                    <GrTask width={6} height={6} />
+                    Summary
+                </Link>  
+                <Link href="" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                    <GrSettingsOption width={6} height={6} />
+                    Settings
+                </Link> 
+                <Link href="" className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                    <GrPower width={6} height={6} />
+                    Sign Out
+                </Link> 
             </div>
-        </div>
     )
 }
