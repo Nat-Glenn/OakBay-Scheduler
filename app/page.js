@@ -1,12 +1,11 @@
 "use client"
 import NavBarComp from "@/components/NavBarComp";
-import { useNavBar } from "@/utils/navBarProvider"
 
 export default function Home() {
-    const boolClick = useNavBar();
   return (
-    <main className={`flex flex-col items-center p-5 min-h-dvh w-full ${boolClick ? "overflow-hidden" : "overflow-y-auto"}`}>
+    <main className="flex min-h-dvh w-full">
       <NavBarComp/>
+      <div className="flex-2 p-2"></div>
     </main>
   );
 }

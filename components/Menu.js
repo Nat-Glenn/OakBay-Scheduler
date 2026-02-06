@@ -12,26 +12,26 @@ export default function MenuComp() {
                     <GrScorecard width={6} height={6} />
                     Appointments
                 </Link> 
-                <Link href="" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                <Link href="./Billing/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
                     <GrMoney width={6} height={6} />
                     Billing
                 </Link>
-                <Link href="" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                <Link href="./Practitioners/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
                     <GrUserManager width={6} height={6} />
                     Practitioners
                 </Link> 
-                <Link href="" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                <Link href="./Summary/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
                     <GrTask width={6} height={6} />
                     Summary
                 </Link>  
-                <Link href="" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                <Link href="./Settings/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
                     <GrSettingsOption width={6} height={6} />
                     Settings
                 </Link> 
-                <Link href="" className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                <button className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
                     <GrPower width={6} height={6} />
                     Sign Out
-                </Link> 
+                </button> 
             </div>
     )
 }
