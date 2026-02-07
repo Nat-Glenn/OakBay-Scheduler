@@ -24,6 +24,10 @@ export default function MenuComp() {
                     <GrTask width={6} height={6} />
                     Summary
                 </Link>  
+                <Link href="./PatientProfiles/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                    <GrTask width={6} height={6} />
+                    Patient Profile
+                </Link>  
                 <Link href="./Settings/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
                     <GrSettingsOption width={6} height={6} />
                     Settings
