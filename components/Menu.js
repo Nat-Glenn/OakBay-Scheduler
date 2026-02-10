@@ -1,8 +1,24 @@
 import Link from "next/link";
 import Image from "next/image";
 import { GrMoney, GrPower, GrScorecard, GrSettingsOption, GrTask, GrUser, GrUserManager } from "react-icons/gr";
+import { useRouter } from "next/navigation";
+import { signOut } from "firebase/auth";
+import { auth } from "@/app/Login/Firebase/firebase";
+
 
 export default function MenuComp() {
+    const router = useRouter();
+
+    const handleSignOut = async () => {
+        try {
+        await signOut(auth);
+        router.replace("/Login");
+        } catch (err) {
+        console.log(err);
+        alert("Sign out failed.");
+        }
+    };
+
     return (
             <div onClick={(event) => event.stopPropagation()} className="flex flex-col bg-[#00AEEF]">
                 <Link href="/" className="self-center p-4">
@@ -32,7 +48,7 @@ export default function MenuComp() {
                     <GrSettingsOption width={6} height={6} />
                     Settings
                 </Link> 
-                <button className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
+                <button onClick={handleSignOut} className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
                     <GrPower width={6} height={6} />
                     Sign Out
                 </button> 
