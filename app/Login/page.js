@@ -32,7 +32,7 @@ const handleSubmit = async (e) => {
       return;
     }
 
-    router.push("/PatientProfiles");
+    router.push("/Appointments");
   } catch (err) {
     console.log(err);
     alert("Login failed. Please check your credentials and try again.");
@@ -59,7 +59,7 @@ const handleSubmit = async (e) => {
         </form>
 
         <p style={{backgroundColor: "#000000", height: "1px", width: "100%" }}></p>
-        <p>Forgot Password? <Link style={{ color: "#FFFFFF", textDecoration: "underline" }} href="/ResetPassword">Click Here</Link>
+        <p>Forgot Password? <Link style={{ color: "#FFFFFF", textDecoration: "underline" }} href="/Login/ResetPassword">Click Here</Link>
         </p>
       </div>
     </main>
