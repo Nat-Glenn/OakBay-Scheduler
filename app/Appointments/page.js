@@ -35,6 +35,33 @@ import {
   CardFooter,
   CardHeader,
 } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function Appointments() {
   const [active, setActive] = useState(null);
@@ -161,7 +188,7 @@ export default function Appointments() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-[175px] bg-gray-500 hover:bg-gray-500/60 hover:text-black/60 font-bold text-white rounded-md ml-auto"
+                  className="w-[175px] bg-[#002D58] hover:bg-[#002D58]/60 hover:text-white/60 font-bold text-white rounded-md ml-auto"
                 >
                   {`Dr. ${practitioner}`}
                   <ChevronDownIcon />
@@ -175,12 +202,63 @@ export default function Appointments() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
-            <Button
-              variant="outline"
-              className="w-[175px] bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-white text-center font-bold rounded-md ml-auto"
-            >
-              New Appointment
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-[175px] bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-white text-center font-bold rounded-md ml-auto"
+                >
+                  New Appointment
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Add a new appointment</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Create a new appointment and add it to the schedule.
+                  </AlertDialogDescription>
+                  <div className="w-full max-w-md">
+                    <form>
+                      <FieldGroup>
+                        <FieldSet>
+                          <FieldDescription>
+                            Create a new appointment and add it to the schedule.
+                          </FieldDescription>
+                          <FieldGroup>
+                            <Field>
+                              <FieldLabel htmlFor="apptName">
+                                Customer Name
+                              </FieldLabel>
+                              <Input id="apptName" />
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="type">Type</FieldLabel>
+                              <Select defaultValue="">
+                                <SelectTrigger id="type">
+                                  <SelectValue placeholder="Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {appointments.map((e) => (
+                                    <SelectItem value={e.type} key={e.id}>
+                                      {e.type}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </Field>
+                          </FieldGroup>
+                          <div className="grid grid-cols-3 gap-4"></div>
+                        </FieldSet>
+                      </FieldGroup>
+                    </form>
+                  </div>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction>Create</AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
           <div className="flex flex-row">
             <div className="w-full h-102 grid grid-cols-9 m-4 border overflow-y-scroll">
