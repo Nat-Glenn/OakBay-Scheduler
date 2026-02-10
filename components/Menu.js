@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { GrMoney, GrPower, GrScorecard, GrSettingsOption, GrTask, GrUserManager } from "react-icons/gr";
+import { GrMoney, GrPower, GrScorecard, GrSettingsOption, GrTask, GrUser, GrUserManager } from "react-icons/gr";
 
 export default function MenuComp() {
     return (
@@ -25,7 +25,7 @@ export default function MenuComp() {
                     Summary
                 </Link>  
                 <Link href="./PatientProfiles/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
-                    <GrTask width={6} height={6} />
+                    <GrUser width={6} height={6} />
                     Patient Profile
                 </Link>  
                 <Link href="./Settings/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">

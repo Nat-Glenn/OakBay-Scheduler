@@ -93,7 +93,7 @@ export default function PatientProfiles() {
               {filteredPatients.length === 0 && (
                 <tr>
                   <td colSpan="4" className="p-8 text-center text-gray-400">
-                    No patients found matching "{searchTerm}"
+                    No patients found matching &quot;{searchTerm}&quot;
                   </td>
                 </tr>
               )}
