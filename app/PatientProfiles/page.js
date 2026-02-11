@@ -2,103 +2,255 @@
 import { useState } from "react";
 import Link from "next/link";
 import NavBarComp from "@/components/NavBarComp";
-import { GrSearch } from "react-icons/gr";
+import { Search, Plus, MoreVertical, User } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+} from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const Patients = [
-  { id: "P001", name: "John Doe", age: 42, email: "john.doe@email.com", lastVisit: "2024-05-12", status: "Active" },
-  { id: "P002", name: "Jane Smith", age: 29, email: "jane.smith@email.com", lastVisit: "2024-05-15", status: "Active" },
-  { id: "P003", name: "Robert Wilson", age: 55, email: "r.wilson@provider.net", lastVisit: "2023-11-20", status: "Inactive" },
-  { id: "P004", name: "Sarah Jenkins", age: 34, email: "s.jenkins@email.com", lastVisit: "2024-06-01", status: "Active" },
-  { id: "P005", name: "Michael Chen", age: 12, email: "m.chen@family.com", lastVisit: "2024-05-28", status: "Active" },
+  { 
+    id: "P001", 
+    name: "John Doe", 
+    age: 42, 
+    dob: "June 01, 1983",
+    email: "johndoe@gmail.com",
+    phone: "587-999-9999",
+    status: "Active",
+    lastVisit: "02/05/2026",
+    nextAppt: "02/15/2026"
+  },
+  { 
+    id: "P002", 
+    name: "Jane Smith", 
+    age: 29, 
+    dob: "March 15, 1996",
+    email: "janesmith@gmail.com",
+    phone: "587-888-8888",
+    status: "Active",
+    lastVisit: "01/28/2026",
+    nextAppt: "02/12/2026"
+  },
+  { 
+    id: "P003", 
+    name: "Robert Wilson", 
+    age: 55, 
+    dob: "August 10, 1970",
+    email: "robertw@gmail.com",
+    phone: "587-777-7777",
+    status: "Inactive",
+    lastVisit: "12/15/2025",
+    nextAppt: null
+  },
 ];
 
 export default function PatientProfiles() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPatient, setSelectedPatient] = useState(null);
 
-  // Search by name
-  const filteredPatients = Patients.filter((patient) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      patient.name.toLowerCase().includes(searchLower) ||
-      patient.id.toLowerCase().includes(searchLower)
-    );
-  });
+  const filteredPatients = Patients.filter(
+    (p) =>
+      p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.id.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
-    <main className="flex min-h-screen w-full bg-gray-50">
+    <main className="flex min-h-dvh w-full">
       <NavBarComp />
-
-      <div className="flex-1 p-8">
-        <header className="mb-8">
+      <div className="flex-1 p-4">
+        <header className="pb-4 px-4">
           <h1 className="text-3xl font-bold text-gray-800">Patient Profiles</h1>
-          <p className="text-gray-500">Manage and view all registered patients.</p>
+          <p className="text-gray-500">
+            Manage and view all registered patients.
+          </p>
         </header>
 
-        <div className="flex flex-row items-center justify-between w-full mb-8">
-          <div className="relative w-full max-w-md">
-            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-              <GrSearch className="text-gray-400" />
+        <div className="flex flex-col px-4">
+          <div className="flex flex-row items-center gap-4 mb-4">
+            <div className="relative flex-1 max-w-md">
+              <Search
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+                size={18}
+              />
+              <Input
+                placeholder="Search by name or ID..."
+                className="pl-10"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Search by name or ID..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#00AEEF] focus:border-transparent outline-none transition-all shadow-sm"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+            <Link href="/AddPatient">
+              <Button className="bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-white font-bold rounded-md ml-auto gap-2">
+                <Plus size={18} />
+                Add Patient
+              </Button>
+            </Link>
           </div>
 
-          <Link href="/AddPatient">
-            <button className="h-[42px] bg-[#00AEEF] text-white px-6 rounded-lg font-bold hover:bg-[#098cbc] transition-colors shadow-sm whitespace-nowrap">
-              Add Patient
-            </button>
-          </Link>
-        </div>
+          <div className="flex flex-row gap-4">
+            <div className="flex-1 rounded-lg border bg-card shadow-sm max-h-[600px] overflow-y-auto">
+              <Table>
+                <TableHeader className="sticky top-0 bg-white z-10">
+                  <TableRow>
+                    <TableHead className="w-[100px]">ID</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Age</TableHead>
+                    <TableHead>Last Visit</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredPatients.map((patient) => (
+                    <TableRow
+                      key={patient.id}
+                      className={`cursor-pointer hover:bg-slate-50 ${
+                        selectedPatient?.id === patient.id ? "bg-slate-100" : ""
+                      }`}
+                      onClick={() => setSelectedPatient(patient)}
+                    >
+                      <TableCell className="font-mono text-sm">
+                        {patient.id}
+                      </TableCell>
+                      <TableCell className="font-medium">{patient.name}</TableCell>
+                      <TableCell>{patient.age}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {patient.lastVisit}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          className={
+                            patient.status === "Active"
+                              ? "bg-[#A0CE66] hover:bg-[#A0CE66]"
+                              : "bg-slate-400 hover:bg-slate-400"
+                          }
+                        >
+                          {patient.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical size={16} />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem>Edit</DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
 
-        <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-100 border-b border-gray-200 text-left">
-                <th className="p-4 font-semibold text-gray-700">ID</th>
-                <th className="p-4 font-semibold text-gray-700">Name</th>
-                <th className="p-4 font-semibold text-gray-700">Age</th>
-                <th className="p-4 font-semibold text-gray-700">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPatients.map((patient) => {
-                // determines color for the status
-                let badgeStyle = "";
-                if (patient.status === "Active") {
-                  badgeStyle = "bg-green-100 text-green-700";
-                } else {
-                  badgeStyle = "bg-red-100 text-red-700";
-                }
+            {selectedPatient && (
+              <div className="w-80">
+                <Card>
+                  <CardHeader>
+                    <div className="flex flex-row items-center gap-4 mb-4">
+                      <div className="h-12 w-12 rounded-full bg-[#002D58] flex items-center justify-center">
+                        <User className="text-white" size={24} />
+                      </div>
+                      <div>
+                        <p className="font-bold text-lg">{selectedPatient.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {selectedPatient.id}
+                        </p>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <p className="font-extrabold text-lg mb-2">
+                        Personal Information
+                      </p>
+                      <div className="space-y-1 text-sm">
+                        <p className="flex gap-2">
+                          <b>Date of Birth:</b>
+                          {selectedPatient.dob} ({selectedPatient.age})
+                        </p>
+                        <p className="flex gap-2">
+                          <b>Email:</b>
+                          {selectedPatient.email}
+                        </p>
+                        <p className="flex gap-2">
+                          <b>Phone:</b>
+                          {selectedPatient.phone}
+                        </p>
+                        <p className="flex gap-2">
+                          <b>Status:</b>
+                          <Badge
+                            className={
+                              selectedPatient.status === "Active"
+                                ? "bg-[#A0CE66] hover:bg-[#A0CE66]"
+                                : "bg-slate-400 hover:bg-slate-400"
+                            }
+                          >
+                            {selectedPatient.status}
+                          </Badge>
+                        </p>
+                      </div>
+                    </div>
 
-                return (
-                  <tr key={patient.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                    <td className="p-4 text-gray-600">{patient.id}</td>
-                    <td className="p-4 font-medium text-gray-900">{patient.name}</td>
-                    <td className="p-4 text-gray-600">{patient.age}</td>
-                    <td className="p-4">
-                      <span className={`px-2 py-1 rounded-full text-xs font-bold ${badgeStyle}`}>
-                        {patient.status}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-              
-              {/* if the searched up name is not on the system shows no patients found */}
-              {filteredPatients.length === 0 && (
-                <tr>
-                  <td colSpan="4" className="p-8 text-center text-gray-400">
-                    No patients found matching &quot;{searchTerm}&quot;
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                    <div>
+                      <p className="font-extrabold text-lg mb-2">
+                        Appointment History
+                      </p>
+                      <div className="space-y-1 text-sm">
+                        <p className="flex gap-2">
+                          <b>Last Visit:</b>
+                          {selectedPatient.lastVisit}
+                        </p>
+                        <p className="flex gap-2">
+                          <b>Next Appointment:</b>
+                          {selectedPatient.nextAppt || "None scheduled"}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="pt-4 space-y-2">
+                      <Link href={`/patients/${selectedPatient.id}`} className="block">
+                        <Button className="w-full bg-[#002D58] hover:bg-[#002D58]/80 text-white font-semibold">
+                          View Full Profile
+                        </Button>
+                      </Link>
+                      <Button
+                        variant="outline"
+                        className="w-full font-semibold"
+                      >
+                        Schedule Appointment
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </main>
