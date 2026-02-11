@@ -11,6 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
+  AlertCircleIcon,
+  Check,
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -62,24 +64,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { toast } from "sonner";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+} from "@/components/ui/command";
 
 export default function Appointments() {
   const [active, setActive] = useState(null);
-  const time = [
-    "9:00",
-    "9:15",
-    "9:30",
-    "9:45",
-    "10:00",
-    "10:15",
-    "10:30",
-    "10:45",
-    "11:00",
-    "11:15",
-    "11:30",
-  ];
-  const practitioners = ["Brad Pritchard", "Kyle James", "Daniel Topala"];
-  const appointments = [
+  const [appointments, setAppointments] = useState([
     {
       id: 1,
       name: "John Doe",
@@ -98,15 +94,57 @@ export default function Appointments() {
       dob: "August 29, 2000 (25)",
       email: "bob@gmail.com",
       phone: "517-949-929",
-      type: "Chiropractic Adjustment",
+      type: "Massage",
       practitioner: "Brad Pritchard",
       time: "9:15",
       slot: 2,
       date: "12/02/2026",
     },
+  ]);
+  const customers = [
+    {
+      id: "1",
+      name: "John Doe",
+      dob: "June 01, 2000 (25)",
+      email: "johndoe@gmail.com",
+      phone: "587-999-999",
+    },
+    {
+      id: "2",
+      name: "Bob",
+      dob: "August 29, 2000 (25)",
+      email: "bob@gmail.com",
+      phone: "517-949-929",
+    },
+    {
+      id: "3",
+      name: "Jane Smith",
+      dob: "March 12, 1995 (30)",
+      email: "jane@gmail.com",
+      phone: "403-222-1111",
+    },
   ];
+  const types = ["Chiropractic Adjustment", "Massage", "Intense Massage"];
+  const time = [
+    "9:00",
+    "9:15",
+    "9:30",
+    "9:45",
+    "10:00",
+    "10:15",
+    "10:30",
+    "10:45",
+    "11:00",
+    "11:15",
+    "11:30",
+  ];
+  const practitioners = ["Brad Pritchard", "Kyle James", "Daniel Topala"];
   const [date, setDate] = useState(new Date());
   const [practitioner, setPractitioner] = useState(practitioners[0]);
+  const [formName, setFormName] = useState("");
+  const [formType, setFormType] = useState("");
+  const [formPractitioner, setFormPractitioner] = useState("");
+  const [formTime, setFormTime] = useState("");
 
   const manageActive = (appt) => {
     if (active?.id === appt.id) {
@@ -121,6 +159,7 @@ export default function Appointments() {
       (a) =>
         a.time === hours &&
         a.slot === slotNumber &&
+        a.practitioner === practitioner &&
         a.date === date.toLocaleDateString("en-ES"), //makes the date follow dd/mm/yyyy format.
     );
     return (
@@ -138,6 +177,79 @@ export default function Appointments() {
         )}
       </div>
     );
+  };
+
+  const handleNameChange = (value) => {
+    if (!value) {
+      return;
+    }
+    setFormName(value);
+  };
+
+  const handleCreateAppointment = () => {
+    if (!formName || !formType || !formPractitioner || !formTime || !date) {
+      toast.warning("Please fill out all of the fields.", {
+        position: "top-center",
+      });
+      return false;
+    }
+
+    const customer = customers.find((c) => c.name === formName);
+    if (!customer) {
+      toast.warning("Customer needs to be selected from the list.", {
+        position: "top-center",
+      });
+      return false;
+    }
+
+    const formattedDate = date.toLocaleDateString("en-ES");
+
+    // Find first available slot (1–4)
+    let availableSlot = null;
+    for (let slot = 1; slot <= 4; slot++) {
+      const isTaken = appointments.some(
+        (a) =>
+          a.date === formattedDate &&
+          a.time === formTime &&
+          a.slot === slot &&
+          a.practitioner === formPractitioner,
+      );
+
+      if (!isTaken) {
+        availableSlot = slot;
+        break;
+      }
+    }
+
+    if (!availableSlot) {
+      toast.warning("All slots for this hour have been booked.", {
+        position: "top-center",
+      });
+      return false;
+    }
+
+    const newAppointment = {
+      id: appointments.length + 1,
+      name: customer.name,
+      dob: customer.dob,
+      email: customer.email,
+      phone: customer.phone,
+      type: formType,
+      practitioner: formPractitioner,
+      time: formTime,
+      slot: availableSlot,
+      date: formattedDate,
+    };
+
+    setAppointments((prev) => [...prev, newAppointment]);
+
+    // Reset form
+    setFormName("");
+    setFormType("");
+    setFormPractitioner("");
+    setFormTime("");
+
+    return true;
   };
 
   return (
@@ -188,7 +300,7 @@ export default function Appointments() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="w-[175px] bg-[#002D58] hover:bg-[#002D58]/60 hover:text-white/60 font-bold text-white rounded-md ml-auto"
+                  className="w-[175px] bg-[#002D58] hover:bg-[#002D58]/60 hover:text-black/60 font-bold text-white rounded-md ml-auto"
                 >
                   {`Dr. ${practitioner}`}
                   <ChevronDownIcon />
@@ -214,9 +326,6 @@ export default function Appointments() {
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Add a new appointment</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Create a new appointment and add it to the schedule.
-                  </AlertDialogDescription>
                   <div className="w-full max-w-md">
                     <form>
                       <FieldGroup>
@@ -224,30 +333,141 @@ export default function Appointments() {
                           <FieldDescription>
                             Create a new appointment and add it to the schedule.
                           </FieldDescription>
-                          <FieldGroup>
-                            <Field>
-                              <FieldLabel htmlFor="apptName">
-                                Customer Name
-                              </FieldLabel>
-                              <Input id="apptName" />
-                            </Field>
-                            <Field>
+                          <Field>
+                            <FieldLabel>Customer Name</FieldLabel>
+
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className="w-full justify-between"
+                                >
+                                  {formName || "Select customer"}
+                                  <ChevronDownIcon />
+                                </Button>
+                              </PopoverTrigger>
+
+                              <PopoverContent className="w-full p-0">
+                                <Command>
+                                  <CommandInput placeholder="Search customer..." />
+
+                                  <CommandEmpty>
+                                    No customer found.
+                                  </CommandEmpty>
+
+                                  <CommandGroup>
+                                    {customers.map((customer) => (
+                                      <CommandItem
+                                        key={customer.id}
+                                        value={customer.name}
+                                        onSelect={(value) => {
+                                          setFormName(value);
+                                        }}
+                                      >
+                                        <Check
+                                          className={
+                                            formName === customer.name
+                                              ? "opacity-100"
+                                              : "opacity-0"
+                                          }
+                                        />
+                                        {customer.name}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </Command>
+                              </PopoverContent>
+                            </Popover>
+                          </Field>
+                          <div className="grid grid-cols-3 gap-4">
+                            <Field className="col-span-2">
                               <FieldLabel htmlFor="type">Type</FieldLabel>
-                              <Select defaultValue="">
+                              <Select onValueChange={setFormType}>
                                 <SelectTrigger id="type">
                                   <SelectValue placeholder="Type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {appointments.map((e) => (
-                                    <SelectItem value={e.type} key={e.id}>
-                                      {e.type}
+                                  {types.map((e) => (
+                                    <SelectItem value={e} key={e}>
+                                      {e}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
                             </Field>
-                          </FieldGroup>
-                          <div className="grid grid-cols-3 gap-4"></div>
+                            <Field>
+                              <FieldLabel htmlFor="pract">
+                                Practitioner
+                              </FieldLabel>
+                              <Select onValueChange={setFormPractitioner}>
+                                <SelectTrigger id="pract">
+                                  <SelectValue placeholder="Dr. Seuss" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {practitioners.map((e) => (
+                                    <SelectItem value={e} key={e}>
+                                      {e}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </Field>
+                          </div>
+                          <div className="grid grid-cols-3 gap-4">
+                            <Field className="col-span-2">
+                              <FieldLabel htmlFor="date">Date</FieldLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    id="date"
+                                    variant="outline"
+                                    data-empty={!date}
+                                    className="data-[empty=true]:text-muted-foreground justify-between text-left font-normal"
+                                  >
+                                    {date ? (
+                                      [
+                                        formatMonthDropdown(date) +
+                                          " " +
+                                          formatDay(date) +
+                                          ", " +
+                                          " " +
+                                          formatYearDropdown(date),
+                                      ]
+                                    ) : (
+                                      <span>Pick a date</span>
+                                    )}
+                                    <ChevronDownIcon />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent
+                                  className="w-auto p-0"
+                                  align="start"
+                                >
+                                  <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={setDate}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="hour">Time</FieldLabel>
+                              <Select onValueChange={setFormTime}>
+                                <SelectTrigger id="hour">
+                                  <SelectValue placeholder="9:00 AM" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {time.map((e) => (
+                                    <SelectItem value={e} key={e}>
+                                      {`${e} AM`}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </Field>
+                          </div>
                         </FieldSet>
                       </FieldGroup>
                     </form>
@@ -255,13 +475,22 @@ export default function Appointments() {
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction>Create</AlertDialogAction>
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      const success = handleCreateAppointment();
+                      if (!success) {
+                        e.preventDefault();
+                      }
+                    }}
+                  >
+                    Create
+                  </AlertDialogAction>
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
           </div>
           <div className="flex flex-row">
-            <div className="w-full h-102 grid grid-cols-9 m-4 border overflow-y-scroll">
+            <div className="w-full h-99 grid grid-cols-9 m-4 border overflow-y-scroll">
               <div className="col-span-1 font-bold text-center border sticky top-0 bg-white">
                 Time
               </div>
@@ -295,7 +524,7 @@ export default function Appointments() {
             </div>
             {active && (
               <div className="flex-1 px-2 pt-2">
-                <Card className="flex flex-col p-4">
+                <Card className="flex flex-col p-4 gap-2">
                   <CardHeader>
                     <div className="flex flex-row items-center gap-4 rounded-2xl px-4">
                       <Image
@@ -335,7 +564,7 @@ export default function Appointments() {
                       </DropdownMenu>
                     </CardAction>
                   </CardHeader>
-                  <CardContent className="w-75">
+                  <CardContent className="flex flex-col w-75 gap-2">
                     <div>
                       <p className="font-extrabold text-lg">Appointment</p>
                       <p className="flex gap-2 text-ellipsis">
