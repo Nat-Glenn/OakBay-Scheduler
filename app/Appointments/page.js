@@ -6,6 +6,7 @@ import { useState } from "react";
 import {
   Popover,
   PopoverContent,
+  PopoverHeader,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
@@ -23,7 +24,7 @@ import {
   formatMonthDropdown,
   formatYearDropdown,
 } from "react-day-picker";
-import { addDays, subDays } from "date-fns";
+import { addDays, isSameDay, subDays } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -72,6 +73,21 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemHeader,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
 
 export default function Appointments() {
   const [active, setActive] = useState(null);
@@ -86,7 +102,8 @@ export default function Appointments() {
       practitioner: "Brad Pritchard",
       time: "9:00",
       slot: 1,
-      date: "11/02/2026",
+      date: "13/02/2026",
+      status: "scheduled",
     },
     {
       id: 2,
@@ -96,9 +113,36 @@ export default function Appointments() {
       phone: "517-949-929",
       type: "Massage",
       practitioner: "Brad Pritchard",
+      time: "10:15",
+      slot: 1,
+      date: "13/02/2026",
+      status: "scheduled",
+    },
+    {
+      id: 3,
+      name: "Bob",
+      dob: "August 29, 2000 (25)",
+      email: "bob@gmail.com",
+      phone: "517-949-929",
+      type: "Chiropractic Adjustment",
+      practitioner: "Brad Pritchard",
+      time: "10:15",
+      slot: 1,
+      date: "09/02/2026",
+      status: "checked-out",
+    },
+    {
+      id: 4,
+      name: "Bob",
+      dob: "August 29, 2000 (25)",
+      email: "bob@gmail.com",
+      phone: "517-949-929",
+      type: "Intense Massage",
+      practitioner: "Brad Pritchard",
       time: "9:15",
-      slot: 2,
-      date: "12/02/2026",
+      slot: 1,
+      date: "19/02/2026",
+      status: "scheduled",
     },
   ]);
   const customers = [
@@ -146,6 +190,19 @@ export default function Appointments() {
   const [formPractitioner, setFormPractitioner] = useState("");
   const [formTime, setFormTime] = useState("");
 
+  const formatDateDMY = (date) => {
+    return date.toLocaleDateString("en-GB"); // dd/mm/yyyy
+  };
+
+  const parseDMYToDate = (dmy) => {
+    const [day, month, year] = dmy.split("/");
+    return new Date(year, month - 1, day);
+  };
+
+  const isAppointmentToday = (apptDate) => {
+    return isSameDay(parseDMYToDate(apptDate), new Date());
+  };
+
   const manageActive = (appt) => {
     if (active?.id === appt.id) {
       setActive(null);
@@ -154,36 +211,135 @@ export default function Appointments() {
     }
   };
 
+  const getStatusColor = (status) => {
+    switch (status) {
+      case "checked-in":
+        return "bg-[#A0CE66]";
+      case "checked-out":
+        return "bg-[#002D58]";
+      default:
+        return "bg-[#00D0FF]";
+    }
+  };
+
   const renderAppt = (hours, slotNumber) => {
+    const selectedDate = formatDateDMY(date);
     const appt = appointments.find(
       (a) =>
         a.time === hours &&
         a.slot === slotNumber &&
         a.practitioner === practitioner &&
-        a.date === date.toLocaleDateString("en-ES"), //makes the date follow dd/mm/yyyy format.
+        a.date === selectedDate,
     );
     return (
       <div className="col-span-2 border p-1 text-center snap-end">
         {appt ? (
-          <div
-            onClick={() => manageActive(appt)}
-            className="bg-[#00D0FF] hover:bg-[#00D0FF]/60 cursor-pointer flex flex-col rounded-md"
-          >
-            <p className="font-extrabold text-white">{appt.name}</p>
-            <p className="font-extralight text-sm text-white/80">{appt.type}</p>
-          </div>
+          <Popover>
+            <PopoverTrigger className="w-full">
+              <div
+                onClick={() => manageActive(appt)}
+                className={`${getStatusColor(
+                  appt.status,
+                )} hover:opacity-80 cursor-pointer flex flex-col`}
+              >
+                <p className="font-extrabold text-white">{appt.name}</p>
+                <p className="font-extralight text-sm text-white/80">
+                  {appt.type}
+                </p>
+              </div>
+            </PopoverTrigger>
+            <PopoverContent className="w-75" align="center">
+              <PopoverHeader>
+                <Item className="bg-white" variant="muted">
+                  <ItemMedia>
+                    <Avatar className="size-10">
+                      <AvatarImage src="/favicon.png"></AvatarImage>
+                      <AvatarFallback>Profile Picture</AvatarFallback>
+                    </Avatar>
+                  </ItemMedia>
+                  <ItemContent>
+                    <HoverCard openDelay={100} closeDelay={100}>
+                      <HoverCardTrigger>
+                        <ItemTitle>{active?.name}</ItemTitle>
+                      </HoverCardTrigger>
+                      <HoverCardContent className="p-1" side="top">
+                        <Item className="bg-white" variant="muted">
+                          <ItemContent>
+                            <ItemTitle>DoB</ItemTitle>
+                            <ItemDescription>{active?.dob}</ItemDescription>
+                          </ItemContent>
+                        </Item>
+                        <Item className="bg-white" variant="muted">
+                          <ItemContent>
+                            <ItemTitle>Email</ItemTitle>
+                            <ItemDescription>{active?.email}</ItemDescription>
+                          </ItemContent>
+                        </Item>
+                        <Item className="bg-white" variant="muted">
+                          <ItemContent>
+                            <ItemTitle>Phone Number</ItemTitle>
+                            <ItemDescription>{active?.phone}</ItemDescription>
+                          </ItemContent>
+                        </Item>
+                      </HoverCardContent>
+                    </HoverCard>
+                  </ItemContent>
+                  <ItemActions>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger className="" asChild>
+                        <Button variant="ghost">
+                          <Settings />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        className="w-auto"
+                        align="center"
+                      ></DropdownMenuContent>
+                    </DropdownMenu>
+                  </ItemActions>
+                </Item>
+                <Item className="bg-white" variant="muted">
+                  <ItemContent>
+                    <ItemTitle>Type</ItemTitle>
+                    <ItemDescription>{active?.type}</ItemDescription>
+                  </ItemContent>
+                </Item>
+                <Item className="bg-white" variant="muted">
+                  <ItemContent>
+                    <ItemTitle>Practitioner</ItemTitle>
+                    <ItemDescription>{`Dr. ${active?.practitioner}`}</ItemDescription>
+                  </ItemContent>
+                </Item>
+              </PopoverHeader>
+              {appt.status != "checked-out" && (
+                <Item>
+                  <ItemContent>
+                    {appt.status == "scheduled" && (
+                      <Button
+                        onClick={handleCheckIn}
+                        className="w-full bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-center font-semibold text-white"
+                      >
+                        Check In
+                      </Button>
+                    )}
+                    {appt.status == "checked-in" && (
+                      <Button
+                        onClick={handleCheckOut}
+                        className="w-full bg-[#C04343] hover:bg-[#C04343]/60 hover:text-black/60 text-center font-semibold text-white"
+                      >
+                        Check Out
+                      </Button>
+                    )}
+                  </ItemContent>
+                </Item>
+              )}
+            </PopoverContent>
+          </Popover>
         ) : (
           <div className="h-full">&nbsp;</div>
         )}
       </div>
     );
-  };
-
-  const handleNameChange = (value) => {
-    if (!value) {
-      return;
-    }
-    setFormName(value);
   };
 
   const handleCreateAppointment = () => {
@@ -202,7 +358,7 @@ export default function Appointments() {
       return false;
     }
 
-    const formattedDate = date.toLocaleDateString("en-ES");
+    const formattedDate = formatDateDMY(date);
 
     // Find first available slot (1–4)
     let availableSlot = null;
@@ -239,6 +395,7 @@ export default function Appointments() {
       time: formTime,
       slot: availableSlot,
       date: formattedDate,
+      status: "scheduled",
     };
 
     setAppointments((prev) => [...prev, newAppointment]);
@@ -250,6 +407,42 @@ export default function Appointments() {
     setFormTime("");
 
     return true;
+  };
+
+  const handleCheckIn = () => {
+    if (!isAppointmentToday(active.date)) {
+      toast.warning("You can only check in appointments scheduled for today.", {
+        position: "top-center",
+      });
+      return;
+    }
+
+    setAppointments((prev) =>
+      prev.map((appt) =>
+        appt.id === active.id ? { ...appt, status: "checked-in" } : appt,
+      ),
+    );
+
+    setActive({ ...active, status: "checked-in" });
+  };
+
+  const handleCheckOut = () => {
+    console.log(active);
+    if (active.status != "checked-in") {
+      toast.warning(
+        "You can only check out appointments that are checked-in.",
+        { position: "top-center" },
+      );
+      return;
+    }
+
+    setAppointments((prev) =>
+      prev.map((appt) =>
+        appt.id === active.id ? { ...appt, status: "checked-out" } : appt,
+      ),
+    );
+
+    setActive({ ...active, status: "checked-out" });
   };
 
   return (
@@ -522,78 +715,6 @@ export default function Appointments() {
                 </React.Fragment>
               ))}
             </div>
-            {active && (
-              <div className="flex-1 px-2 pt-2">
-                <Card className="flex flex-col p-4 gap-2">
-                  <CardHeader>
-                    <div className="flex flex-row items-center gap-4 rounded-2xl px-4">
-                      <Image
-                        className="rounded-full"
-                        src="/favicon.png"
-                        alt="logo"
-                        height={50}
-                        width={50}
-                      ></Image>
-                      <p>{active.name}</p>
-                    </div>
-                    <div className="flex flex-col">
-                      <p className="flex gap-2">
-                        <b>DoB:</b>
-                        {active.dob}
-                      </p>
-                      <p className="flex gap-2">
-                        <b>Email:</b>
-                        {active.email}
-                      </p>
-                      <p className="text-ellipsis">
-                        <b>Phone Number:&nbsp;</b>
-                        {active.phone}
-                      </p>
-                    </div>
-                    <CardAction>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost">
-                            <Settings />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent
-                          className="w-auto"
-                          align="center"
-                        ></DropdownMenuContent>
-                      </DropdownMenu>
-                    </CardAction>
-                  </CardHeader>
-                  <CardContent className="flex flex-col w-75 gap-2">
-                    <div>
-                      <p className="font-extrabold text-lg">Appointment</p>
-                      <p className="flex gap-2 text-ellipsis">
-                        <b>Type:</b>
-                        {active.type}
-                      </p>
-                      <p className="flex gap-2 text-ellipsis">
-                        <b>Practitioner:</b>
-                        {`Dr. ${active.practitioner}`}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="font-extrabold text-lg">Notes</p>
-                      <p className="text-ellipsis">
-                        Neck pain, Involved in car accident.
-                      </p>
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex flex-col gap-2">
-                    <Button className="w-full bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-center font-semibold text-white">
-                      Check In
-                    </Button>
-                    <Button className="w-full bg-[#C04343] hover:bg-[#C04343]/60 hover:text-black/60 text-center font-semibold text-white">
-                      Check Out
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-            )}
           </div>
         </div>
       </div>

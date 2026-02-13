@@ -7,8 +7,7 @@ import { auth } from "./Firebase/firebase";
 import { useRouter } from "next/navigation";
 import { sendEmailVerification } from "firebase/auth";
 import Image from "next/image";
-import { AlertCircleIcon, Eye, EyeOff } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -16,12 +15,12 @@ import {
   InputGroupAddon,
   InputGroupInput,
 } from "@/components/ui/input-group";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [alert, setAlert] = useState("");
 
   const router = useRouter();
 
@@ -33,14 +32,21 @@ export default function LoginPage() {
 
       if (!user.emailVerified) {
         await sendEmailVerification(user);
-        setAlert("verify");
+        toast.info(
+          "Your login credentials are saved. Please verify your email and login again.",
+          { position: "top-center" },
+        );
+
         return;
       }
 
       router.push("/Appointments");
     } catch (err) {
       console.log(err);
-      setAlert("fail");
+      toast.warning(
+        "Your login credentials could not be processed. Please check your credentials and try again.",
+        { position: "top-center" },
+      );
     }
   };
 
@@ -49,26 +55,6 @@ export default function LoginPage() {
       className="flex flex-col items-center justify-center min-h-screen"
       style={{ backgroundColor: "#F0F0F0" }}
     >
-      {alert == "fail" && (
-        <Alert variant="destructive" className="fixed top-10 right-0 max-w-sm">
-          <AlertCircleIcon />
-          <AlertTitle>Login Failed</AlertTitle>
-          <AlertDescription>
-            Your login credentials could not be processed. Please check your
-            credentials and try again.
-          </AlertDescription>
-        </Alert>
-      )}
-      {alert == "verify" && (
-        <Alert className="fixed top-10 right-0 max-w-sm">
-          <AlertCircleIcon />
-          <AlertTitle>Verify Email</AlertTitle>
-          <AlertDescription>
-            Your login credentials are saved. Please verify your email and login
-            again.
-          </AlertDescription>
-        </Alert>
-      )}
       <div
         className="flex flex-col items-center gap-6"
         style={{

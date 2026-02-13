@@ -9,10 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { InfoIcon } from "lucide-react";
+import { toast } from "sonner";
 
 export default function ResetPassword() {
   const [username, setUsername] = useState("");
-  const [alert, setAlert] = useState("");
   const router = useRouter();
 
   const handleSubmit = async (e) => {
@@ -20,7 +20,9 @@ export default function ResetPassword() {
 
     try {
       await sendPasswordResetEmail(auth, username);
-      setAlert("success");
+      toast.info("Password reset email sent. Check your inbox.", {
+        position: "top-center",
+      });
       setUsername("");
       router.push("/Login");
     } catch (err) {
@@ -37,9 +39,7 @@ export default function ResetPassword() {
         <Alert className="fixed top-10 right-0 max-w-sm">
           <InfoIcon />
           <AlertTitle>Success!</AlertTitle>
-          <AlertDescription>
-            Password reset email sent. Check your inbox.
-          </AlertDescription>
+          <AlertDescription></AlertDescription>
         </Alert>
       )}
       <div
