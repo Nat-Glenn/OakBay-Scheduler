@@ -88,6 +88,15 @@ import {
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
 
 export default function Appointments() {
   const [active, setActive] = useState(null);
@@ -181,6 +190,13 @@ export default function Appointments() {
     "11:00",
     "11:15",
     "11:30",
+    "11:45",
+    "12:00",
+    "12:15",
+    "12:30",
+    "12:45",
+    "13:00",
+    "21:00",
   ];
   const practitioners = ["Brad Pritchard", "Kyle James", "Daniel Topala"];
   const [date, setDate] = useState(new Date());
@@ -232,12 +248,17 @@ export default function Appointments() {
         a.date === selectedDate,
     );
     return (
-      <div className="col-span-2 border p-1 text-center snap-end">
+      <div className="col-span-2 border p-1 text-center">
         {appt ? (
           <Popover>
             <PopoverTrigger className="w-full">
               <div
-                onClick={() => manageActive(appt)}
+                onClick={() => {
+                  if (appt == active) {
+                    return;
+                  }
+                  manageActive(appt);
+                }}
                 className={`${getStatusColor(
                   appt.status,
                 )} hover:opacity-80 cursor-pointer flex flex-col`}
@@ -285,17 +306,26 @@ export default function Appointments() {
                     </HoverCard>
                   </ItemContent>
                   <ItemActions>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger className="" asChild>
+                    <Dialog>
+                      <DialogTrigger className="" asChild>
                         <Button variant="ghost">
                           <Settings />
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        className="w-auto"
-                        align="center"
-                      ></DropdownMenuContent>
-                    </DropdownMenu>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit Appointment</DialogTitle>
+                          <DialogDescription>
+                            Edit an appointment&apos;s information.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <FieldGroup>
+                          <Field>
+                            <Label></Label>
+                          </Field>
+                        </FieldGroup>
+                      </DialogContent>
+                    </Dialog>
                   </ItemActions>
                 </Item>
                 <Item className="bg-white" variant="muted">
@@ -353,6 +383,13 @@ export default function Appointments() {
     const customer = customers.find((c) => c.name === formName);
     if (!customer) {
       toast.warning("Customer needs to be selected from the list.", {
+        position: "top-center",
+      });
+      return false;
+    }
+
+    if (date < new Date()) {
+      toast.warning("Cannot book appointments for past dates.", {
         position: "top-center",
       });
       return false;
@@ -448,7 +485,7 @@ export default function Appointments() {
   return (
     <main className="flex min-h-dvh w-full">
       <NavBarComp />
-      <div className="flex-2 p-4">
+      <div className="flex-2 px-4 pt-4 overflow-y-hidden">
         <header className="pb-4 px-4">
           <h1 className="text-3xl font-bold text-gray-800">Scheduler</h1>
           <p className="text-gray-500">
@@ -573,8 +610,8 @@ export default function Appointments() {
                               </PopoverContent>
                             </Popover>
                           </Field>
-                          <div className="grid grid-cols-3 gap-4">
-                            <Field className="col-span-2">
+                          <div className="grid grid-cols-2 gap-4">
+                            <Field className="">
                               <FieldLabel htmlFor="type">Type</FieldLabel>
                               <Select onValueChange={setFormType}>
                                 <SelectTrigger id="type">
@@ -589,26 +626,7 @@ export default function Appointments() {
                                 </SelectContent>
                               </Select>
                             </Field>
-                            <Field>
-                              <FieldLabel htmlFor="pract">
-                                Practitioner
-                              </FieldLabel>
-                              <Select onValueChange={setFormPractitioner}>
-                                <SelectTrigger id="pract">
-                                  <SelectValue placeholder="Dr. Seuss" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {practitioners.map((e) => (
-                                    <SelectItem value={e} key={e}>
-                                      {e}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </Field>
-                          </div>
-                          <div className="grid grid-cols-3 gap-4">
-                            <Field className="col-span-2">
+                            <Field className="">
                               <FieldLabel htmlFor="date">Date</FieldLabel>
                               <Popover>
                                 <PopoverTrigger asChild>
@@ -640,25 +658,77 @@ export default function Appointments() {
                                   <Calendar
                                     mode="single"
                                     selected={date}
-                                    onSelect={setDate}
+                                    onSelect={(day) => {
+                                      if (day) setDate(day);
+                                    }}
                                   />
                                 </PopoverContent>
                               </Popover>
                             </Field>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
                             <Field>
-                              <FieldLabel htmlFor="hour">Time</FieldLabel>
-                              <Select onValueChange={setFormTime}>
-                                <SelectTrigger id="hour">
-                                  <SelectValue placeholder="9:00 AM" />
+                              <FieldLabel htmlFor="pract">
+                                Practitioner
+                              </FieldLabel>
+                              <Select onValueChange={setFormPractitioner}>
+                                <SelectTrigger id="pract">
+                                  <SelectValue placeholder="Dr. Seuss" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  {time.map((e) => (
+                                  {practitioners.map((e) => (
                                     <SelectItem value={e} key={e}>
-                                      {`${e} AM`}
+                                      {e}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
+                            </Field>
+                            <Field>
+                              <FieldLabel htmlFor="hour">Time</FieldLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    className="justify-between w-full"
+                                  >
+                                    {formTime || "Select time"}
+                                    <ChevronDownIcon />
+                                  </Button>
+                                </PopoverTrigger>
+                                <PopoverContent>
+                                  <Command>
+                                    <CommandInput placeholder="Search time..." />
+
+                                    <CommandEmpty>No time found.</CommandEmpty>
+
+                                    <CommandGroup
+                                      className="w-full h-50"
+                                      id="hour"
+                                    >
+                                      {time.map((hour) => (
+                                        <CommandItem
+                                          key={hour}
+                                          value={hour}
+                                          onSelect={(value) => {
+                                            setFormTime(value);
+                                          }}
+                                        >
+                                          <Check
+                                            className={
+                                              formTime === hour
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                            }
+                                          />
+                                          {hour}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  </Command>
+                                </PopoverContent>
+                              </Popover>
                             </Field>
                           </div>
                         </FieldSet>
@@ -683,7 +753,7 @@ export default function Appointments() {
             </AlertDialog>
           </div>
           <div className="flex flex-row">
-            <div className="w-full h-99 grid grid-cols-9 m-4 border overflow-y-scroll">
+            <div className="w-full h-105 grid grid-cols-9 m-4 border overflow-y-scroll">
               <div className="col-span-1 font-bold text-center border sticky top-0 bg-white">
                 Time
               </div>
@@ -702,7 +772,7 @@ export default function Appointments() {
               {time.map((hours) => (
                 <React.Fragment key={hours}>
                   <div
-                    className="col-span-1 text-center border p-2 font-medium"
+                    className="col-span-1 text-center border p-3 font-medium"
                     key={hours.key}
                   >
                     {hours}

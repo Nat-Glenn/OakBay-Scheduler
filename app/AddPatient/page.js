@@ -5,11 +5,7 @@ import NavBarComp from "@/components/NavBarComp";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -49,7 +45,7 @@ export default function AddPatientPage() {
         </header>
 
         <div className="flex justify-center px-4">
-          <Card className="w-full max-w-2xl">
+          <Card className="w-full h-full max-w-2xl">
             <CardHeader>
               <h2 className="text-xl font-bold">Patient Information</h2>
             </CardHeader>
@@ -64,9 +60,7 @@ export default function AddPatientPage() {
                     {/* Name Row */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field>
-                        <FieldLabel htmlFor="firstName">
-                          First Name
-                        </FieldLabel>
+                        <FieldLabel htmlFor="firstName">First Name</FieldLabel>
                         <Input
                           id="firstName"
                           placeholder="First Name"
@@ -75,11 +69,7 @@ export default function AddPatientPage() {
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
-                        <Input
-                          id="lastName"
-                          placeholder="Last Name"
-                          required
-                        />
+                        <Input id="lastName" placeholder="Last Name" required />
                       </Field>
                     </div>
 
@@ -156,10 +146,7 @@ export default function AddPatientPage() {
                           <FieldLabel htmlFor="emergencyName">
                             Contact Name
                           </FieldLabel>
-                          <Input
-                            id="emergencyName"
-                            placeholder="Jane Doe"
-                          />
+                          <Input id="emergencyName" placeholder="Jane Doe" />
                         </Field>
                         <Field>
                           <FieldLabel htmlFor="emergencyPhone">
