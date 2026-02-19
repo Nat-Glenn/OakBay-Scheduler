@@ -1,10 +1,10 @@
 "use client";
 import NavBarComp from "@/components/NavBarComp";
-import { RenderAppointment } from "@/components/RenderAppointment";
+import { renderAppointment } from "@/components/RenderAppointment";
 import React from "react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import Calendar from "@/components/Calendar";
+import DatePicker from "@/components/DatePicker";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -110,14 +110,14 @@ export default function Appointments() {
           </p>
         </header>
         <div className="flex flex-col">
-          <div className="flex flex-row items-center gap-2">
+          <div className="flex flex-row items-center gap-2 px-4">
             <ChevronLeftIcon
               onClick={() => date && setDate(subDays(date, 1))}
             />
             <ChevronRightIcon
               onClick={() => date && setDate(addDays(date, 1))}
             />
-            <Calendar date={date} setDate={setDate} />
+            <DatePicker date={date} setDate={setDate} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -144,7 +144,7 @@ export default function Appointments() {
             />
           </div>
           <div className="flex flex-row">
-            <div className="w-full h-105 grid grid-cols-9 m-4 border overflow-y-scroll">
+            <div className="w-full md:h-105 grid grid-cols-9 m-4 border overflow-y-scroll">
               <div className="col-span-1 font-bold text-center border sticky top-0 bg-white">
                 Time
               </div>
@@ -169,7 +169,7 @@ export default function Appointments() {
                     {hours}
                   </div>
 
-                  {RenderAppointment(
+                  {renderAppointment(
                     hours,
                     1,
                     practitioner,
@@ -179,7 +179,7 @@ export default function Appointments() {
                     appointments,
                     setAppointments,
                   )}
-                  {RenderAppointment(
+                  {renderAppointment(
                     hours,
                     2,
                     practitioner,
@@ -189,7 +189,7 @@ export default function Appointments() {
                     appointments,
                     setAppointments,
                   )}
-                  {RenderAppointment(
+                  {renderAppointment(
                     hours,
                     3,
                     practitioner,
@@ -199,7 +199,7 @@ export default function Appointments() {
                     appointments,
                     setAppointments,
                   )}
-                  {RenderAppointment(
+                  {renderAppointment(
                     hours,
                     4,
                     practitioner,

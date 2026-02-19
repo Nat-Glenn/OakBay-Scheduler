@@ -10,8 +10,9 @@ import {
   formatMonthDropdown,
   formatYearDropdown,
 } from "react-day-picker";
+import { Calendar } from "@/components/ui/calendar";
 
-export default function Calendar({ date, setDate }) {
+export default function DatePicker({ date, setDate }) {
   return (
     <Popover>
       <PopoverTrigger asChild>
