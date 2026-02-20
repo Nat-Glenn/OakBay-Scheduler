@@ -64,6 +64,7 @@ const Patients = [
 
 export default function PatientProfiles() {
   const [searchTerm, setSearchTerm] = useState("");
+  // Removed <any> here to fix the ReferenceError
   const [selectedPatient, setSelectedPatient] = useState(null);
 
   const filteredPatients = Patients.filter(
@@ -78,18 +79,13 @@ export default function PatientProfiles() {
       <div className="flex-1 p-4">
         <header className="pb-4 px-4">
           <h1 className="text-3xl font-bold text-gray-800">Patient Profiles</h1>
-          <p className="text-gray-500">
-            Manage and view all registered patients.
-          </p>
+          <p className="text-gray-500">Manage and view all registered patients.</p>
         </header>
 
         <div className="flex flex-col px-4">
           <div className="flex flex-row items-center gap-4 mb-4">
             <div className="relative flex-1 max-w-md">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                size={18}
-              />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
               <Input
                 placeholder="Search by name or ID..."
                 className="pl-10"
@@ -127,26 +123,16 @@ export default function PatientProfiles() {
                       }`}
                       onClick={() => setSelectedPatient(patient)}
                     >
-                      <TableCell className="font-mono text-sm">
-                        {patient.id}
-                      </TableCell>
+                      <TableCell className="font-mono text-sm">{patient.id}</TableCell>
                       <TableCell className="font-medium">{patient.name}</TableCell>
                       <TableCell>{patient.age}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {patient.lastVisit}
-                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{patient.lastVisit}</TableCell>
                       <TableCell>
-                        <Badge
-                          className={
-                            patient.status === "Active"
-                              ? "bg-[#A0CE66] hover:bg-[#A0CE66]"
-                              : "bg-slate-400 hover:bg-slate-400"
-                          }
-                        >
+                        <Badge className={patient.status === "Active" ? "bg-[#A0CE66] hover:bg-[#A0CE66]" : "bg-slate-400 hover:bg-slate-400"}>
                           {patient.status}
                         </Badge>
                       </TableCell>
-                      <TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="sm">
@@ -156,9 +142,7 @@ export default function PatientProfiles() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>View Details</DropdownMenuItem>
                             <DropdownMenuItem>Edit</DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600">
-                              Delete
-                            </DropdownMenuItem>
+                            <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -178,58 +162,31 @@ export default function PatientProfiles() {
                       </div>
                       <div>
                         <p className="font-bold text-lg">{selectedPatient.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {selectedPatient.id}
-                        </p>
+                        <p className="text-sm text-muted-foreground">{selectedPatient.id}</p>
                       </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="font-extrabold text-lg mb-2">
-                        Personal Information
-                      </p>
+                      <p className="font-extrabold text-lg mb-2">Personal Information</p>
                       <div className="space-y-1 text-sm">
-                        <p className="flex gap-2">
-                          <b>Date of Birth:</b>
-                          {selectedPatient.dob} ({selectedPatient.age})
-                        </p>
-                        <p className="flex gap-2">
-                          <b>Email:</b>
-                          {selectedPatient.email}
-                        </p>
-                        <p className="flex gap-2">
-                          <b>Phone:</b>
-                          {selectedPatient.phone}
-                        </p>
-                        <p className="flex gap-2">
+                        <p><b>Date of Birth:</b> {selectedPatient.dob} ({selectedPatient.age})</p>
+                        <p><b>Email:</b> {selectedPatient.email}</p>
+                        <p><b>Phone:</b> {selectedPatient.phone}</p>
+                        <div className="flex gap-2 items-center">
                           <b>Status:</b>
-                          <Badge
-                            className={
-                              selectedPatient.status === "Active"
-                                ? "bg-[#A0CE66] hover:bg-[#A0CE66]"
-                                : "bg-slate-400 hover:bg-slate-400"
-                            }
-                          >
+                          <Badge className={selectedPatient.status === "Active" ? "bg-[#A0CE66] hover:bg-[#A0CE66]" : "bg-slate-400 hover:bg-slate-400"}>
                             {selectedPatient.status}
                           </Badge>
-                        </p>
+                        </div>
                       </div>
                     </div>
 
                     <div>
-                      <p className="font-extrabold text-lg mb-2">
-                        Appointment History
-                      </p>
+                      <p className="font-extrabold text-lg mb-2">Appointment History</p>
                       <div className="space-y-1 text-sm">
-                        <p className="flex gap-2">
-                          <b>Last Visit:</b>
-                          {selectedPatient.lastVisit}
-                        </p>
-                        <p className="flex gap-2">
-                          <b>Next Appointment:</b>
-                          {selectedPatient.nextAppt || "None scheduled"}
-                        </p>
+                        <p><b>Last Visit:</b> {selectedPatient.lastVisit}</p>
+                        <p><b>Next Appointment:</b> {selectedPatient.nextAppt || "None scheduled"}</p>
                       </div>
                     </div>
 
@@ -239,10 +196,7 @@ export default function PatientProfiles() {
                           View Full Profile
                         </Button>
                       </Link>
-                      <Button
-                        variant="outline"
-                        className="w-full font-semibold"
-                      >
+                      <Button variant="outline" className="w-full font-semibold">
                         Schedule Appointment
                       </Button>
                     </div>
