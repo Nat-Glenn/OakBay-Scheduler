@@ -30,7 +30,7 @@ export function parseDMYToDate(dmy) {
   return new Date(year, month - 1, day);
 }
 
-export function RenderAppointment(
+export function renderAppointment(
   hours,
   slotNumber,
   practitioner,
