@@ -1,57 +1,86 @@
+"use client";
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
 import { GrMoney, GrPower, GrScorecard, GrSettingsOption, GrTask, GrUser, GrUserManager } from "react-icons/gr";
-import { useRouter } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/Login/Firebase/firebase";
 
-
 export default function MenuComp() {
     const router = useRouter();
+    const pathname = usePathname();
 
     const handleSignOut = async () => {
         try {
-        await signOut(auth);
-        router.replace("/Login");
+            await signOut(auth);
+            router.replace("/Login");
         } catch (err) {
-        console.log(err);
-        alert("Sign out failed.");
+            console.log(err);
+            alert("Sign out failed.");
         }
     };
 
+    const CurrentPage = (href) => {
+        const isActive = pathname === href || pathname.startsWith(href + "/");
+        
+        return `my-1 p-4 flex flex-row items-center gap-2 font-bold transition-all duration-200 ${
+            isActive 
+            ? "bg-[#098cbc] text-white shadow-inner"
+            : "text-white hover:bg-[#098cbc]"       
+        }`;
+    };
+
     return (
-            <div onClick={(event) => event.stopPropagation()} className="flex flex-col bg-[#00AEEF]">
-                <Link href="/" className="self-center p-4">
-                    <Image src="/logo.png" alt="Logo" width={100} height={50}></Image>
-                </Link>
-                <Link href="./Appointments/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
-                    <GrScorecard width={6} height={6} />
+        <div 
+            onClick={(event) => event.stopPropagation()} 
+            className="flex flex-col w-64 min-h-screen bg-[#00AEEF] border-r border-white/10 shadow-xl"
+        >
+            {/* Logo Section */}
+            <Link href="/" className="self-center p-4">
+                <Image src="/logo.png" alt="Logo" width={100} height={50} priority />
+            </Link>
+            
+            {/* Navigation Links */}
+            <nav className="flex flex-col flex-1">
+                <Link href="/Appointments" className={CurrentPage("/Appointments")}>
+                    <GrScorecard />
                     Appointments
                 </Link> 
-                <Link href="./Billing/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
-                    <GrMoney width={6} height={6} />
+                
+                <Link href="/Billing" className={CurrentPage("/Billing")}>
+                    <GrMoney />
                     Billing
                 </Link>
-                <Link href="./Practitioners/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
-                    <GrUserManager width={6} height={6} />
+                
+                <Link href="/Practitioners" className={CurrentPage("/Practitioners")}>
+                    <GrUserManager />
                     Practitioners
                 </Link> 
-                <Link href="./Summary/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
-                    <GrTask width={6} height={6} />
+                
+                <Link href="/Summary" className={CurrentPage("/Summary")}>
+                    <GrTask />
                     Summary
                 </Link>  
-                <Link href="./PatientProfiles/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
-                    <GrUser width={6} height={6} />
+                
+                <Link href="/PatientProfiles" className={CurrentPage("/PatientProfiles")}>
+                    <GrUser />
                     Patient Profile
                 </Link>  
-                <Link href="./Settings/" className="my-1 p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
-                    <GrSettingsOption width={6} height={6} />
+                
+                <Link href="/Settings" className={CurrentPage("/Settings")}>
+                    <GrSettingsOption />
                     Settings
                 </Link> 
-                <button onClick={handleSignOut} className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc]">
-                    <GrPower width={6} height={6} />
+
+                {/* Sign Out Section */}
+                <button 
+                    onClick={handleSignOut} 
+                    className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc] transition-all border-t border-white/10"
+                >
+                    <GrPower />
                     Sign Out
                 </button> 
-            </div>
-    )
+            </nav>
+        </div>
+    );
 }
