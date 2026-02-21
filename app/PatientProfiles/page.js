@@ -225,11 +225,9 @@ export default function PatientProfiles() {
 
                     {/* ACTION BUTTONS */}
                     <div className="pt-4 space-y-2">
-                      <Link href={`/patients/${selectedPatient.id}`} className="block">
                         <Button className="w-full bg-[#002D58] hover:bg-[#002D58]/80 text-white font-semibold">
                           View Full Profile
                         </Button>
-                      </Link>
                       <Button variant="outline" className="w-full font-semibold">
                         Schedule Appointment
                       </Button>
