@@ -25,9 +25,12 @@ export default function AddPatientPage() {
   return (
     <main className="flex min-h-dvh w-full">
       <NavBarComp />
+
       <div className="flex-1 p-4">
+        {/* HEADER SECTION */}
         <header className="pb-4 px-4">
           <div className="flex items-center gap-2 mb-2">
+            {/* BACK BUTTON */}
             <Link
               href="/PatientProfiles"
               className="flex items-center text-[#002D58] hover:text-[#002D58]/60 font-medium"
@@ -44,6 +47,7 @@ export default function AddPatientPage() {
           </p>
         </header>
 
+        {/* FORM CONTAINER */}
         <div className="flex justify-center px-4">
           <Card className="w-full h-full max-w-2xl">
             <CardHeader>
@@ -57,7 +61,7 @@ export default function AddPatientPage() {
                       Fill in the required patient details below.
                     </FieldDescription>
 
-                    {/* Name Row */}
+                    {/* NAME ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field>
                         <FieldLabel htmlFor="firstName">First Name</FieldLabel>
@@ -73,7 +77,7 @@ export default function AddPatientPage() {
                       </Field>
                     </div>
 
-                    {/* Date of Birth */}
+                    {/* DATE OF BIRTH & AGE ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field>
                         <FieldLabel htmlFor="dob">Date of Birth</FieldLabel>
@@ -91,7 +95,7 @@ export default function AddPatientPage() {
                       </Field>
                     </div>
 
-                    {/* Contact Information */}
+                    {/* CONTACT INFORMATION ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field>
                         <FieldLabel htmlFor="email">Email</FieldLabel>
@@ -113,7 +117,7 @@ export default function AddPatientPage() {
                       </Field>
                     </div>
 
-                    {/* Status */}
+                    {/* STATUS DROPDOWN */}
                     <Field>
                       <FieldLabel htmlFor="status">Status</FieldLabel>
                       <Select defaultValue="Active">
@@ -127,7 +131,7 @@ export default function AddPatientPage() {
                       </Select>
                     </Field>
 
-                    {/* Address */}
+                    {/* ADDRESS */}
                     <Field>
                       <FieldLabel htmlFor="address">
                         Address (Optional)
@@ -138,7 +142,7 @@ export default function AddPatientPage() {
                       />
                     </Field>
 
-                    {/* Emergency Contact */}
+                    {/* EMERGENCY CONTACT SECTION */}
                     <div className="pt-4 border-t">
                       <h3 className="font-bold mb-4">Emergency Contact</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -161,20 +165,20 @@ export default function AddPatientPage() {
                       </div>
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* FORM ACTION BUTTONS */}
                     <div className="flex gap-4 pt-6">
                       <Link href="/PatientProfiles" className="flex-1">
                         <Button
                           type="button"
                           variant="outline"
-                          className="w-full font-semibold"
+                          className=" bg-[#FB2C36] hover:bg-[#FB2C36]/60 w-full hover:text-black/60 text-white font-bold"
                         >
                           Cancel
                         </Button>
                       </Link>
                       <Button
                         type="submit"
-                        className="flex-1 bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-white font-bold"
+                        className="flex-1 bg-[#002D58] hover:bg-[#002D58]/90 hover:text-black/60 text-white font-bold"
                       >
                         Create Patient
                       </Button>

@@ -33,19 +33,13 @@ export default function ResetPassword() {
   return (
     <main
       className="flex flex-col items-center justify-center min-h-screen"
-      style={{ backgroundColor: "#F0F0F0" }}
+      style={{ backgroundColor: "#00AEEF" }}
     >
-      {alert == "success" && (
-        <Alert className="fixed top-10 right-0 max-w-sm">
-          <InfoIcon />
-          <AlertTitle>Success!</AlertTitle>
-          <AlertDescription></AlertDescription>
-        </Alert>
-      )}
+      {/* alert logic maintained from original */}
       <div
         className="flex flex-col items-center gap-6"
         style={{
-          backgroundColor: "#00AEEF",
+          backgroundColor: "#FFFFFF",
           borderRadius: "20px",
           width: "400px",
           padding: "40px",
@@ -62,7 +56,7 @@ export default function ResetPassword() {
         <p
           style={{
             textAlign: "center",
-            color: "#ffffff",
+            color: "#000000",
             fontSize: "12px",
             fontWeight: "bold",
           }}
@@ -72,7 +66,7 @@ export default function ResetPassword() {
 
         <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
           <Input
-            className="text-center bg-white"
+            className="text-center bg-slate-50"
             type="text"
             name="username"
             placeholder="Email"

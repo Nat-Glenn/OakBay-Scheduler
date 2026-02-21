@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import NavBarComp from "@/components/NavBarComp";
-import { Search, Plus, MoreVertical, User } from "lucide-react";
+import { Search, Plus, MoreVertical, User, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,11 +26,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// MOCK DATA
 const Patients = [
-  { 
-    id: "P001", 
-    name: "John Doe", 
-    age: 42, 
+  {
+    id: "P001",
+    name: "John Doe",
+    age: 42,
     dob: "June 01, 1983",
     email: "johndoe@gmail.com",
     phone: "587-999-9999",
@@ -38,10 +39,10 @@ const Patients = [
     lastVisit: "02/05/2026",
     nextAppt: "02/15/2026"
   },
-  { 
-    id: "P002", 
-    name: "Jane Smith", 
-    age: 29, 
+  {
+    id: "P002",
+    name: "Jane Smith",
+    age: 29,
     dob: "March 15, 1996",
     email: "janesmith@gmail.com",
     phone: "587-888-8888",
@@ -49,10 +50,10 @@ const Patients = [
     lastVisit: "01/28/2026",
     nextAppt: "02/12/2026"
   },
-  { 
-    id: "P003", 
-    name: "Robert Wilson", 
-    age: 55, 
+  {
+    id: "P003",
+    name: "Robert Wilson",
+    age: 55,
     dob: "August 10, 1970",
     email: "robertw@gmail.com",
     phone: "587-777-7777",
@@ -64,7 +65,6 @@ const Patients = [
 
 export default function PatientProfiles() {
   const [searchTerm, setSearchTerm] = useState("");
-  // Removed <any> here to fix the ReferenceError
   const [selectedPatient, setSelectedPatient] = useState(null);
 
   const filteredPatients = Patients.filter(
@@ -75,14 +75,18 @@ export default function PatientProfiles() {
 
   return (
     <main className="flex min-h-dvh w-full">
+      {/* Sidebar Navigation Component */}
       <NavBarComp />
+
       <div className="flex-1 p-4">
+        {/* PAGE HEADER */}
         <header className="pb-4 px-4">
           <h1 className="text-3xl font-bold text-gray-800">Patient Profiles</h1>
           <p className="text-gray-500">Manage and view all registered patients.</p>
         </header>
 
         <div className="flex flex-col px-4">
+          {/* SEARCH & ACTIONS BAR */}
           <div className="flex flex-row items-center gap-4 mb-4">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={18} />
@@ -94,14 +98,17 @@ export default function PatientProfiles() {
               />
             </div>
             <Link href="/AddPatient">
-              <Button className="bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-white font-bold rounded-md ml-auto gap-2">
+              <Button className="bg-[#002D58] hover:bg-[#002D58]/90 hover:text-black/60 text-white font-bold rounded-md ml-auto gap-2">
                 <Plus size={18} />
                 Add Patient
               </Button>
             </Link>
           </div>
 
+          {/* MAIN CONTENT AREA */}
           <div className="flex flex-row gap-4">
+            
+            {/* PATIENT LIST TABLE */}
             <div className="flex-1 rounded-lg border bg-card shadow-sm max-h-[600px] overflow-y-auto">
               <Table>
                 <TableHeader className="sticky top-0 bg-white z-10">
@@ -118,9 +125,8 @@ export default function PatientProfiles() {
                   {filteredPatients.map((patient) => (
                     <TableRow
                       key={patient.id}
-                      className={`cursor-pointer hover:bg-slate-50 ${
-                        selectedPatient?.id === patient.id ? "bg-slate-100" : ""
-                      }`}
+                      className={`cursor-pointer hover:bg-slate-50 ${selectedPatient?.id === patient.id ? "bg-slate-100" : ""}`}
+                      // When a row is clicked, the side card opens/updates
                       onClick={() => setSelectedPatient(patient)}
                     >
                       <TableCell className="font-mono text-sm">{patient.id}</TableCell>
@@ -152,21 +158,36 @@ export default function PatientProfiles() {
               </Table>
             </div>
 
+            {/* PATIENT DETAIL SIDE-CARD */}
             {selectedPatient && (
               <div className="w-80">
-                <Card>
+                <Card className="relative overflow-hidden">
+
+                  {/* CLOSE BUTTON (X) */}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-2 h-8 w-8 rounded-full text-muted-foreground hover:bg-slate-100 hover:text-slate-900 z-10"
+                    onClick={() => setSelectedPatient(null)}
+                  >
+                    <X size={16} />
+                  </Button>
+
                   <CardHeader>
                     <div className="flex flex-row items-center gap-4 mb-4">
+                      {/* Profile Icon Placeholder */}
                       <div className="h-12 w-12 rounded-full bg-[#002D58] flex items-center justify-center">
                         <User className="text-white" size={24} />
                       </div>
                       <div>
-                        <p className="font-bold text-lg">{selectedPatient.name}</p>
+                        <p className="font-bold text-lg leading-tight">{selectedPatient.name}</p>
                         <p className="text-sm text-muted-foreground">{selectedPatient.id}</p>
                       </div>
                     </div>
                   </CardHeader>
+
                   <CardContent className="space-y-4">
+                    {/* PERSONAL INFO SECTION */}
                     <div>
                       <p className="font-extrabold text-lg mb-2">Personal Information</p>
                       <div className="space-y-1 text-sm">
@@ -182,6 +203,7 @@ export default function PatientProfiles() {
                       </div>
                     </div>
 
+                    {/* HISTORY SECTION */}
                     <div>
                       <p className="font-extrabold text-lg mb-2">Appointment History</p>
                       <div className="space-y-1 text-sm">
@@ -190,6 +212,7 @@ export default function PatientProfiles() {
                       </div>
                     </div>
 
+                    {/* ACTION BUTTONS */}
                     <div className="pt-4 space-y-2">
                       <Link href={`/patients/${selectedPatient.id}`} className="block">
                         <Button className="w-full bg-[#002D58] hover:bg-[#002D58]/80 text-white font-semibold">

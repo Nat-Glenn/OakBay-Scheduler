@@ -1,4 +1,5 @@
 "use client";
+
 import { useState } from "react";
 import NavBarComp from "@/components/NavBarComp";
 import { 
@@ -39,15 +40,17 @@ export default function Settings() {
       <NavBarComp />
       
       <div className="flex-1 p-8">
+        {/* PAGE HEADER & GLOBAL ACTIONS */}
         <header className="pb-8 px-4 flex justify-between items-end max-w-4xl mx-auto">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
             <p className="text-gray-500">Manage administrator profile and security protocols.</p>
           </div>
+          {/* Save Button */}
           <Button 
             onClick={handleSave} 
             disabled={isSaving}
-            className="bg-[#A0CE66] hover:bg-[#A0CE66]/80 text-white font-bold gap-2 min-w-[140px]"
+            className="bg-[#002D58] hover:bg-[#002D58]/90 text-white font-bold gap-2 min-w-[140px]"
           >
             <Save size={18} />
             {isSaving ? "Saving..." : "Save Changes"}
@@ -55,6 +58,8 @@ export default function Settings() {
         </header>
 
         <div className="max-w-4xl mx-auto space-y-6 px-4">
+          
+          {/* ADMIN PROFILE SECTION */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2 text-[#002D58]">
@@ -63,13 +68,17 @@ export default function Settings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
+              {/* Avatar Upload */}
               <div className="flex items-center gap-6 pb-2">
-                <div className="h-20 w-20 rounded-full bg-[#002D58] flex items-center justify-center">
-                  <User className="text-white" size={36} />
+                <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center">
+                  <User className="text-[#002D58]" size={36} />
                 </div>
-                <Button variant="outline" size="sm">Change Photo</Button>
+                <Button className="bg-[#7AC242] hover:bg-[#7AC242]/90 text-white " variant="outline" size="lg">
+                  Change Photo
+                </Button>
               </div>
 
+              {/* Form inputs for basic account details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>Full Name</Label>
@@ -83,6 +92,7 @@ export default function Settings() {
             </CardContent>
           </Card>
 
+          {/* SECURITY & ACCESS SECTION */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2 text-[#002D58]">
@@ -101,9 +111,10 @@ export default function Settings() {
                   Securely update your administrative credentials using multi-channel verification.
                 </p>
 
+                {/* PASSWORD RESET DIALOG */}
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="gap-2">
+                    <Button className="flex gap-2 bg-red-500 hover:bg-red-600 text-white border-none" variant="outline">
                       <KeyRound size={16} />
                       Reset Account Password
                     </Button>
@@ -118,6 +129,7 @@ export default function Settings() {
                       </DialogDescription>
                     </DialogHeader>
 
+                    {/*  Select Verification Method */}
                     {resetStep === "request" ? (
                       <div className="grid gap-4 py-4">
                         <Button 
@@ -144,6 +156,7 @@ export default function Settings() {
                         </Button>
                       </div>
                     ) : (
+                      /* Input Recovery Code & New Credentials */
                       <div className="grid gap-4 py-4">
                         <div className="space-y-2">
                           <Label htmlFor="code">Recovery Code</Label>
@@ -161,6 +174,7 @@ export default function Settings() {
                       </div>
                     )}
 
+                    {/* FOOTER ACTIONS based on current reset step */}
                     <DialogFooter>
                       {resetStep === "verify" ? (
                         <Button className="bg-[#A0CE66] hover:bg-[#A0CE66]/80 w-full" onClick={() => setResetStep("request")}>

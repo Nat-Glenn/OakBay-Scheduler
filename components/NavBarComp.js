@@ -19,7 +19,7 @@ export default function NavBarComp() {
         return;
       }
 
-      await user.reload(); // makes emailVerified up-to-date
+      await user.reload();
       if (!user.emailVerified) {
         router.replace("/Login");
         return;

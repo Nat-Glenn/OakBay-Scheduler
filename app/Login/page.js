@@ -53,12 +53,12 @@ export default function LoginPage() {
   return (
     <main
       className="flex flex-col items-center justify-center min-h-screen"
-      style={{ backgroundColor: "#F0F0F0" }}
+      style={{ backgroundColor: "#00AEEF" }}
     >
       <div
         className="flex flex-col items-center gap-6"
         style={{
-          backgroundColor: "#00AEEF",
+          backgroundColor: "#FFFFFF",
           borderRadius: "20px",
           width: "400px",
           padding: "40px",
@@ -84,14 +84,14 @@ export default function LoginPage() {
 
         <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
           <Input
-            className="bg-white"
+            className="bg-slate-50"
             type="text"
             name="username"
             placeholder="Email"
             value={username}
             onChange={(username) => setUsername(username.target.value)}
           />
-          <InputGroup className="bg-white text-center">
+          <InputGroup className="bg-slate-50 text-center">
             <InputGroupInput
               type={showPassword ? "text" : "password"}
               name="password"
@@ -118,7 +118,7 @@ export default function LoginPage() {
             </InputGroupAddon>
           </InputGroup>
           <Button
-            className="bg-[#7BC043] hover:bg-[#7BC043]/80 hover:text-white/60 cursor-pointer"
+            className="bg-[#01488D] hover:bg-[#7BC043]/80 hover:text-white/60 cursor-pointer"
             type="submit"
           >
             Login
@@ -128,10 +128,10 @@ export default function LoginPage() {
         <p
           style={{ backgroundColor: "#000000", height: "1px", width: "100%" }}
         ></p>
-        <p>
+        <p style={{ color: "#000000" }}>
           Forgot Password?{" "}
           <Link
-            style={{ color: "#FFFFFF", textDecoration: "underline" }}
+            style={{ color: "#00AEEF", textDecoration: "underline" }}
             href="/Login/ResetPassword"
           >
             Click Here
