@@ -8,7 +8,6 @@ import {
   Save, 
   Mail, 
   Lock,
-  Smartphone,
   KeyRound
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -29,10 +28,21 @@ import {
 export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
   const [resetStep, setResetStep] = useState("request"); 
+  const [recoveryCode, setRecoveryCode] = useState("");
 
   const handleSave = () => {
     setIsSaving(true);
     setTimeout(() => setIsSaving(false), 800);
+  };
+
+  const handlePasswordUpdate = () => {
+    if (recoveryCode.length !== 6) {
+      alert("Please enter a valid 6-digit recovery code.");
+      return;
+    }
+    // Proceed with update logic
+    setResetStep("request");
+    setRecoveryCode("");
   };
 
   return (
@@ -40,13 +50,11 @@ export default function Settings() {
       <NavBarComp />
       
       <div className="flex-1 p-8">
-        {/* PAGE HEADER & GLOBAL ACTIONS */}
         <header className="pb-8 px-4 flex justify-between items-end max-w-4xl mx-auto">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Settings</h1>
             <p className="text-gray-500">Manage administrator profile and security protocols.</p>
           </div>
-          {/* Save Button */}
           <Button 
             onClick={handleSave} 
             disabled={isSaving}
@@ -58,8 +66,6 @@ export default function Settings() {
         </header>
 
         <div className="max-w-4xl mx-auto space-y-6 px-4">
-          
-          {/* ADMIN PROFILE SECTION */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2 text-[#002D58]">
@@ -68,7 +74,6 @@ export default function Settings() {
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Avatar Upload */}
               <div className="flex items-center gap-6 pb-2">
                 <div className="h-20 w-20 rounded-full bg-blue-100 flex items-center justify-center">
                   <User className="text-[#002D58]" size={36} />
@@ -78,7 +83,6 @@ export default function Settings() {
                 </Button>
               </div>
 
-              {/* Form inputs for basic account details */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <Label>Full Name</Label>
@@ -92,7 +96,6 @@ export default function Settings() {
             </CardContent>
           </Card>
 
-          {/* SECURITY & ACCESS SECTION */}
           <Card>
             <CardHeader>
               <div className="flex items-center gap-2 text-[#002D58]">
@@ -106,13 +109,16 @@ export default function Settings() {
                    <Lock size={16} className="text-muted-foreground" />
                    <p>Password Management</p>
                 </div>
-                
                 <p className="text-sm text-muted-foreground">
-                  Securely update your administrative credentials using multi-channel verification.
+                  Securely update your administrative credentials using email verification.
                 </p>
 
-                {/* PASSWORD RESET DIALOG */}
-                <Dialog>
+                <Dialog onOpenChange={(open) => {
+                  if (!open) {
+                    setResetStep("request");
+                    setRecoveryCode("");
+                  }
+                }}>
                   <DialogTrigger asChild>
                     <Button className="flex gap-2 bg-red-500 hover:bg-red-600 text-white border-none" variant="outline">
                       <KeyRound size={16} />
@@ -124,17 +130,16 @@ export default function Settings() {
                       <DialogTitle>Reset Password</DialogTitle>
                       <DialogDescription>
                         {resetStep === "request" 
-                          ? "Select a method to receive your recovery code." 
+                          ? "Verify your identity via email to receive a recovery code." 
                           : "Enter the 6-digit code and choose a new password."}
                       </DialogDescription>
                     </DialogHeader>
 
-                    {/*  Select Verification Method */}
                     {resetStep === "request" ? (
                       <div className="grid gap-4 py-4">
                         <Button 
                           variant="outline" 
-                          className="justify-start gap-4 h-16" 
+                          className="justify-start gap-4 h-16 border-blue-100 hover:bg-blue-50" 
                           onClick={() => setResetStep("verify")}
                         >
                           <Mail className="text-blue-500" />
@@ -143,24 +148,20 @@ export default function Settings() {
                             <p className="text-xs text-muted-foreground">ad***@chiropractic.com</p>
                           </div>
                         </Button>
-                        <Button 
-                          variant="outline" 
-                          className="justify-start gap-4 h-16"
-                          onClick={() => setResetStep("verify")}
-                        >
-                          <Smartphone className="text-green-500" />
-                          <div className="text-left">
-                            <p className="text-sm font-bold">SMS Recovery</p>
-                            <p className="text-xs text-muted-foreground">***-***-9999</p>
-                          </div>
-                        </Button>
                       </div>
                     ) : (
-                      /* Input Recovery Code & New Credentials */
                       <div className="grid gap-4 py-4">
                         <div className="space-y-2">
-                          <Label htmlFor="code">Recovery Code</Label>
-                          <Input id="code" placeholder="000000" className="text-center text-2xl tracking-[0.5em] font-mono" maxLength={6} />
+                          <Label htmlFor="code">Recovery Code <span className="text-red-500">*</span></Label>
+                          <Input 
+                            id="code" 
+                            placeholder="000000" 
+                            className="text-center text-2xl tracking-[0.5em] font-mono" 
+                            maxLength={6} 
+                            value={recoveryCode}
+                            onChange={(e) => setRecoveryCode(e.target.value)}
+                            required
+                          />
                         </div>
                         <Separator className="my-2" />
                         <div className="space-y-2">
@@ -174,10 +175,13 @@ export default function Settings() {
                       </div>
                     )}
 
-                    {/* FOOTER ACTIONS based on current reset step */}
                     <DialogFooter>
                       {resetStep === "verify" ? (
-                        <Button className="bg-[#A0CE66] hover:bg-[#A0CE66]/80 w-full" onClick={() => setResetStep("request")}>
+                        <Button 
+                          className="bg-[#A0CE66] hover:bg-[#A0CE66]/80 w-full disabled:opacity-50 disabled:cursor-not-allowed" 
+                          onClick={handlePasswordUpdate}
+                          disabled={recoveryCode.length < 6}
+                        >
                           Update Password
                         </Button>
                       ) : (
