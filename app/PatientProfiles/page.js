@@ -108,7 +108,6 @@ export default function PatientProfiles() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            {/* UPDATED LINK PATH */}
             <Link href="/PatientProfiles/AddPatient">
               <Button className="bg-[#002D58] hover:bg-[#002D58]/90 hover:text-black/60 text-white font-bold rounded-md ml-auto gap-2">
                 <Plus size={18} />
