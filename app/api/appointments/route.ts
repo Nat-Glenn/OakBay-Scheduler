@@ -51,6 +51,7 @@ export async function GET(req: Request) {
 }
 
 
+//Create Appointment API (POST)
 function isValidDate(d: Date) {
   return !Number.isNaN(d.getTime());
 }
@@ -101,11 +102,6 @@ export async function POST(req: Request) {
         );
       }
     }
-
-    const patient = await prisma.patient.findUnique({ where: { id: patientId } });
-if (!patient) {
-  return Response.json({ error: "Patient not found" }, { status: 400 });
-}
 
     const appointment = await prisma.appointment.create({
       data: {
