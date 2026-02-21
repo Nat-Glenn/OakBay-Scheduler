@@ -25,15 +25,15 @@ export default function MenuComp() {
         
         return `my-1 p-4 flex flex-row items-center gap-2 font-bold transition-all duration-200 ${
             isActive 
-            ? "bg-[#098cbc] text-white shadow-inner"
-            : "text-white hover:bg-[#098cbc]"       
+            ? "bg-[#098cbc] text-white shadow-inner border-r-4 border-[#A0CE66]" 
+            : "text-white hover:bg-[#098cbc] hover:text-white/90"       
         }`;
     };
 
     return (
         <div 
             onClick={(event) => event.stopPropagation()} 
-            className="flex flex-col w-64 min-h-screen bg-[#00AEEF] border-r border-white/10 shadow-xl"
+            className="flex flex-col w-64 min-h-screen bg-[#00AEEF] border-r border-white/5 shadow-2xl"
         >
             {/* Logo Section */}
             <Link href="/" className="self-center p-4">
@@ -75,7 +75,7 @@ export default function MenuComp() {
                 {/* Sign Out Section */}
                 <button 
                     onClick={handleSignOut} 
-                    className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#098cbc] transition-all border-t border-white/10"
+                    className="mt-auto p-4 flex flex-row items-center gap-2 font-bold text-white hover:bg-[#002D58] hover:text-[#A0CE66] transition-all border-t border-white/5"
                 >
                     <GrPower />
                     Sign Out
