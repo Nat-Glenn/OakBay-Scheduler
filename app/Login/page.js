@@ -129,12 +129,11 @@ export default function LoginPage() {
           style={{ backgroundColor: "#000000", height: "1px", width: "100%" }}
         ></p>
         <p style={{ color: "#000000" }}>
-          Forgot Password?{" "}
           <Link
             style={{ color: "#00AEEF", textDecoration: "underline" }}
             href="/Login/ResetPassword"
           >
-            Click Here
+            Forgot Password
           </Link>
         </p>
       </div>

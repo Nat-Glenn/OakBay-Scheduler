@@ -120,7 +120,7 @@ export default function PatientProfiles() {
           <div className="flex flex-row gap-4">
             
             {/* PATIENT LIST TABLE */}
-            <div className="flex-1 rounded-lg border bg-card shadow-sm max-h-[600px] overflow-y-auto">
+            <div className="flex-1 rounded-lg border bg-card shadow-sm max-h-[1200px] overflow-y-auto">
               <Table>
                 <TableHeader className="sticky top-0 bg-white z-10">
                   <TableRow>
