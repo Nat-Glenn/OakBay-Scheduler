@@ -1,34 +1,34 @@
 import { prisma } from "@/lib/prisma";
+import { ok, badRequest, notFound, serverError } from "@/lib/api";
 
 export async function PATCH(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
-    // ✅ Next.js 15/16: params is a Promise, so await it
     const { id: idStr } = await context.params;
-
     const id = Number(idStr);
-    if (!id) {
-      return Response.json(
-        { error: "Invalid appointment id", id: idStr },
-        { status: 400 }
-      );
+
+    if (!Number.isInteger(id) || id <= 0) {
+      return badRequest("Invalid appointment id", { id: idStr });
     }
 
     const body = await req.json();
 
     const status = body.status ? String(body.status) : undefined;
-    const adminNotes =
-      body.adminNotes !== undefined ? String(body.adminNotes) : undefined;
+    const adminNotes = body.adminNotes !== undefined ? String(body.adminNotes) : undefined;
 
     const allowedStatuses = ["requested", "confirmed", "completed", "cancelled"];
     if (status && !allowedStatuses.includes(status)) {
-      return Response.json(
-        { error: "Invalid status value", allowedStatuses },
-        { status: 400 }
-      );
+      return badRequest("Invalid status value", { allowedStatuses });
     }
+
+    // Return 404 instead of 500 if not found
+    const exists = await prisma.appointment.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!exists) return notFound("Appointment not found");
 
     const updated = await prisma.appointment.update({
       where: { id },
@@ -39,12 +39,9 @@ export async function PATCH(
       include: { patient: true, provider: true, payment: true },
     });
 
-    return Response.json(updated);
+    return ok(updated);
   } catch (err) {
-    console.error("PATCH /api/appointments/[id] error:", err);
-    return Response.json(
-      { error: "Failed to update appointment" },
-      { status: 500 }
-    );
+    console.error(err);
+    return serverError("Failed to update appointment");
   }
 }
