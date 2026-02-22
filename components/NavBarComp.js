@@ -4,12 +4,9 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth } from "../app/Login/Firebase/firebase";
-
-import { useNavBar } from "@/utils/navBarProvider";
 import MenuComp from "./Menu";
 
 export default function NavBarComp() {
-  const { boolClick } = useNavBar();
   const router = useRouter();
 
   useEffect(() => {
@@ -31,7 +28,7 @@ export default function NavBarComp() {
 
   return (
     <div className="flex self-stretch">
-      {boolClick && <MenuComp />}
+      <MenuComp />
     </div>
   );
 }

@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AddAppointment from "@/components/AddAppointment";
+import { useDarkMode } from "@/utils/DarkModeProvider";
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState([
@@ -98,18 +99,19 @@ export default function Appointments() {
   const [date, setDate] = useState(new Date());
   const [practitioner, setPractitioner] = useState(practitioners[0]);
   const [active, setActive] = useState(null);
+  const { boolDark } = useDarkMode();
 
   return (
-    <main className="flex min-h-dvh w-full">
+    <main className="flex h-dvh w-full bg-background overflow-hidden">
       <NavBarComp />
-      <div className="flex-2 px-4 pt-4 overflow-y-hidden">
-        <header className="pb-4 px-4">
-          <h1 className="text-3xl font-bold text-gray-800">Scheduler</h1>
-          <p className="text-gray-500">
+      <div className="flex-1 flex flex-col min-h-0">
+        <header className="p-8 pb-4">
+          <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
+          <p className="text-muted-foreground">
             Manage and view all current appointments.
           </p>
         </header>
-        <div className="flex flex-col">
+        <div className="flex flex-col px-4 flex-1 min-h-0">
           <div className="flex flex-row items-center gap-2 px-4">
             <ChevronLeftIcon
               onClick={() => date && setDate(subDays(date, 1))}
@@ -117,13 +119,10 @@ export default function Appointments() {
             <ChevronRightIcon
               onClick={() => date && setDate(addDays(date, 1))}
             />
-            <DatePicker date={date} setDate={setDate} />
+            <DatePicker date={date} setDate={setDate} boolDark={boolDark} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="w-[175px] bg-[#002D58] hover:bg-[#002D58]/60 hover:text-black/60 font-bold text-white rounded-md ml-auto"
-                >
+                <Button className="w-[175px] bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold ml-auto border text-button-secondary-text hover:text-foreground">
                   {`Dr. ${practitioner}`}
                   <ChevronDownIcon />
                 </Button>
@@ -141,23 +140,24 @@ export default function Appointments() {
               setAppointments={setAppointments}
               date={date}
               setDate={setDate}
+              boolDark={boolDark}
             />
           </div>
-          <div className="flex flex-row">
-            <div className="w-full md:h-105 grid grid-cols-9 m-4 border overflow-y-scroll">
-              <div className="col-span-1 font-bold text-center border sticky top-0 bg-white">
+          <div className="flex flex-row flex-1 min-h-0 px-4 pt-4">
+            <div className="w-full flex-1 grid grid-cols-9 border-border overflow-y-auto min-h-0 no-scrollbar">
+              <div className="col-span-1 font-bold text-center border sticky top-0 bg-input border-border">
                 Time
               </div>
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-white">
+              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-border">
                 Slot 1
               </div>
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-white">
+              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-border">
                 Slot 2
               </div>
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-white">
+              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-border">
                 Slot 3
               </div>
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-white">
+              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-border">
                 Slot 4
               </div>
               {time.map((hours) => (

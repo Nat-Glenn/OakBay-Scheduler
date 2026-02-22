@@ -55,6 +55,7 @@ export default function AddAppointment({
   setAppointments,
   date,
   setDate,
+  boolDark,
 }) {
   const [formName, setFormName] = useState("");
   const [formType, setFormType] = useState("");
@@ -179,16 +180,13 @@ export default function AddAppointment({
     return true;
   };
   return (
-    <AlertDialog>
+    <AlertDialog className="bg-background">
       <AlertDialogTrigger asChild>
-        <Button
-          variant="outline"
-          className="w-[175px] bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-white text-center font-bold rounded-md ml-auto"
-        >
+        <Button className="w-[175px] bg-button-primary hover:bg-button-primary-foreground hover:text-foreground text-white text-center font-bold rounded-md ml-auto">
           New Appointment
         </Button>
       </AlertDialogTrigger>
-      <AlertDialogContent>
+      <AlertDialogContent className="bg-background text-foreground border border-border">
         <AlertDialogHeader>
           <AlertDialogTitle>Add a new appointment</AlertDialogTitle>
           <div className="w-full max-w-md">
@@ -204,7 +202,6 @@ export default function AddAppointment({
                     <Popover>
                       <PopoverTrigger asChild>
                         <Button
-                          variant="outline"
                           role="combobox"
                           className="w-full justify-between"
                         >
@@ -213,7 +210,7 @@ export default function AddAppointment({
                         </Button>
                       </PopoverTrigger>
 
-                      <PopoverContent className="w-full p-0">
+                      <PopoverContent className="w-full p-0 ">
                         <Command>
                           <CommandInput placeholder="Search customer..." />
 
@@ -247,7 +244,10 @@ export default function AddAppointment({
                     <Field className="">
                       <FieldLabel htmlFor="type">Type</FieldLabel>
                       <Select onValueChange={setFormType}>
-                        <SelectTrigger id="type">
+                        <SelectTrigger
+                          className="bg-input border-border text-foreground"
+                          id="type"
+                        >
                           <SelectValue placeholder="Type" />
                         </SelectTrigger>
                         <SelectContent>
@@ -300,7 +300,10 @@ export default function AddAppointment({
                     <Field>
                       <FieldLabel htmlFor="pract">Practitioner</FieldLabel>
                       <Select onValueChange={setFormPractitioner}>
-                        <SelectTrigger id="pract">
+                        <SelectTrigger
+                          className="bg-input border-border text-foreground"
+                          id="pract"
+                        >
                           <SelectValue placeholder="Dr. Seuss" />
                         </SelectTrigger>
                         <SelectContent>

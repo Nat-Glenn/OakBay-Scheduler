@@ -1,7 +1,7 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { NavBarContextProvider } from "@/utils/navBarProvider";
-import { Toaster } from "@/components/ui/sonner";
+import { DarkModeProvider } from "@/utils/DarkModeProvider";
+import ClientLayout from "./clientLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -24,8 +24,9 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <Toaster />
-        <NavBarContextProvider>{children}</NavBarContextProvider>
+        <DarkModeProvider>
+          <ClientLayout>{children}</ClientLayout>
+        </DarkModeProvider>
       </body>
     </html>
   );
