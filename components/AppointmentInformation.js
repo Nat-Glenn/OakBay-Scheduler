@@ -159,7 +159,7 @@ export default function AppointmentInformation({
       toast.warning("Checked-out appointments cannot be edited.", {
         position: "top-center",
       });
-      return;
+      return false;
     }
     setEditType(appointment.type);
     setEditPractitioner(appointment.practitioner);
@@ -207,7 +207,11 @@ export default function AppointmentInformation({
           <Dialog>
             <form>
               <DialogTrigger asChild>
-                <Button variant="ghost" onClick={() => openEditDialog(active)}>
+                <Button
+                  variant="ghost"
+                  disabled={active?.status === "checked-out"}
+                  onClick={() => openEditDialog(active)}
+                >
                   <Settings />
                 </Button>
               </DialogTrigger>
@@ -221,18 +225,45 @@ export default function AppointmentInformation({
                 <div className="grid grid-cols-2 gap-4">
                   <Field className="">
                     <FieldLabel htmlFor="typeEdit">Type</FieldLabel>
-                    <Select value={editType} onValueChange={setEditType}>
-                      <SelectTrigger id="typeEdit">
-                        <SelectValue placeholder={active?.type} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {types.map((e) => (
-                          <SelectItem value={e} key={e}>
-                            {e}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          role="combobox"
+                          variant="outline"
+                          className="w-full justify-between"
+                        >
+                          {editType || "Select Type"}
+                          <ChevronDownIcon />
+                        </Button>
+                      </PopoverTrigger>
+
+                      <PopoverContent className="w-50 h-50">
+                        <Command>
+                          <CommandInput placeholder="Search type..." />
+                          <CommandEmpty>No type found.</CommandEmpty>
+                          <CommandGroup>
+                            {types.map((type) => (
+                              <CommandItem
+                                key={type}
+                                value={type}
+                                onSelect={(value) => {
+                                  setEditType(value);
+                                }}
+                              >
+                                <Check
+                                  className={
+                                    editType === type
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }
+                                />
+                                {type}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="dateEdit">Date</FieldLabel>
@@ -274,21 +305,45 @@ export default function AppointmentInformation({
                 <div className="grid grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel htmlFor="practEdit">Practitioner</FieldLabel>
-                    <Select
-                      value={editPractitioner}
-                      onValueChange={setEditPractitioner}
-                    >
-                      <SelectTrigger id="practEdit">
-                        <SelectValue placeholder={active?.practitioner} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {practitioners.map((e) => (
-                          <SelectItem value={e} key={e}>
-                            {e}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          role="combobox"
+                          variant="outline"
+                          className="w-full justify-between"
+                        >
+                          {editPractitioner || "Select practitioner"}
+                          <ChevronDownIcon />
+                        </Button>
+                      </PopoverTrigger>
+
+                      <PopoverContent className="w-50 h-50">
+                        <Command>
+                          <CommandInput placeholder="Search practitioner..." />
+                          <CommandEmpty>No practitioner found.</CommandEmpty>
+                          <CommandGroup>
+                            {practitioners.map((practitioner) => (
+                              <CommandItem
+                                key={practitioner}
+                                value={practitioner}
+                                onSelect={(value) => {
+                                  setEditPractitioner(value);
+                                }}
+                              >
+                                <Check
+                                  className={
+                                    editPractitioner === practitioner
+                                      ? "opacity-100"
+                                      : "opacity-0"
+                                  }
+                                />
+                                {practitioner}
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </Command>
+                      </PopoverContent>
+                    </Popover>
                   </Field>
                   <Field>
                     <FieldLabel htmlFor="hourEdit">Time</FieldLabel>
@@ -303,13 +358,13 @@ export default function AppointmentInformation({
                           <ChevronDownIcon />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent>
+                      <PopoverContent className="w-50 h-50">
                         <Command>
                           <CommandInput placeholder="Search time..." />
 
                           <CommandEmpty>No time found.</CommandEmpty>
 
-                          <CommandGroup className="w-full h-50" id="hourEdit">
+                          <CommandGroup id="hour">
                             {time.map((hour) => (
                               <CommandItem
                                 key={hour}

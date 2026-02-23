@@ -5,7 +5,15 @@ import NavBarComp from "@/components/NavBarComp";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -23,44 +31,45 @@ import {
 
 export default function AddPatientPage() {
   return (
-    <main className="flex min-h-dvh w-full">
+    <main className="flex h-dvh w-full overflow-hidden bg-background">
       <NavBarComp />
 
-      <div className="flex-1 p-4">
+      <div className="flex-1 min-w-0 overflow-y-auto no-scrollbar pb-8">
         {/* HEADER SECTION */}
-        <header className="pb-4 px-4">
+        <header className="pb-4 p-8">
           <div className="flex items-center gap-2 mb-2">
             {/* BACK BUTTON */}
             <Link
               href="/PatientProfiles"
-              className="flex items-center text-[#002D58] hover:text-[#002D58]/60 font-medium"
+              className="flex items-center text-ring hover:text-ring/60 font-medium"
             >
               <ChevronLeft size={20} />
               Back to Profiles
             </Link>
           </div>
-          <h1 className="text-3xl font-bold text-gray-800">
+          <h1 className="text-3xl font-bold text-foreground">
             Register New Patient
           </h1>
-          <p className="text-gray-500">
+          <p className="text-muted-foreground">
             Enter patient information to create a profile.
           </p>
         </header>
 
         {/* FORM CONTAINER */}
-        <div className="flex justify-center px-4">
+        <div className="flex justify-center">
           <Card className="w-full h-full max-w-2xl">
             <CardHeader>
-              <h2 className="text-xl font-bold">Patient Information</h2>
+              <CardTitle className="text-xl font-bold">
+                Patient Information
+              </CardTitle>
+              <CardDescription>
+                Fill in the required patient details below.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <form>
                 <FieldGroup>
                   <FieldSet>
-                    <FieldDescription>
-                      Fill in the required patient details below.
-                    </FieldDescription>
-
                     {/* NAME ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field>
@@ -68,12 +77,18 @@ export default function AddPatientPage() {
                         <Input
                           id="firstName"
                           placeholder="First Name"
+                          className="bg-input border border-border"
                           required
                         />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
-                        <Input id="lastName" placeholder="Last Name" required />
+                        <Input
+                          id="lastName"
+                          placeholder="Last Name"
+                          required
+                          className="bg-input border border-border"
+                        />
                       </Field>
                     </div>
 
@@ -81,7 +96,12 @@ export default function AddPatientPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field>
                         <FieldLabel htmlFor="dob">Date of Birth</FieldLabel>
-                        <Input id="dob" type="date" required />
+                        <Input
+                          id="dob"
+                          type="date"
+                          required
+                          className="bg-input border border-border"
+                        />
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="age">Age</FieldLabel>
@@ -90,6 +110,7 @@ export default function AddPatientPage() {
                           type="number"
                           min="0"
                           max="150"
+                          className="bg-input border border-border"
                           required
                         />
                       </Field>
@@ -103,6 +124,7 @@ export default function AddPatientPage() {
                           id="email"
                           type="email"
                           placeholder="johndoe@gmail.com"
+                          className="bg-input border border-border"
                           required
                         />
                       </Field>
@@ -112,6 +134,7 @@ export default function AddPatientPage() {
                           id="phone"
                           type="tel"
                           placeholder="587-999-9999"
+                          className="bg-input border border-border"
                           required
                         />
                       </Field>
@@ -139,6 +162,7 @@ export default function AddPatientPage() {
                       <Input
                         id="address"
                         placeholder="123 Main St, Calgary, AB"
+                        className="bg-input border border-border"
                       />
                     </Field>
 
@@ -150,7 +174,11 @@ export default function AddPatientPage() {
                           <FieldLabel htmlFor="emergencyName">
                             Contact Name
                           </FieldLabel>
-                          <Input id="emergencyName" placeholder="Jane Doe" />
+                          <Input
+                            id="emergencyName"
+                            placeholder="Jane Doe"
+                            className="bg-input border border-border"
+                          />
                         </Field>
                         <Field>
                           <FieldLabel htmlFor="emergencyPhone">
@@ -160,6 +188,7 @@ export default function AddPatientPage() {
                             id="emergencyPhone"
                             type="tel"
                             placeholder="587-888-8888"
+                            className="bg-input border border-border"
                           />
                         </Field>
                       </div>
@@ -170,15 +199,14 @@ export default function AddPatientPage() {
                       <Link href="/PatientProfiles" className="flex-1">
                         <Button
                           type="button"
-                          variant="outline"
-                          className=" bg-[#FB2C36] hover:bg-[#FB2C36]/60 w-full hover:text-black/60 text-white font-bold"
+                          className=" bg-destructive hover:bg-destructive/60 w-full text-white font-bold"
                         >
                           Cancel
                         </Button>
                       </Link>
                       <Button
                         type="submit"
-                        className="flex-1 bg-[#002D58] hover:bg-[#002D58]/90 hover:text-black/60 text-white font-bold"
+                        className="flex-1 bg-button-primary hover:bg-button-primary-foreground text-white font-bold"
                       >
                         Create Patient
                       </Button>

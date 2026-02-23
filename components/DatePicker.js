@@ -19,7 +19,7 @@ export default function DatePicker({ date, setDate }) {
         <Button
           variant="outline"
           data-empty={!date}
-          className="data-[empty=true]:text-muted-foreground w-[212px] justify-between text-left font-normal"
+          className="data-[empty=true]:text-muted-foreground w-[212px] justify-between text-left font-normal cursor-pointer"
         >
           {date ? (
             [
@@ -37,7 +37,13 @@ export default function DatePicker({ date, setDate }) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar mode="single" selected={date} onSelect={setDate} />
+        <Calendar
+          mode="single"
+          selected={date}
+          onSelect={(day) => {
+            if (day) setDate(day);
+          }}
+        />
       </PopoverContent>
     </Popover>
   );

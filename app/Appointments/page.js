@@ -120,7 +120,7 @@ export default function Appointments() {
             <DatePicker date={date} setDate={setDate} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="w-[175px] bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold ml-auto border text-button-secondary-text hover:text-foreground">
+                <Button className="w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold ml-auto border text-button-secondary-text hover:text-foreground">
                   {`Dr. ${practitioner}`}
                   <ChevronDownIcon />
                 </Button>

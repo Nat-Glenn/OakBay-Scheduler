@@ -49,6 +49,15 @@ import {
   formatMonthDropdown,
   formatYearDropdown,
 } from "react-day-picker";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "./ui/dialog";
 
 export default function AddAppointment({
   appointments,
@@ -181,7 +190,7 @@ export default function AddAppointment({
   return (
     <AlertDialog className="bg-background">
       <AlertDialogTrigger asChild>
-        <Button className="w-[175px] bg-button-primary hover:bg-button-primary-foreground hover:text-foreground text-white text-center font-bold rounded-md ml-auto">
+        <Button className="w-[175px] bg-button-primary hover:bg-button-primary-foreground text-white text-center font-bold rounded-md ml-auto pointer-cursor">
           New Appointment
         </Button>
       </AlertDialogTrigger>
@@ -210,12 +219,10 @@ export default function AddAppointment({
                         </Button>
                       </PopoverTrigger>
 
-                      <PopoverContent className="w-full p-0 ">
+                      <PopoverContent className="w-50 h-50">
                         <Command>
                           <CommandInput placeholder="Search customer..." />
-
                           <CommandEmpty>No customer found.</CommandEmpty>
-
                           <CommandGroup>
                             {customers.map((customer) => (
                               <CommandItem
@@ -243,20 +250,47 @@ export default function AddAppointment({
                   <div className="grid grid-cols-2 gap-4">
                     <Field className="">
                       <FieldLabel htmlFor="type">Type</FieldLabel>
-                      <Select onValueChange={setFormType}>
-                        <SelectTrigger id="type">
-                          <SelectValue placeholder="Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {types.map((e) => (
-                            <SelectItem value={e} key={e}>
-                              {e}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            role="combobox"
+                            variant="outline"
+                            className="w-full justify-between"
+                          >
+                            {formType || "Select Type"}
+                            <ChevronDownIcon />
+                          </Button>
+                        </PopoverTrigger>
+
+                        <PopoverContent className="w-50 h-50">
+                          <Command>
+                            <CommandInput placeholder="Search type..." />
+                            <CommandEmpty>No type found.</CommandEmpty>
+                            <CommandGroup>
+                              {types.map((type) => (
+                                <CommandItem
+                                  key={type}
+                                  value={type}
+                                  onSelect={(value) => {
+                                    setFormType(value);
+                                  }}
+                                >
+                                  <Check
+                                    className={
+                                      formType === type
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    }
+                                  />
+                                  {type}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </Field>
-                    <Field className="">
+                    <Field>
                       <FieldLabel htmlFor="date">Date</FieldLabel>
                       <Popover>
                         <PopoverTrigger asChild>
@@ -264,7 +298,7 @@ export default function AddAppointment({
                             id="date"
                             variant="outline"
                             data-empty={!date}
-                            className="data-[empty=true]:text-muted-foreground justify-between text-left font-normal"
+                            className="justify-between text-left font-normal"
                           >
                             {date ? (
                               [
@@ -296,21 +330,45 @@ export default function AddAppointment({
                   <div className="grid grid-cols-2 gap-4">
                     <Field>
                       <FieldLabel htmlFor="pract">Practitioner</FieldLabel>
-                      <Select onValueChange={setFormPractitioner}>
-                        <SelectTrigger
-                          className="bg-input border-border text-foreground"
-                          id="pract"
-                        >
-                          <SelectValue placeholder="Dr. Seuss" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {practitioners.map((e) => (
-                            <SelectItem value={e} key={e}>
-                              {e}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            role="combobox"
+                            variant="outline"
+                            className="w-full justify-between"
+                          >
+                            {formPractitioner || "Select practitioner"}
+                            <ChevronDownIcon />
+                          </Button>
+                        </PopoverTrigger>
+
+                        <PopoverContent className="w-50 h-50">
+                          <Command>
+                            <CommandInput placeholder="Search practitioner..." />
+                            <CommandEmpty>No practitioner found.</CommandEmpty>
+                            <CommandGroup>
+                              {practitioners.map((practitioner) => (
+                                <CommandItem
+                                  key={practitioner}
+                                  value={practitioner}
+                                  onSelect={(value) => {
+                                    setFormPractitioner(value);
+                                  }}
+                                >
+                                  <Check
+                                    className={
+                                      formPractitioner === practitioner
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    }
+                                  />
+                                  {practitioner}
+                                </CommandItem>
+                              ))}
+                            </CommandGroup>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </Field>
                     <Field>
                       <FieldLabel htmlFor="hour">Time</FieldLabel>
@@ -325,13 +383,13 @@ export default function AddAppointment({
                             <ChevronDownIcon />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent>
+                        <PopoverContent className="w-50 h-50">
                           <Command>
                             <CommandInput placeholder="Search time..." />
 
                             <CommandEmpty>No time found.</CommandEmpty>
 
-                            <CommandGroup className="w-full h-50" id="hour">
+                            <CommandGroup id="hour">
                               {time.map((hour) => (
                                 <CommandItem
                                   key={hour}
