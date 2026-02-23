@@ -55,7 +55,6 @@ export default function AddAppointment({
   setAppointments,
   date,
   setDate,
-  boolDark,
 }) {
   const [formName, setFormName] = useState("");
   const [formType, setFormType] = useState("");
@@ -203,6 +202,7 @@ export default function AddAppointment({
                       <PopoverTrigger asChild>
                         <Button
                           role="combobox"
+                          variant="outline"
                           className="w-full justify-between"
                         >
                           {formName || "Select customer"}
@@ -244,10 +244,7 @@ export default function AddAppointment({
                     <Field className="">
                       <FieldLabel htmlFor="type">Type</FieldLabel>
                       <Select onValueChange={setFormType}>
-                        <SelectTrigger
-                          className="bg-input border-border text-foreground"
-                          id="type"
-                        >
+                        <SelectTrigger id="type">
                           <SelectValue placeholder="Type" />
                         </SelectTrigger>
                         <SelectContent>

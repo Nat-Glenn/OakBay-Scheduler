@@ -18,7 +18,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AddAppointment from "@/components/AddAppointment";
-import { useDarkMode } from "@/utils/DarkModeProvider";
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState([
@@ -99,7 +98,6 @@ export default function Appointments() {
   const [date, setDate] = useState(new Date());
   const [practitioner, setPractitioner] = useState(practitioners[0]);
   const [active, setActive] = useState(null);
-  const { boolDark } = useDarkMode();
 
   return (
     <main className="flex h-dvh w-full bg-background overflow-hidden">
@@ -119,7 +117,7 @@ export default function Appointments() {
             <ChevronRightIcon
               onClick={() => date && setDate(addDays(date, 1))}
             />
-            <DatePicker date={date} setDate={setDate} boolDark={boolDark} />
+            <DatePicker date={date} setDate={setDate} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="w-[175px] bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold ml-auto border text-button-secondary-text hover:text-foreground">
@@ -140,30 +138,29 @@ export default function Appointments() {
               setAppointments={setAppointments}
               date={date}
               setDate={setDate}
-              boolDark={boolDark}
             />
           </div>
-          <div className="flex flex-row flex-1 min-h-0 px-4 pt-4">
-            <div className="w-full flex-1 grid grid-cols-9 border-border overflow-y-auto min-h-0 no-scrollbar">
-              <div className="col-span-1 font-bold text-center border sticky top-0 bg-input border-border">
+          <div className="flex flex-row flex-1 min-h-0 px-4 pt-4 pb-8">
+            <div className="w-full flex-1 grid grid-cols-9 border-border border overflow-y-auto min-h-0 no-scrollbar rounded-2xl">
+              <div className="col-span-1 font-bold text-center border sticky top-0 bg-input border-border text-ring">
                 Time
               </div>
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-border">
+              <div className="col-span-2 font-medium text-muted-foreground text-center border sticky top-0 bg-input border-border">
                 Slot 1
               </div>
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-border">
+              <div className="col-span-2 font-medium text-muted-foreground text-center border sticky top-0 bg-input border-border">
                 Slot 2
               </div>
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-border">
+              <div className="col-span-2 font-medium text-muted-foreground text-center border sticky top-0 bg-input border-border">
                 Slot 3
               </div>
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-border">
+              <div className="col-span-2 font-medium text-muted-foreground text-center border sticky top-0 bg-input border-border">
                 Slot 4
               </div>
               {time.map((hours) => (
                 <React.Fragment key={hours}>
                   <div
-                    className="col-span-1 text-center border p-3 font-medium"
+                    className="col-span-1 text-center text-ring border-border border font-mono p-3 font-medium"
                     key={hours.key}
                   >
                     {hours}

@@ -52,20 +52,20 @@ export default function Summary() {
   ];
 
   return (
-    <main className="flex min-h-dvh w-full bg-slate-50 relative">
+    <main className="flex h-dvh w-full bg-background relative overflow-hidden">
       <NavBarComp />
 
-      <div className="flex-1 p-10">
+      <div className="flex-1 flex flex-col min-w-0 overflow-y-auto no-scrollbar">
         {/* PAGE HEADER */}
-        <header className="mb-10">
-          <h1 className="text-4xl font-bold text-[#002D58]">Summary</h1>
-          <p className="text-lg text-gray-500 mt-1">
+        <header className="p-8 pb-4">
+          <h1 className="text-3xl font-bold text-foreground">Summary</h1>
+          <p className="text-lg text-muted-foreground mt-1">
             A snapshot of your clinic&apos;s current activity and finances.
           </p>
         </header>
 
         {/* STATISTICAL OVERVIEW CARDS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="px-8 pb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
           <StatCard
             title="Total Patients"
             value="1,284"
@@ -93,14 +93,14 @@ export default function Summary() {
         </div>
 
         {/* MAIN DASHBOARD CONTENT */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="px-8 pb-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
           {/* RECENT VISITS TABLE CARD */}
           <Card className="lg:col-span-2 shadow-sm border-none">
             <CardHeader className="flex flex-row items-center justify-between py-6 px-8">
               <CardTitle className="text-xl font-bold">
                 Recent Patient Visits
               </CardTitle>
-              <Button className="flex h-12 text-md bg-[#002D58] hover:bg-[#002D58]/90 text-white font-semibold">
+              <Button className="flex h-12 text-md bg-secondary-button hover:bg-button-secondary-foreground border border-button-secondary-border text-button-secondary-text hover:text-black font-semibold">
                 View All History
               </Button>
             </CardHeader>
@@ -116,20 +116,21 @@ export default function Summary() {
                 </TableHeader>
                 <TableBody>
                   {recentVisits.map((visit) => (
-                    <TableRow
-                      key={visit.id}
-                      className="text-gray-700 border-b last:border-0 hover:bg-slate-50/50"
-                    >
-                      <TableCell className="font-semibold py-5">
+                    <TableRow key={visit.id} className="border-b last:border-0">
+                      <TableCell className="font-medium text-foreground py-5">
                         {visit.patient}
                       </TableCell>
-                      <TableCell className="py-5">{visit.date}</TableCell>
-                      <TableCell className="py-5">{visit.type}</TableCell>
-                      <TableCell className="py-5">
+                      <TableCell className="py-5 text-muted-foreground">
+                        {visit.date}
+                      </TableCell>
+                      <TableCell className="py-5 text-muted-foreground">
+                        {visit.type}
+                      </TableCell>
+                      <TableCell className="py-5 text-muted-foreground">
                         <span
                           className={`text-sm px-3 py-1.5 rounded-full font-semibold ${
                             visit.status === "Completed"
-                              ? "bg-green-100 text-green-700"
+                              ? "bg-[#a0ce66] text-black"
                               : "bg-yellow-100 text-yellow-700"
                           }`}
                         >
@@ -175,14 +176,14 @@ export default function Summary() {
                 {/* Total Summary Section */}
                 <div className="pt-6 border-t mt-8">
                   <div className="flex justify-between items-center mb-6">
-                    <span className="text-lg font-bold text-gray-700">
+                    <span className="text-lg font-bold text-foreground">
                       Total Expenses
                     </span>
-                    <span className="text-xl font-bold text-red-600">
+                    <span className="text-xl font-bold text-destructive">
                       $12,300
                     </span>
                   </div>
-                  <Button className="w-full h-12 text-md bg-[#002D58] hover:bg-[#002D58]/90 text-white font-semibold shadow-md">
+                  <Button className="w-full h-12 text-md bg-button-primary hover:bg-button-primary-foreground text-white font-semibold shadow-md">
                     Download Full Report
                   </Button>
                 </div>

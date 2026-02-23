@@ -12,13 +12,10 @@ import {
 } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 
-export default function DatePicker({ date, setDate, boolDark }) {
+export default function DatePicker({ date, setDate }) {
   return (
     <Popover>
-      <PopoverTrigger
-        className={`w-auto p-0 ${boolDark && "bg-[#0a0a0a] text-white"}`}
-        asChild
-      >
+      <PopoverTrigger className="w-auto p-0" asChild>
         <Button
           variant="outline"
           data-empty={!date}
@@ -39,10 +36,7 @@ export default function DatePicker({ date, setDate, boolDark }) {
           <ChevronDownIcon />
         </Button>
       </PopoverTrigger>
-      <PopoverContent
-        className={`w-auto p-0 ${boolDark && "bg-[#0a0a0a] text-white"}`}
-        align="start"
-      >
+      <PopoverContent className="w-auto p-0" align="start">
         <Calendar mode="single" selected={date} onSelect={setDate} />
       </PopoverContent>
     </Popover>

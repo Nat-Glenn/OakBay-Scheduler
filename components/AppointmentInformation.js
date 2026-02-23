@@ -169,7 +169,7 @@ export default function AppointmentInformation({
   };
   return (
     <PopoverHeader>
-      <Item className="bg-white" variant="muted">
+      <Item>
         <ItemMedia>
           <Avatar className="size-10">
             <AvatarImage src="/favicon.png"></AvatarImage>
@@ -182,19 +182,19 @@ export default function AppointmentInformation({
               <ItemTitle>{active?.name}</ItemTitle>
             </HoverCardTrigger>
             <HoverCardContent className="p-1" side="top">
-              <Item className="bg-white" variant="muted">
+              <Item>
                 <ItemContent>
                   <ItemTitle>DoB</ItemTitle>
                   <ItemDescription>{active?.dob}</ItemDescription>
                 </ItemContent>
               </Item>
-              <Item className="bg-white" variant="muted">
+              <Item>
                 <ItemContent>
                   <ItemTitle>Email</ItemTitle>
                   <ItemDescription>{active?.email}</ItemDescription>
                 </ItemContent>
               </Item>
-              <Item className="bg-white" variant="muted">
+              <Item>
                 <ItemContent>
                   <ItemTitle>Phone Number</ItemTitle>
                   <ItemDescription>{active?.phone}</ItemDescription>
@@ -353,13 +353,13 @@ export default function AppointmentInformation({
           </Dialog>
         </ItemActions>
       </Item>
-      <Item className="bg-white" variant="muted">
+      <Item>
         <ItemContent>
           <ItemTitle>Type</ItemTitle>
           <ItemDescription>{active?.type}</ItemDescription>
         </ItemContent>
       </Item>
-      <Item className="bg-white" variant="muted">
+      <Item>
         <ItemContent>
           <ItemTitle>Practitioner</ItemTitle>
           <ItemDescription>{`Dr. ${active?.practitioner}`}</ItemDescription>

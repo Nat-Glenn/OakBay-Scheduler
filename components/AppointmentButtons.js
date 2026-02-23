@@ -54,7 +54,7 @@ export default function AppointmentButtons({
         {appointment.status == "scheduled" && (
           <Button
             onClick={handleCheckIn}
-            className="w-full bg-[#A0CE66] hover:bg-[#A0CE66]/60 hover:text-black/60 text-center font-semibold text-white"
+            className="w-full bg-button-primary hover:bg-button-primary-foreground text-center font-semibold text-white"
           >
             Check In
           </Button>
@@ -62,7 +62,7 @@ export default function AppointmentButtons({
         {appointment.status == "checked-in" && (
           <Button
             onClick={handleCheckOut}
-            className="w-full bg-[#C04343] hover:bg-[#C04343]/60 hover:text-black/60 text-center font-semibold text-white"
+            className="w-full bg-destructive hover:bg-destructive/60 text-center font-semibold text-white"
           >
             Check Out
           </Button>
