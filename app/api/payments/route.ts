@@ -38,8 +38,8 @@ export async function POST(req: Request) {
         const body = await req.json();
 
         const appointmentId = Number(body.appointmentId);
-        const paymentType = parseNonEmptyString(body.paymentType);
-        const amount = Number(body.amount);
+        const paymentType = parseNonEmptyString(body.paymentType)?.toLowerCase().trim(); //Converts to lowercase and trims whitespace for better filtering
+        const amount = Math.round(Number(body.amount) * 100) / 100; // Rounds to 2 decimal places
 
         // Validate inputs before proceeding with database operations
         if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
@@ -63,6 +63,11 @@ export async function POST(req: Request) {
         if (!appointment) {
             return notFound("Appointment not found");
         }
+        // Cancelled appointment wont be checked out.
+        if (appointment.status === "CANCELLED") {
+            return badRequest("Cannot record payment for a cancelled appointment");
+        }
+
         // Prevent duplicate payments for the same appointment
         if (appointment.payment) {
             return conflict("Payment already exists for this appointment");

@@ -42,6 +42,10 @@ export async function GET(
             orderBy: { createdAt: "desc" },
             //newest payments first
         });
+        // If no payments are found, return an empty array with a message instead of an error
+        if (payments.length ===0) {
+            return ok ({message: "No payments found for this patient", data: []});
+        }
 
         return ok(payments);
     } catch (err) {
