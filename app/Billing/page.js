@@ -43,13 +43,18 @@ export default function Billing(){
         { id: "card_1", brand: "Visa", last4: "5679", exp: "01/29" },
     ]);
 
-    // Add Card dialog state
     const [brand, setBrand] = useState("Visa");
     const [number, setNumber] = useState("");
     const [exp, setExp] = useState("");
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isReprintOpen, setIsReprintOpen] = useState(false);
     const [reprintQuery, setReprintQuery] = useState("");
+    const [isManageOpen, setIsManageOpen] = useState(false);
+    const [selectedCardId, setSelectedCardId] = useState(null);
+    // Manage form fields
+    const [manageBrand, setManageBrand] = useState("Visa");
+    const [manageLast4, setManageLast4] = useState("");
+    const [manageExp, setManageExp] = useState("");
     const handleReprint = (appt) => {
         // TODO: replace with your receipt logic (route to receipt page, open print window, fetch PDF, etc.)
         console.log("Reprinting receipt for:", appt);
@@ -59,29 +64,20 @@ export default function Billing(){
     };
     const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
 
-    const cardsForUI = useMemo(
-        () =>
-            cards.map((c) => ({
-                ...c,
-                displayNumber: maskCard(c.last4 ? `000000000000${c.last4}` : number),
-            })),
-        [cards],
-    );
-
     const handleAddCard = () => {
         const digits = number.replace(/\D/g, "");
         const last4 = digits.slice(-4);
 
-        if (!last4 || !exp) return;
+        if (!brand || !last4 || !exp) return;
 
         setCards((prev) => [
-        ...prev,
-        {
+            ...prev,
+            {
             id: `card_${Date.now()}`,
-            brand: brand || "Card",
+            brand,
             last4,
             exp,
-        },
+            },
         ]);
 
         // reset + close
@@ -91,9 +87,105 @@ export default function Billing(){
         setIsAddOpen(false);
     };
 
+    const openManageCard = (card) => {
+        setSelectedCardId(card.id);
+        setManageBrand(card.brand || "Visa");
+        setManageLast4(card.last4 || "");
+        setManageExp(card.exp || "");
+        setIsManageOpen(true);
+    };
+
+    const handleSaveManagedCard = () => {
+        if (!selectedCardId) return;
+
+        const cleanLast4 = manageLast4.replace(/\D/g, "").slice(-4);
+        if (!manageBrand || cleanLast4.length !== 4 || !manageExp) return;
+
+        setCards((prev) =>
+            prev.map((c) =>
+            c.id === selectedCardId
+                ? { ...c, brand: manageBrand, last4: cleanLast4, exp: manageExp }
+                : c
+            )
+        );
+
+        setIsManageOpen(false);
+    };
+
+    const handleDeleteManagedCard = () => {
+        if (!selectedCardId) return;
+
+        setCards((prev) => prev.filter((c) => c.id !== selectedCardId));
+
+        setIsManageOpen(false);
+    };
+
     return(
         <main className="flex min-h-dvh w-full">
             <NavBarComp/>
+
+            {/* Manage Card Dialog */}
+            <Dialog open={isManageOpen} onOpenChange={setIsManageOpen}>
+                <DialogContent className="sm:max-w-[520px]">
+                    <DHeader>
+                        <DTitle>Manage Card</DTitle>
+                        <DialogDescription>Edit this card or remove it from the patient file.</DialogDescription>
+                    </DHeader>
+
+                    <div className="mt-2 rounded-2xl border border-border bg-card p-4 space-y-4">
+                        <div className="space-y-2">
+                            <Label>Card Type</Label>
+                            <Select value={manageBrand} onValueChange={setManageBrand}>
+                                <SelectTrigger className="bg-input text-foreground border-border">
+                                    <SelectValue placeholder="Card Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Visa">Visa</SelectItem>
+                                    <SelectItem value="Mastercard">Mastercard</SelectItem>
+                                    <SelectItem value="Amex">Amex</SelectItem>
+                                    <SelectItem value="Debit">Debit</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="manageLast4">Card Number (Last 4)</Label>
+                        <Input
+                            id="manageLast4"
+                            value={manageLast4}
+                            onChange={(e) =>
+                                setManageLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
+                            }
+                            inputMode="numeric"
+                            placeholder="1234"
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="manageExp">Expiry</Label>
+                        <Input
+                            id="manageExp"
+                            value={manageExp}
+                            onChange={(e) => setManageExp(e.target.value)}
+                            placeholder="MM/YY"
+                        />
+                    </div>
+                     </div>
+
+                    <DialogFooter className="flex justify-between sm:justify-between">
+                        <Button variant="destructive" onClick={handleDeleteManagedCard}>
+                            Delete card
+                        </Button>
+
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={() => setIsManageOpen(false)}>
+                            Cancel
+                        </Button>
+                        <Button onClick={handleSaveManagedCard}>Save</Button>
+                    </div>
+                </DialogFooter>
+            </DialogContent>
+            </Dialog>
 
             <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
                 {/* Header */}
@@ -243,7 +335,7 @@ export default function Billing(){
                         </div>
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {cardsForUI.map((c) => (
+                            {cards.map((c) => (
                                 <Card key={c.id} className="border-border bg-card">
                                     <CardHeader className="pb-3">
                                         <CardTitle className="text-base text-foreground flex items-center justify-between">
@@ -264,7 +356,7 @@ export default function Billing(){
                                         </div>
 
                                         <div className="pt-2 flex justify-end">
-                                            <Button variant="ghost" size="sm" disabled>
+                                            <Button variant="ghost" size="sm" onClick={() => openManageCard(c)}>
                                                 Manage
                                             </Button>
                                         </div>
@@ -272,10 +364,10 @@ export default function Billing(){
                                 </Card>
                             ))}
 
-                            {cardsForUI.length === 0 && (
+                            {cards.length === 0 && (
                                 <Card className="border-border bg-card">
                                     <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                                        No cards on file yet. Click <span className="text-foreground font-medium">Add Card</span>.
+                                        No cards on file for this patient.
                                     </CardContent>
                                 </Card>
                             )}
