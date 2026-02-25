@@ -57,6 +57,7 @@ export default function Billing(){
         // close modal after click (optional)
         setIsReprintOpen(false);
     };
+    const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
 
     const cardsForUI = useMemo(
         () =>
@@ -103,10 +104,40 @@ export default function Billing(){
                 <div className="flex-1 min-h-0 px-8 pb-8 overflow-y-auto no-scrollbar space-y-6">
                     {/* Buttons */}
                     <div className="flex flex-wrap gap-3">
-                        <Button variant="outline" className="gap-2">
-                            <PencilLine className="size-4" />
-                            Billing Adjustment
-                        </Button>
+                        <Dialog open={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen}>
+                            <DialogTrigger asChild>
+                                <Button variant="outline" className="gap-2">
+                                    <PencilLine className="size-4" />
+                                    Billing Adjustment
+                                </Button>
+                            </DialogTrigger>
+
+                            <DialogContent className="sm:max-w-[900px]">
+                                <DHeader>
+                                    <DTitle>Billing Adjustment</DTitle>
+                                    <DialogDescription>
+                                        Select an appointment to edit or delete
+                                    </DialogDescription>
+                                </DHeader>
+
+                                <div className="mt-2 rounded-2xl border border-border bg-card p-4 space-y-4">
+                                    <div className="text-sm font-medium text-foreground">
+                                        Appointments
+                                    </div>
+                                    <div className="h-[320px] rounded-xl border border-border bg-background"/>
+
+                                </div>
+
+                                <DialogFooter className="justify-between">
+                                    <Button variant="outline">
+                                        Edit
+                                    </Button>
+                                    <Button variant="destructive">
+                                        Delete
+                                    </Button>
+                                </DialogFooter>
+                            </DialogContent>
+                        </Dialog>
 
                         <Dialog open={isReprintOpen} onOpenChange={setIsReprintOpen}>
                             <DialogTrigger asChild>
