@@ -107,7 +107,7 @@ async function main() {
         /////////APPOINTMENTS/////////
     const appointmentConfirmed = await prisma.appointment.create({
         data: {
-            status: "Confirmed",
+            status: "CONFIRMED",
             type: "Initial Consultation",
             startTime: new Date("2024-07-01T10:00:00Z"),
             endTime: new Date("2024-07-01T10:30:00Z"),
@@ -121,7 +121,7 @@ async function main() {
 
     const appointmentCompleted = await prisma.appointment.create({
         data: {
-            status: "Completed",
+            status: "COMPLETED",
             type: "Follow-up",
             startTime: new Date("2024-07-02T11:00:00Z"),
             endTime: new Date("2024-07-02T11:30:00Z"),
@@ -135,7 +135,7 @@ async function main() {
 
     const appointmentRequested = await prisma.appointment.create({
         data: {
-            status: "Requested",
+            status: "REQUESTED",
             type: "Adjustment",
             startTime: new Date("2024-07-03T09:00:00Z"),
             endTime: new Date("2024-07-03T09:30:00Z"),
@@ -149,7 +149,7 @@ async function main() {
 
     const appointmentCancelled = await prisma.appointment.create({
         data: {
-            status: "Cancelled",
+            status: "CANCELLED",
             type: "Follow-up",
             startTime: new Date("2024-07-04T14:00:00Z"),
             endTime: new Date("2024-07-04T14:30:00Z"),
