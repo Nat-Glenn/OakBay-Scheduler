@@ -219,7 +219,10 @@ export default function AddAppointment({
                         </Button>
                       </PopoverTrigger>
 
-                      <PopoverContent className="w-50 h-50">
+                      <PopoverContent
+                        align="center"
+                        className="ml-3.5 w-lg h-50"
+                      >
                         <Command>
                           <CommandInput placeholder="Search customer..." />
                           <CommandEmpty>No customer found.</CommandEmpty>
@@ -262,7 +265,10 @@ export default function AddAppointment({
                           </Button>
                         </PopoverTrigger>
 
-                        <PopoverContent className="w-50 h-50">
+                        <PopoverContent
+                          align="center"
+                          className="w-55 h-50 truncate"
+                        >
                           <Command>
                             <CommandInput placeholder="Search type..." />
                             <CommandEmpty>No type found.</CommandEmpty>
@@ -315,7 +321,7 @@ export default function AddAppointment({
                             <ChevronDownIcon />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
+                        <PopoverContent className="w-auto p-0" align="center">
                           <Calendar
                             mode="single"
                             selected={date}
@@ -342,7 +348,7 @@ export default function AddAppointment({
                           </Button>
                         </PopoverTrigger>
 
-                        <PopoverContent className="w-50 h-50">
+                        <PopoverContent align="center" className="w-55 h-50">
                           <Command>
                             <CommandInput placeholder="Search practitioner..." />
                             <CommandEmpty>No practitioner found.</CommandEmpty>
@@ -383,7 +389,7 @@ export default function AddAppointment({
                             <ChevronDownIcon />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent className="w-50 h-50">
+                        <PopoverContent align="center" className="w-55 h-50">
                           <Command>
                             <CommandInput placeholder="Search time..." />
 

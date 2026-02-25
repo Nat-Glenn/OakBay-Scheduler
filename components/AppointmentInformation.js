@@ -52,7 +52,7 @@ import {
   PopoverHeader,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Check, ChevronDownIcon, Settings } from "lucide-react";
+import { Activity, Check, ChevronDownIcon, Settings, User } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
   formatDay,
@@ -237,7 +237,10 @@ export default function AppointmentInformation({
                         </Button>
                       </PopoverTrigger>
 
-                      <PopoverContent className="w-50 h-50">
+                      <PopoverContent
+                        align="center"
+                        className="w-55 h-50 truncate"
+                      >
                         <Command>
                           <CommandInput placeholder="Search type..." />
                           <CommandEmpty>No type found.</CommandEmpty>
@@ -290,7 +293,7 @@ export default function AppointmentInformation({
                           <ChevronDownIcon />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
+                      <PopoverContent className="w-auto p-0" align="center">
                         <Calendar
                           mode="single"
                           selected={editDate}
@@ -317,7 +320,7 @@ export default function AppointmentInformation({
                         </Button>
                       </PopoverTrigger>
 
-                      <PopoverContent className="w-50 h-50">
+                      <PopoverContent className="w-55 h-50 truncate">
                         <Command>
                           <CommandInput placeholder="Search practitioner..." />
                           <CommandEmpty>No practitioner found.</CommandEmpty>
@@ -358,7 +361,7 @@ export default function AppointmentInformation({
                           <ChevronDownIcon />
                         </Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-50 h-50">
+                      <PopoverContent className="w-55 h-50 truncate">
                         <Command>
                           <CommandInput placeholder="Search time..." />
 
@@ -408,13 +411,13 @@ export default function AppointmentInformation({
           </Dialog>
         </ItemActions>
       </Item>
-      <Item>
+      <Item size="sm">
         <ItemContent>
           <ItemTitle>Type</ItemTitle>
           <ItemDescription>{active?.type}</ItemDescription>
         </ItemContent>
       </Item>
-      <Item>
+      <Item size="sm">
         <ItemContent>
           <ItemTitle>Practitioner</ItemTitle>
           <ItemDescription>{`Dr. ${active?.practitioner}`}</ItemDescription>
