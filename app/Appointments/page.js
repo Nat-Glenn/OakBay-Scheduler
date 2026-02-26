@@ -109,19 +109,19 @@ export default function Appointments() {
             Manage and view all current appointments.
           </p>
         </header>
-        <div className="flex flex-row items-center gap-2">
+        <div className="flex flex-row items-center md:gap-2">
           <ChevronLeftIcon
-            className="cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+            className="sm:hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
             onClick={() => date && setDate(subDays(date, 1))}
           />
           <ChevronRightIcon
-            className="cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+            className="sm:hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
             onClick={() => date && setDate(addDays(date, 1))}
           />
           <DatePicker date={date} setDate={setDate} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold border text-button-secondary-text hover:text-foreground">
+              <Button className="sm:shrink w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold border text-button-secondary-text hover:text-foreground">
                 {`Dr. ${practitioner}`}
                 <ChevronDownIcon />
               </Button>
@@ -146,26 +146,26 @@ export default function Appointments() {
           />
         </div>
         <div className="flex flex-row flex-1 min-h-0 pt-4">
-          <div className="w-full flex-1 grid grid-cols-9 border-border border overflow-y-auto min-h-0 rounded-lg">
-            <div className="col-span-1 font-bold text-center border sticky top-0 bg-input border-border text-ring">
+          <div className="w-full flex-1 grid grid-cols-10 overflow-y-auto min-h-0 rounded-lg border border-foreground scrollbar-rounded">
+            <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-foreground text-button-primary">
               Time
             </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-border">
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
               Slot 1
             </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-border">
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
               Slot 2
             </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-border">
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
               Slot 3
             </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-border">
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
               Slot 4
             </div>
             {time.map((hours) => (
               <React.Fragment key={hours}>
                 <div
-                  className="col-span-1 text-center text-ring border-border border font-mono p-3 font-medium"
+                  className="col-span-2 text-center text-button-primary border-foreground border font-mono p-3 font-medium"
                   key={hours.key}
                 >
                   {hours}

@@ -175,7 +175,7 @@ export default function AppointmentInformation({
   };
   return (
     <PopoverHeader>
-      <Item>
+      <Item size="xs">
         <ItemMedia>
           <Avatar className="size-10">
             <AvatarImage src="/favicon.png"></AvatarImage>
@@ -276,6 +276,7 @@ export default function AppointmentInformation({
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
+                  className="bg-button-primary"
                   onClick={(e) => {
                     const success = handleEditAppointment();
                     if (!success) {
@@ -283,20 +284,20 @@ export default function AppointmentInformation({
                     }
                   }}
                 >
-                  Edit
+                  Save Changes
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
         </ItemActions>
       </Item>
-      <Item size="sm">
+      <Item size="xs">
         <ItemContent>
           <ItemTitle>Type</ItemTitle>
           <ItemDescription>{active?.type}</ItemDescription>
         </ItemContent>
       </Item>
-      <Item size="sm">
+      <Item size="xs">
         <ItemContent>
           <ItemTitle>Practitioner</ItemTitle>
           <ItemDescription>{`Dr. ${active?.practitioner}`}</ItemDescription>

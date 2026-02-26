@@ -23,11 +23,11 @@ export default function DatePicker({ date, setDate }) {
   const [open, setOpen] = useState(false);
   return (
     <DropdownMenu open={open}>
-      <DropdownMenuTrigger className="w-auto p-0" asChild>
+      <DropdownMenuTrigger asChild>
         <Button
           variant="outline"
           data-empty={!date}
-          className="data-[empty=true]:text-muted-foreground w-[212px] justify-between text-left font-normal cursor-pointer"
+          className="data-[empty=true]:text-muted-foreground sm:shrink md:w-[175px] justify-between text-left font-normal cursor-pointer"
           onClick={() => setOpen(true)}
         >
           {date ? (

@@ -111,7 +111,7 @@ export default function Practitioners() {
             </div>
 
             <Link href="/Practitioners">
-              <Button className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2 shadow-lg shadow-[#A0CE66]/10">
+              <Button>
                 <Plus size={18} />
                 Add Practitioner
               </Button>

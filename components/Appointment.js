@@ -28,10 +28,10 @@ export default function Appointment({ appointment, active, setActive }) {
       }}
       className={`${getStatusColor(
         appointment.status,
-      )} hover:opacity-80 cursor-pointer flex flex-col`}
+      )} hover:opacity-80 cursor-pointer flex h-10 w-full truncate flex-col rounded-lg`}
     >
-      <p className="font-extrabold text-white">{appointment.name}</p>
-      <p className="font-extralight text-sm text-white/80">
+      <p className="font-extrabold text-white text-sm">{appointment.name}</p>
+      <p className="font-extralight text-xs text-white/80">
         {appointment.type}
       </p>
     </div>

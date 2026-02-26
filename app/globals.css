@@ -5,8 +5,18 @@
 @custom-variant dark (&:is(.dark *));
 
 @layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
+  .scrollbar-rounded::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .scrollbar-rounded::-webkit-scrollbar-track {
+    border-radius: var(--radius);
+    background: var(--color-background);
+  }
+
+  .scrollbar-rounded::-webkit-scrollbar-thumb {
+    background: var(--color-foreground);
+    border-radius: var(--radius)
   }
 }
 
@@ -48,7 +58,7 @@
   --color-button-primary-foreground: var(--button-primary-foreground);
   --color-dropdown: var(--dropdown);
   --color-title: var(--title);
-  --color-secondary-button: var(--button-secondary);
+  --color-button-secondary: var(--button-secondary);
   --color-button-secondary-text: var(--button-secondary-text);
   --color-button-secondary-border: var(--button-secondary-border);
   --color-button-secondary-foreground: var(--button-secondary-foreground);
@@ -90,7 +100,7 @@ html, body {
   --ring: oklch(70.80% 0.149 234.36);
   --button-primary: oklch(29.66% 0.090 252.50);
   --button-primary-foreground: oklch(19.66% 0.090 252.50);
-  --button-secondary: oklch(1 0 0);
+  --button-secondary: oklch(70.80% 0.149 234.36);
   --button-secondary-foreground: oklch(59.43% 0.130 237.36);
   --button-secondary-text: oklch(70.80% 0.149 234.36);
   --button-secondary-border: oklch(70.80% 0.149 234.36);

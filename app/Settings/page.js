@@ -61,11 +61,7 @@ export default function Settings() {
             </p>
           </div>
           {/* Save Button */}
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2 min-w-[140px]"
-          >
+          <Button onClick={handleSave} disabled={isSaving}>
             <Save size={18} />
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
@@ -85,12 +81,7 @@ export default function Settings() {
                 <div className="h-20 w-20 rounded-full bg-background border-2 flex items-center justify-center">
                   <User className="text-foreground" size={36} />
                 </div>
-                <Button
-                  className="bg-button-primary hover:bg-button-primary-foreground text-white "
-                  size="lg"
-                >
-                  Change Photo
-                </Button>
+                <Button size="lg">Change Photo</Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-foreground">
@@ -138,7 +129,7 @@ export default function Settings() {
                   }}
                 >
                   <DialogTrigger asChild>
-                    <Button className="flex gap-2 bg-destructive text-white">
+                    <Button variant="destructive">
                       <KeyRound size={16} />
                       Reset Account Password
                     </Button>

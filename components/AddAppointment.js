@@ -182,9 +182,7 @@ export default function AddAppointment({
   return (
     <AlertDialog className="bg-background">
       <AlertDialogTrigger asChild>
-        <Button className="w-[175px] bg-button-primary hover:bg-button-primary-foreground text-white text-center font-bold rounded-md pointer-cursor">
-          New Appointment
-        </Button>
+        <Button className="w-[175px]">New Appointment</Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="bg-background text-foreground border border-border">
         <AlertDialogHeader>
@@ -216,7 +214,9 @@ export default function AddAppointment({
                       setItemSearch={setFormType}
                     />
                     <Field>
-                      <FieldLabel htmlFor="date">Date</FieldLabel>
+                      <FieldLabel className="font-bold" htmlFor="date">
+                        Date
+                      </FieldLabel>
                       <DatePicker date={date} setDate={setDate} />
                     </Field>
                   </div>
@@ -248,6 +248,7 @@ export default function AddAppointment({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction
+            className="bg-button-primary hover:bg-button-primary-foreground text-white"
             onClick={(e) => {
               const success = handleCreateAppointment();
               if (!success) {

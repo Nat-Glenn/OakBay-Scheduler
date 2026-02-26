@@ -50,7 +50,7 @@ export function renderAppointment(
   );
 
   return (
-    <div className="col-span-2 border border-border bg-background p-1 text-center">
+    <div className="col-span-2 border border-foreground bg-background text-center p-0.5">
       {appointment ? (
         <Popover>
           <PopoverTrigger className="w-full">

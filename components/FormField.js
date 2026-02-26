@@ -25,10 +25,10 @@ export default function FormField({
 }) {
   return (
     <Field>
-      <FieldLabel>{fieldLabel}</FieldLabel>
+      <FieldLabel className="font-bold">{fieldLabel}</FieldLabel>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="w-full justify-between">
+          <Button variant="outline" className="w-full justify-between truncate">
             {displayText || `Select ${fieldLabel}`}
             <ChevronDownIcon />
           </Button>
@@ -37,7 +37,7 @@ export default function FormField({
           {/* Search input */}
           <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
             <InputGroupInput
-              placeholder="Search by name or ID..."
+              placeholder="Search by name..."
               className="focus-visible:ring-ring"
               value={search}
               onChange={(e) => setSearch(e.target.value)}

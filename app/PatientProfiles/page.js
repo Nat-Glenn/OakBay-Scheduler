@@ -775,10 +775,8 @@ export default function PatientProfiles() {
 
                     {/* ACTIONS */}
                     <div className="pt-6 space-y-3 mt-auto">
-                      <Button className="w-full bg-button-primary hover:bg-button-primary-foreground text-white hover:text-black font-bold">
-                        View Full Profile
-                      </Button>
-                      <Button className="w-full bg-secondary-button hover:bg-button-secondary-foreground text-button-secondary-text hover:text-foreground font-bold border border-button-secondary-border">
+                      <Button className="w-full">View Full Profile</Button>
+                      <Button variant="secondary" className="w-full">
                         Schedule Appointment
                       </Button>
                     </div>
