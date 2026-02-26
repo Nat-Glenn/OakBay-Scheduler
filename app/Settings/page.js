@@ -26,21 +26,12 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Field,
-  FieldDescription,
-  FieldTitle,
-  FieldLabel,
-  FieldContent,
-} from "@/components/ui/field";
-import { Switch } from "@/components/ui/switch";
-import { useDarkMode } from "@/utils/DarkModeProvider";
+
 import { toast } from "sonner";
 export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
   const [resetStep, setResetStep] = useState("request");
   const [recoveryCode, setRecoveryCode] = useState("");
-  const { boolDark, handleBool } = useDarkMode();
 
   const handleSave = () => {
     setIsSaving(true);
@@ -237,38 +228,6 @@ export default function Settings() {
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border bg-background">
-            <CardHeader>
-              <div className="flex items-center gap-2 text-foreground">
-                <PenLine size={20} />
-                <CardTitle>Accessibility</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm font-medium">
-                  <Palette size={16} className="text-muted-foreground" />
-                  <p>Theme Selection</p>
-                </div>
-                <FieldLabel htmlFor="switchDark">
-                  <Field orientation="horizontal">
-                    <FieldContent>
-                      <FieldTitle>Dark Mode</FieldTitle>
-                    </FieldContent>
-                    {boolDark ? (
-                      <Switch
-                        onClick={handleBool}
-                        id="switchDark"
-                        defaultChecked
-                      />
-                    ) : (
-                      <Switch onClick={handleBool} id="switchDark" />
-                    )}
-                  </Field>
-                </FieldLabel>
               </div>
             </CardContent>
           </Card>

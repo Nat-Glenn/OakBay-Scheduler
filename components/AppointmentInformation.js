@@ -15,20 +15,15 @@ import {
   ItemTitle,
 } from "@/components/ui/item";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-} from "@/components/ui/command";
-import { Field, FieldLabel } from "@/components/ui/field";
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -37,28 +32,21 @@ import {
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from "@/components/ui/field";
 import {
   Popover,
   PopoverContent,
   PopoverHeader,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Activity, Check, ChevronDownIcon, Settings, User } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  formatDay,
-  formatMonthDropdown,
-  formatYearDropdown,
-} from "react-day-picker";
+import DatePicker from "./DatePicker";
+import FormField from "@/components/FormField";
+import { Settings } from "lucide-react";
 
 export default function AppointmentInformation({
   active,
@@ -66,32 +54,50 @@ export default function AppointmentInformation({
   appointments,
   setAppointments,
 }) {
-  const types = ["Chiropractic Adjustment", "Massage", "Intense Massage"];
-  const time = [
-    "9:00",
-    "9:15",
-    "9:30",
-    "9:45",
-    "10:00",
-    "10:15",
-    "10:30",
-    "10:45",
-    "11:00",
-    "11:15",
-    "11:30",
-    "11:45",
-    "12:00",
-    "12:15",
-    "12:30",
-    "12:45",
-    "13:00",
-    "21:00",
-  ];
-  const practitioners = ["Brad Pritchard", "Kyle James", "Daniel Topala"];
   const [editType, setEditType] = useState("");
   const [editPractitioner, setEditPractitioner] = useState("");
   const [editTime, setEditTime] = useState("");
   const [editDate, setEditDate] = useState(null);
+  const [search, setSearch] = useState("");
+  const practitioners = [
+    { id: 1, name: "Brad Pritchard" },
+    { id: 2, name: "Kyle James" },
+    { id: 3, name: "Daniel Topala" },
+  ];
+  const types = [
+    { id: 1, name: "Chiropractic Adjustment" },
+    { id: 2, name: "Massage" },
+    { id: 3, name: "Intense Massage" },
+  ];
+  const time = [
+    { id: 1, name: "9:00" },
+    { id: 2, name: "9:15" },
+    { id: 3, name: "9:30" },
+    { id: 4, name: "9:45" },
+    { id: 5, name: "10:00" },
+    { id: 6, name: "10:15" },
+    { id: 7, name: "10:30" },
+    { id: 8, name: "10:45" },
+    { id: 9, name: "11:00" },
+    { id: 10, name: "11:15" },
+  ];
+  const filteredArray = (type) => {
+    if (type == "types") {
+      return types.filter((c) =>
+        c.name.toLowerCase().includes(search.toLowerCase()),
+      );
+    }
+    if (type == "practitioners") {
+      return practitioners.filter((c) =>
+        c.name.toLowerCase().includes(search.toLowerCase()),
+      );
+    }
+    if (type == "time") {
+      return time.filter((c) =>
+        c.name.toLowerCase().includes(search.toLowerCase()),
+      );
+    }
+  };
   const handleEditAppointment = () => {
     if (!editType || !editPractitioner || !editTime || !editDate) {
       toast.warning("Please fill out all fields.", { position: "top-center" });
@@ -204,211 +210,84 @@ export default function AppointmentInformation({
           </HoverCard>
         </ItemContent>
         <ItemActions>
-          <Dialog>
-            <form>
-              <DialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  disabled={active?.status === "checked-out"}
-                  onClick={() => openEditDialog(active)}
+          <AlertDialog className="bg-background">
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                disabled={
+                  active?.status === "checked-out" ||
+                  active?.date !== formatDateDMY(new Date())
+                }
+                onClick={() => openEditDialog(active)}
+              >
+                <Settings />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="bg-background text-foreground border border-border">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Edit Appointment</AlertDialogTitle>
+                <div className="w-full max-w-md">
+                  <form>
+                    <FieldGroup>
+                      <FieldSet>
+                        <FieldDescription>
+                          Edit an appointment&apos;s information.
+                        </FieldDescription>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            fieldLabel={"Type"}
+                            displayText={editType}
+                            search={search}
+                            setSearch={setSearch}
+                            itemsArray={filteredArray("types")}
+                            emptyText={"No types found"}
+                            setItemSearch={setEditType}
+                          />
+                          <Field>
+                            <FieldLabel htmlFor="date">Date</FieldLabel>
+                            <DatePicker date={editDate} setDate={setEditDate} />
+                          </Field>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <FormField
+                            fieldLabel={"Practitioner"}
+                            displayText={editPractitioner}
+                            search={search}
+                            setSearch={setSearch}
+                            itemsArray={filteredArray("practitioners")}
+                            emptyText={"No practitioners found"}
+                            setItemSearch={setEditPractitioner}
+                          />
+                          <FormField
+                            fieldLabel={"Time"}
+                            displayText={editTime}
+                            search={search}
+                            setSearch={setSearch}
+                            itemsArray={filteredArray("time")}
+                            emptyText={"No time found"}
+                            setItemSearch={setEditTime}
+                          />
+                        </div>
+                      </FieldSet>
+                    </FieldGroup>
+                  </form>
+                </div>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={(e) => {
+                    const success = handleEditAppointment();
+                    if (!success) {
+                      e.preventDefault();
+                    }
+                  }}
                 >
-                  <Settings />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Edit Appointment</DialogTitle>
-                  <DialogDescription>
-                    Edit an appointment&apos;s information.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field className="">
-                    <FieldLabel htmlFor="typeEdit">Type</FieldLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          role="combobox"
-                          variant="outline"
-                          className="w-full justify-between"
-                        >
-                          {editType || "Select Type"}
-                          <ChevronDownIcon />
-                        </Button>
-                      </PopoverTrigger>
-
-                      <PopoverContent
-                        align="center"
-                        className="w-55 h-50 truncate"
-                      >
-                        <Command>
-                          <CommandInput placeholder="Search type..." />
-                          <CommandEmpty>No type found.</CommandEmpty>
-                          <CommandGroup>
-                            {types.map((type) => (
-                              <CommandItem
-                                key={type}
-                                value={type}
-                                onSelect={(value) => {
-                                  setEditType(value);
-                                }}
-                              >
-                                <Check
-                                  className={
-                                    editType === type
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  }
-                                />
-                                {type}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="dateEdit">Date</FieldLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          id="date"
-                          variant="outline"
-                          data-empty={editDate}
-                          className="data-[empty=true]:text-muted-foreground justify-between text-left font-normal"
-                        >
-                          {editDate ? (
-                            [
-                              formatMonthDropdown(editDate) +
-                                " " +
-                                formatDay(editDate) +
-                                ", " +
-                                " " +
-                                formatYearDropdown(editDate),
-                            ]
-                          ) : (
-                            <span>Pick a date</span>
-                          )}
-                          <ChevronDownIcon />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="center">
-                        <Calendar
-                          mode="single"
-                          selected={editDate}
-                          onSelect={(day) => {
-                            if (day) setEditDate(day);
-                          }}
-                        />
-                      </PopoverContent>
-                    </Popover>
-                  </Field>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <Field>
-                    <FieldLabel htmlFor="practEdit">Practitioner</FieldLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          role="combobox"
-                          variant="outline"
-                          className="w-full justify-between"
-                        >
-                          {editPractitioner || "Select practitioner"}
-                          <ChevronDownIcon />
-                        </Button>
-                      </PopoverTrigger>
-
-                      <PopoverContent className="w-55 h-50 truncate">
-                        <Command>
-                          <CommandInput placeholder="Search practitioner..." />
-                          <CommandEmpty>No practitioner found.</CommandEmpty>
-                          <CommandGroup>
-                            {practitioners.map((practitioner) => (
-                              <CommandItem
-                                key={practitioner}
-                                value={practitioner}
-                                onSelect={(value) => {
-                                  setEditPractitioner(value);
-                                }}
-                              >
-                                <Check
-                                  className={
-                                    editPractitioner === practitioner
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  }
-                                />
-                                {practitioner}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </Field>
-                  <Field>
-                    <FieldLabel htmlFor="hourEdit">Time</FieldLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <Button
-                          variant="outline"
-                          role="combobox"
-                          className="justify-between w-full"
-                        >
-                          {editTime || "Select time"}
-                          <ChevronDownIcon />
-                        </Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-55 h-50 truncate">
-                        <Command>
-                          <CommandInput placeholder="Search time..." />
-
-                          <CommandEmpty>No time found.</CommandEmpty>
-
-                          <CommandGroup id="hour">
-                            {time.map((hour) => (
-                              <CommandItem
-                                key={hour}
-                                value={hour}
-                                onSelect={(value) => {
-                                  setEditTime(value);
-                                }}
-                              >
-                                <Check
-                                  className={
-                                    editTime === hour
-                                      ? "opacity-100"
-                                      : "opacity-0"
-                                  }
-                                />
-                                {hour}
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        </Command>
-                      </PopoverContent>
-                    </Popover>
-                  </Field>
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild variant="outline">
-                    <Button variant="outline">Cancel</Button>
-                  </DialogClose>
-                  <Button
-                    type="submit"
-                    onClick={(e) => {
-                      const success = handleEditAppointment();
-                      if (!success) e.preventDefault();
-                    }}
-                  >
-                    Save Changes
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </form>
-          </Dialog>
+                  Edit
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </ItemActions>
       </Item>
       <Item size="sm">

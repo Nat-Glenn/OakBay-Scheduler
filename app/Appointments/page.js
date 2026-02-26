@@ -100,115 +100,119 @@ export default function Appointments() {
   const [active, setActive] = useState(null);
 
   return (
-    <main className="flex h-dvh w-full bg-background overflow-hidden">
+    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden p-4">
       <NavBarComp />
-      <div className="flex-1 flex flex-col min-h-0">
-        <header className="p-8 pb-4">
+      <div className="flex flex-col min-h-0">
+        <header className="pb-4">
           <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
           <p className="text-muted-foreground">
             Manage and view all current appointments.
           </p>
         </header>
-        <div className="flex flex-col px-4 flex-1 min-h-0">
-          <div className="flex flex-row items-center gap-2 px-4">
-            <ChevronLeftIcon
-              onClick={() => date && setDate(subDays(date, 1))}
-            />
-            <ChevronRightIcon
-              onClick={() => date && setDate(addDays(date, 1))}
-            />
-            <DatePicker date={date} setDate={setDate} />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button className="w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold ml-auto border text-button-secondary-text hover:text-foreground">
-                  {`Dr. ${practitioner}`}
-                  <ChevronDownIcon />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-auto" align="center">
-                {practitioners.map((p) => (
-                  <DropdownMenuItem key={p} onClick={() => setPractitioner(p)}>
-                    {p}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <AddAppointment
-              appointments={appointments}
-              setAppointments={setAppointments}
-              date={date}
-              setDate={setDate}
-            />
-          </div>
-          <div className="flex flex-row flex-1 min-h-0 px-4 pt-4 pb-8">
-            <div className="w-full flex-1 grid grid-cols-9 border-border border overflow-y-auto min-h-0 no-scrollbar rounded-2xl">
-              <div className="col-span-1 font-bold text-center border sticky top-0 bg-input border-border text-ring">
-                Time
-              </div>
-              <div className="col-span-2 font-medium text-muted-foreground text-center border sticky top-0 bg-input border-border">
-                Slot 1
-              </div>
-              <div className="col-span-2 font-medium text-muted-foreground text-center border sticky top-0 bg-input border-border">
-                Slot 2
-              </div>
-              <div className="col-span-2 font-medium text-muted-foreground text-center border sticky top-0 bg-input border-border">
-                Slot 3
-              </div>
-              <div className="col-span-2 font-medium text-muted-foreground text-center border sticky top-0 bg-input border-border">
-                Slot 4
-              </div>
-              {time.map((hours) => (
-                <React.Fragment key={hours}>
-                  <div
-                    className="col-span-1 text-center text-ring border-border border font-mono p-3 font-medium"
-                    key={hours.key}
-                  >
-                    {hours}
-                  </div>
-
-                  {renderAppointment(
-                    hours,
-                    1,
-                    practitioner,
-                    date,
-                    active,
-                    setActive,
-                    appointments,
-                    setAppointments,
-                  )}
-                  {renderAppointment(
-                    hours,
-                    2,
-                    practitioner,
-                    date,
-                    active,
-                    setActive,
-                    appointments,
-                    setAppointments,
-                  )}
-                  {renderAppointment(
-                    hours,
-                    3,
-                    practitioner,
-                    date,
-                    active,
-                    setActive,
-                    appointments,
-                    setAppointments,
-                  )}
-                  {renderAppointment(
-                    hours,
-                    4,
-                    practitioner,
-                    date,
-                    active,
-                    setActive,
-                    appointments,
-                    setAppointments,
-                  )}
-                </React.Fragment>
+        <div className="flex flex-row items-center gap-2">
+          <ChevronLeftIcon
+            className="cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+            onClick={() => date && setDate(subDays(date, 1))}
+          />
+          <ChevronRightIcon
+            className="cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+            onClick={() => date && setDate(addDays(date, 1))}
+          />
+          <DatePicker date={date} setDate={setDate} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold border text-button-secondary-text hover:text-foreground">
+                {`Dr. ${practitioner}`}
+                <ChevronDownIcon />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-auto" align="center">
+              {practitioners.map((p) => (
+                <DropdownMenuItem
+                  className="text-foreground"
+                  key={p}
+                  onClick={() => setPractitioner(p)}
+                >
+                  {p}
+                </DropdownMenuItem>
               ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <AddAppointment
+            appointments={appointments}
+            setAppointments={setAppointments}
+            date={date}
+            setDate={setDate}
+          />
+        </div>
+        <div className="flex flex-row flex-1 min-h-0 pt-4">
+          <div className="w-full flex-1 grid grid-cols-9 border-border border overflow-y-auto min-h-0 rounded-lg">
+            <div className="col-span-1 font-bold text-center border sticky top-0 bg-input border-border text-ring">
+              Time
             </div>
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-border">
+              Slot 1
+            </div>
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-border">
+              Slot 2
+            </div>
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-border">
+              Slot 3
+            </div>
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-border">
+              Slot 4
+            </div>
+            {time.map((hours) => (
+              <React.Fragment key={hours}>
+                <div
+                  className="col-span-1 text-center text-ring border-border border font-mono p-3 font-medium"
+                  key={hours.key}
+                >
+                  {hours}
+                </div>
+
+                {renderAppointment(
+                  hours,
+                  1,
+                  practitioner,
+                  date,
+                  active,
+                  setActive,
+                  appointments,
+                  setAppointments,
+                )}
+                {renderAppointment(
+                  hours,
+                  2,
+                  practitioner,
+                  date,
+                  active,
+                  setActive,
+                  appointments,
+                  setAppointments,
+                )}
+                {renderAppointment(
+                  hours,
+                  3,
+                  practitioner,
+                  date,
+                  active,
+                  setActive,
+                  appointments,
+                  setAppointments,
+                )}
+                {renderAppointment(
+                  hours,
+                  4,
+                  practitioner,
+                  date,
+                  active,
+                  setActive,
+                  appointments,
+                  setAppointments,
+                )}
+              </React.Fragment>
+            ))}
           </div>
         </div>
       </div>

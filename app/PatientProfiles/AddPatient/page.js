@@ -1,8 +1,8 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import NavBarComp from "@/components/NavBarComp";
-import { ChevronLeft } from "lucide-react";
+import { ChevronDownIcon, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -28,8 +28,19 @@ import {
   FieldLabel,
   FieldSet,
 } from "@/components/ui/field";
-
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  formatDay,
+  formatMonthDropdown,
+  formatYearDropdown,
+} from "react-day-picker";
 export default function AddPatientPage() {
+  const [dob, setDob] = useState("");
   return (
     <main className="flex h-dvh w-full overflow-hidden bg-background">
       <NavBarComp />
@@ -95,13 +106,39 @@ export default function AddPatientPage() {
                     {/* DATE OF BIRTH & AGE ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field>
-                        <FieldLabel htmlFor="dob">Date of Birth</FieldLabel>
-                        <Input
-                          id="dob"
-                          type="date"
-                          required
-                          className="bg-input border border-border"
-                        />
+                        <FieldLabel htmlFor="dateEdit">Date</FieldLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="date"
+                              variant="outline"
+                              className="justify-between text-left font-normal bg-input border-border"
+                            >
+                              {dob ? (
+                                [
+                                  formatMonthDropdown(dob) +
+                                    " " +
+                                    formatDay(dob) +
+                                    ", " +
+                                    " " +
+                                    formatYearDropdown(dob),
+                                ]
+                              ) : (
+                                <span>Pick a date</span>
+                              )}
+                              <ChevronDownIcon />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="center">
+                            <Calendar
+                              mode="single"
+                              selected={dob}
+                              onSelect={(day) => {
+                                if (day) setDob(day);
+                              }}
+                            />
+                          </PopoverContent>
+                        </Popover>
                       </Field>
                       <Field>
                         <FieldLabel htmlFor="age">Age</FieldLabel>
