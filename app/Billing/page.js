@@ -326,10 +326,10 @@ export default function Billing(){
                     {/* Cards on File */}
                     <section className="space-y-3">
                         <div>
-                            <h2 className="text-lg font-semibold text-foreground">
+                            <h2 className="text-lg font-bold text-foreground">
                                 Cards on File
                             </h2>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-foreground">
                                 Saved payment methods for patient
                             </p>
                         </div>
@@ -351,7 +351,7 @@ export default function Billing(){
                                         <div className="font-mono text-sm text-foreground">
                                             {maskCard(c.last4)}
                                         </div>
-                                        <div className="text-sm text-muted-foreground">
+                                        <div className="text-sm text-foreground">
                                             Exp: {c.exp}
                                         </div>
 
