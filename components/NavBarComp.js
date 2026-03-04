@@ -37,10 +37,11 @@ export default function NavBarComp() {
   return (
     <div className="flex flex-row items-center justify-center relative z-40">
       <Menu
+        className="mr-auto hover:bg-muted-foreground/30 rounded-full p-2 cursor-pointer"
         onClick={handleOpen}
         size={40}
-        className="mr-auto hover:bg-muted-foreground/30 p-2 rounded-full cursor-pointer"
       />
+
       <div>&nbsp;</div>
       <div className="">
         {boolDark ? (

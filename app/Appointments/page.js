@@ -18,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AddAppointment from "@/components/AddAppointment";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState([
@@ -98,6 +99,7 @@ export default function Appointments() {
   const [date, setDate] = useState(new Date());
   const [practitioner, setPractitioner] = useState(practitioners[0]);
   const [active, setActive] = useState(null);
+  const small = useMediaQuery("(max-width: 768px)");
 
   return (
     <main className="flex flex-col h-dvh w-full bg-background overflow-hidden p-4">
@@ -109,19 +111,19 @@ export default function Appointments() {
             Manage and view all current appointments.
           </p>
         </header>
-        <div className="flex flex-row items-center md:gap-2">
+        <div className="flex flex-row items-center justify-between">
           <ChevronLeftIcon
-            className="sm:hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+            className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
             onClick={() => date && setDate(subDays(date, 1))}
           />
           <ChevronRightIcon
-            className="sm:hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+            className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
             onClick={() => date && setDate(addDays(date, 1))}
           />
           <DatePicker date={date} setDate={setDate} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button className="sm:shrink w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold border text-button-secondary-text hover:text-foreground">
+              <Button className="hidden md:flex w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold border text-button-secondary-text hover:text-foreground">
                 {`Dr. ${practitioner}`}
                 <ChevronDownIcon />
               </Button>
@@ -165,7 +167,7 @@ export default function Appointments() {
             {time.map((hours) => (
               <React.Fragment key={hours}>
                 <div
-                  className="col-span-2 text-center text-button-primary border-foreground border font-mono p-3 font-medium"
+                  className="col-span-2 text-center text-button-primary border-foreground border font-mono py-3"
                   key={hours.key}
                 >
                   {hours}
@@ -180,6 +182,7 @@ export default function Appointments() {
                   setActive,
                   appointments,
                   setAppointments,
+                  small,
                 )}
                 {renderAppointment(
                   hours,
@@ -190,6 +193,7 @@ export default function Appointments() {
                   setActive,
                   appointments,
                   setAppointments,
+                  small,
                 )}
                 {renderAppointment(
                   hours,
@@ -200,6 +204,7 @@ export default function Appointments() {
                   setActive,
                   appointments,
                   setAppointments,
+                  small,
                 )}
                 {renderAppointment(
                   hours,
@@ -210,6 +215,7 @@ export default function Appointments() {
                   setActive,
                   appointments,
                   setAppointments,
+                  small,
                 )}
               </React.Fragment>
             ))}

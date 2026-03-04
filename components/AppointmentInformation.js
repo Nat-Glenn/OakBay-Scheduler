@@ -183,31 +183,7 @@ export default function AppointmentInformation({
           </Avatar>
         </ItemMedia>
         <ItemContent>
-          <HoverCard openDelay={100} closeDelay={100}>
-            <HoverCardTrigger>
-              <ItemTitle>{active?.name}</ItemTitle>
-            </HoverCardTrigger>
-            <HoverCardContent className="p-1" side="top">
-              <Item>
-                <ItemContent>
-                  <ItemTitle>DoB</ItemTitle>
-                  <ItemDescription>{active?.dob}</ItemDescription>
-                </ItemContent>
-              </Item>
-              <Item>
-                <ItemContent>
-                  <ItemTitle>Email</ItemTitle>
-                  <ItemDescription>{active?.email}</ItemDescription>
-                </ItemContent>
-              </Item>
-              <Item>
-                <ItemContent>
-                  <ItemTitle>Phone Number</ItemTitle>
-                  <ItemDescription>{active?.phone}</ItemDescription>
-                </ItemContent>
-              </Item>
-            </HoverCardContent>
-          </HoverCard>
+          <ItemTitle>{active?.name}</ItemTitle>
         </ItemContent>
         <ItemActions>
           <AlertDialog className="bg-background">
@@ -301,6 +277,24 @@ export default function AppointmentInformation({
         <ItemContent>
           <ItemTitle>Practitioner</ItemTitle>
           <ItemDescription>{`Dr. ${active?.practitioner}`}</ItemDescription>
+        </ItemContent>
+      </Item>
+      <Item size="xs">
+        <ItemContent>
+          <ItemTitle>Dob</ItemTitle>
+          <ItemDescription>{active?.dob}</ItemDescription>
+        </ItemContent>
+      </Item>
+      <Item size="xs">
+        <ItemContent>
+          <ItemTitle>Email</ItemTitle>
+          <ItemDescription>{active?.email}</ItemDescription>
+        </ItemContent>
+      </Item>
+      <Item className="w-full" size="xs">
+        <ItemContent>
+          <ItemTitle>Phone</ItemTitle>
+          <ItemDescription>{active?.phone}</ItemDescription>
         </ItemContent>
       </Item>
     </PopoverHeader>

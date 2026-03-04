@@ -27,8 +27,8 @@ export default function DatePicker({ date, setDate }) {
         <Button
           variant="outline"
           data-empty={!date}
-          className="data-[empty=true]:text-muted-foreground sm:shrink md:w-[175px] justify-between text-left font-normal cursor-pointer"
-          onClick={() => setOpen((v) => !v)}
+          className="data-[empty=true]:text-muted-foreground sm:shrink md:w-[175px] justify-between text-left cursor-pointer"
+          onClick={() => setOpen((prev) => !prev)}
         >
           {date ? (
             [
@@ -48,7 +48,12 @@ export default function DatePicker({ date, setDate }) {
 
       <DropdownMenuContent className="w-auto h-63 p-0" align="start">
         {/* Close button */}
-        <button type="button" onClick={() => setOpen(false)} className="absolute top-1 left-1 z-10 rounded-md p-1 hover:bg-muted" aria-label="Close calendar">
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="absolute top-1 left-1 z-10 rounded-md p-1 hover:bg-muted"
+          aria-label="Close calendar"
+        >
           <X className="h-3 w-3" />
         </button>
 

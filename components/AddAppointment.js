@@ -173,9 +173,12 @@ export default function AddAppointment({
     setFormPractitioner("");
     setFormTime("");
 
-    toast.success("Appointment created successfully.", {
-      position: "top-center",
-    });
+    toast.success(
+      `Appointment created on ${newAppointment.date} at ${newAppointment.time} for Dr.${newAppointment.practitioner}.`,
+      {
+        position: "top-center",
+      },
+    );
 
     return true;
   };

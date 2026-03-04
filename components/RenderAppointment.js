@@ -39,6 +39,7 @@ export function renderAppointment(
   setActive,
   appointments,
   setAppointments,
+  small,
 ) {
   const selectedDate = formatDateDMY(date);
   const appointment = appointments.find(
@@ -60,7 +61,11 @@ export function renderAppointment(
               setActive={setActive}
             />
           </PopoverTrigger>
-          <PopoverContent className="w-75" align="center">
+          <PopoverContent
+            side={small ? "bottom" : "left"}
+            className="w-75"
+            align="center"
+          >
             <AppointmentInformation
               active={active}
               setActive={setActive}
