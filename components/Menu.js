@@ -61,7 +61,7 @@ export default function MenuComp({ closeNav }) {
 
         {/* Navigation Links */}
         <Link
-          href="/Appointments"
+          href="/"
           onClick={closeNav}
           className={CurrentPage("/Appointments")}
         >

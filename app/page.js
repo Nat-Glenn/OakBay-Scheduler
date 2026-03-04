@@ -1,11 +1,226 @@
-"use client"
+"use client";
 import NavBarComp from "@/components/NavBarComp";
+import { renderAppointment } from "@/components/RenderAppointment";
+import React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import DatePicker from "@/components/DatePicker";
+import {
+  ChevronDownIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
+} from "lucide-react";
+import { addDays, subDays } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import AddAppointment from "@/components/AddAppointment";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
 
-export default function Home() {
+export default function Appointments() {
+  const [appointments, setAppointments] = useState([
+    {
+      id: 1,
+      name: "John Doe",
+      dob: "June 01, 2000 (25)",
+      email: "johndoe@gmail.com",
+      phone: "587-999-999",
+      type: "Chiropractic Adjustment",
+      practitioner: "Brad Pritchard",
+      time: "9:00",
+      slot: 1,
+      date: "13/02/2026",
+      status: "scheduled",
+    },
+    {
+      id: 2,
+      name: "Bob",
+      dob: "August 29, 2000 (25)",
+      email: "bob@gmail.com",
+      phone: "517-949-929",
+      type: "Massage",
+      practitioner: "Brad Pritchard",
+      time: "10:15",
+      slot: 1,
+      date: "13/02/2026",
+      status: "scheduled",
+    },
+    {
+      id: 3,
+      name: "Bob",
+      dob: "August 29, 2000 (25)",
+      email: "bob@gmail.com",
+      phone: "517-949-929",
+      type: "Chiropractic Adjustment",
+      practitioner: "Brad Pritchard",
+      time: "10:15",
+      slot: 1,
+      date: "09/02/2026",
+      status: "checked-out",
+    },
+    {
+      id: 4,
+      name: "Bob",
+      dob: "August 29, 2000 (25)",
+      email: "bob@gmail.com",
+      phone: "517-949-929",
+      type: "Intense Massage",
+      practitioner: "Brad Pritchard",
+      time: "9:15",
+      slot: 1,
+      date: "19/02/2026",
+      status: "scheduled",
+    },
+  ]);
+  const time = [
+    "9:00",
+    "9:15",
+    "9:30",
+    "9:45",
+    "10:00",
+    "10:15",
+    "10:30",
+    "10:45",
+    "11:00",
+    "11:15",
+    "11:30",
+    "11:45",
+    "14:00",
+    "14:15",
+    "14:30",
+    "14:45",
+    "15:00",
+    "15:15",
+  ];
+  const practitioners = ["Brad Pritchard", "Kyle James", "Daniel Topala"];
+  const [date, setDate] = useState(new Date());
+  const [practitioner, setPractitioner] = useState(practitioners[0]);
+  const [active, setActive] = useState(null);
+  const small = useMediaQuery("(max-width: 768px)");
+
   return (
-    <main className="flex min-h-dvh w-full">
-      <NavBarComp/>
-      <div className="flex-2 p-2"></div>
+    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
+      <NavBarComp />
+      <div className="flex flex-col min-h-0 px-4 pb-4">
+        <header className="flex flex-row justify-between items-center py-4">
+          <div className="flex flex-col">
+            <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
+          </div>
+          <div className="flex flex-row items-center gap-4">
+            <ChevronLeftIcon
+              className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+              onClick={() => date && setDate(subDays(date, 1))}
+            />
+            <ChevronRightIcon
+              className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+              onClick={() => date && setDate(addDays(date, 1))}
+            />
+            <DatePicker date={date} setDate={setDate} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="hidden md:flex w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold border text-button-secondary-text hover:text-foreground">
+                  {`Dr. ${practitioner}`}
+                  <ChevronDownIcon />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-auto" align="center">
+                {practitioners.map((p) => (
+                  <DropdownMenuItem
+                    className="text-foreground"
+                    key={p}
+                    onClick={() => setPractitioner(p)}
+                  >
+                    {p}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AddAppointment
+              appointments={appointments}
+              setAppointments={setAppointments}
+              date={date}
+              setDate={setDate}
+            />
+          </div>
+        </header>
+        <div className="flex flex-row flex-1 min-h-0">
+          <div className="w-full flex-1 grid grid-cols-10 overflow-y-auto min-h-0 rounded-lg border border-foreground scrollbar-rounded">
+            <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-foreground">
+              Time
+            </div>
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
+              Slot 1
+            </div>
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
+              Slot 2
+            </div>
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
+              Slot 3
+            </div>
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
+              Slot 4
+            </div>
+            {time.map((hours) => (
+              <React.Fragment key={hours}>
+                <div
+                  className="col-span-2 text-center text-foreground border-foreground border font-mono py-3"
+                  key={hours.key}
+                >
+                  {hours}
+                </div>
+
+                {renderAppointment(
+                  hours,
+                  1,
+                  practitioner,
+                  date,
+                  active,
+                  setActive,
+                  appointments,
+                  setAppointments,
+                  small,
+                )}
+                {renderAppointment(
+                  hours,
+                  2,
+                  practitioner,
+                  date,
+                  active,
+                  setActive,
+                  appointments,
+                  setAppointments,
+                  small,
+                )}
+                {renderAppointment(
+                  hours,
+                  3,
+                  practitioner,
+                  date,
+                  active,
+                  setActive,
+                  appointments,
+                  setAppointments,
+                  small,
+                )}
+                {renderAppointment(
+                  hours,
+                  4,
+                  practitioner,
+                  date,
+                  active,
+                  setActive,
+                  appointments,
+                  setAppointments,
+                  small,
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+      </div>
     </main>
   );
 }

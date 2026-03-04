@@ -98,6 +98,10 @@ export default function AppointmentInformation({
       );
     }
   };
+  const handleDeleteAppointment = () => {
+    const filteredArray = appointments.filter((appt) => appt.id != active?.id);
+    setAppointments(filteredArray);
+  };
   const handleEditAppointment = () => {
     if (!editType || !editPractitioner || !editTime || !editDate) {
       toast.warning("Please fill out all fields.", { position: "top-center" });
@@ -250,7 +254,20 @@ export default function AppointmentInformation({
                 </div>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel className="mr-auto">
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={(e) => {
+                    const success = handleDeleteAppointment();
+                    if (!success) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  Delete
+                </AlertDialogAction>
                 <AlertDialogAction
                   className="bg-button-primary"
                   onClick={(e) => {

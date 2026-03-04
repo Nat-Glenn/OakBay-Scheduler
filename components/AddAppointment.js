@@ -187,7 +187,7 @@ export default function AddAppointment({
       <AlertDialogTrigger asChild>
         <Button className="w-[175px]">New Appointment</Button>
       </AlertDialogTrigger>
-      <AlertDialogContent className="bg-background text-foreground border border-border">
+      <AlertDialogContent className="bg-background text-foreground">
         <AlertDialogHeader>
           <AlertDialogTitle>Add a new appointment</AlertDialogTitle>
           <div className="w-full max-w-md">

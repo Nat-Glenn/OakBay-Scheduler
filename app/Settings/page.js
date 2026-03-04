@@ -51,14 +51,11 @@ export default function Settings() {
   return (
     <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
       <NavBarComp />
-      <div className="flex flex-col overflow-hidden px-4">
+      <div className="flex flex-col overflow-hidden px-4 pb-4">
         {/* PAGE HEADER & GLOBAL ACTIONS */}
-        <header className="pb-4 flex justify-between items-end">
+        <header className="py-4 flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-            <p className="text-muted-foreground">
-              Manage administrator profile and security protocols.
-            </p>
           </div>
           {/* Save Button */}
           <Button onClick={handleSave} disabled={isSaving}>
@@ -67,7 +64,7 @@ export default function Settings() {
           </Button>
         </header>
 
-        <div className="flex-1 overflow-y-auto space-y-6 pb-8 scrollbar-rounded min-h-0">
+        <div className="flex-1 overflow-y-auto space-y-4 pb-8 scrollbar-rounded min-h-0">
           {/* ADMIN PROFILE SECTION */}
           <Card className="border-border bg-background">
             <CardHeader>
@@ -76,8 +73,8 @@ export default function Settings() {
                 <CardTitle>Admin Profile</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="flex items-center gap-6 pb-2">
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4 pb-2">
                 <div className="h-20 w-20 rounded-full bg-background border-2 flex items-center justify-center">
                   <User className="text-foreground" size={36} />
                 </div>

@@ -541,20 +541,17 @@ export default function PatientProfiles() {
     <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
       <NavBarComp />
 
-      <div className="flex flex-col min-w-0 px-4">
+      <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden">
         {/* PAGE HEADER */}
-        <header className="pb-4">
+        <header className="py-4">
           <h1 className="text-3xl font-bold text-foreground">
             Patient Profiles
           </h1>
-          <p className="text-muted-foreground">
-            Manage and view all registered patients.
-          </p>
         </header>
 
-        <div className="flex flex-col pb-8 min-h-0">
+        <div className="flex flex-col min-h-0">
           {/* SEARCH & ACTIONS BAR */}
-          <div className="flex flex-row items-center gap-4 mb-6">
+          <div className="flex flex-row items-center gap-4 pb-4">
             <div className="relative flex-1 max-w-md">
               <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
                 <InputGroupInput
@@ -583,12 +580,12 @@ export default function PatientProfiles() {
           </div>
 
           {/* MAIN CONTENT AREA */}
-          <div className="flex flex-row gap-6 flex-1 min-h-0">
+          <div className="flex flex-row gap-4 min-h-0">
             {/* PATIENT LIST TABLE */}
-            <div className="w-full rounded-xl border border-border bg-input/50 overflow-hidden flex flex-col">
-              <div className="overflow-y-auto scrollbar-rounded">
+            <div className="w-full rounded-xl border border-border bg-input/50 flex flex-col min-h-0">
+              <div className="flex-1 min-h-0 overflow-y-auto scrollbar-rounded">
                 <Table>
-                  <TableHeader className="sticky top-0 bg-input z-20 border-b border-border">
+                  <TableHeader className="bg-input z-20 border-b border-border">
                     <TableRow className="hover:bg-transparent border-border">
                       <TableHead className="w-[120px] text-ring font-bold">
                         ID
@@ -710,13 +707,13 @@ export default function PatientProfiles() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-6 pt-6 overflow-y-auto flex-1 no-scrollbar">
+                  <CardContent className="space-y-6 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
                     {/* PERSONAL INFO */}
                     <div className="space-y-4">
                       <h3 className="text-title text-xs font-black uppercase tracking-widest">
                         Personal Information
                       </h3>
-                      <div className="grid gap-3 text-sm">
+                      <div className="grid gap-4 text-sm">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Date of Birth</span>
                           <span className="text-foreground">
@@ -755,7 +752,7 @@ export default function PatientProfiles() {
                       <h3 className="text-title text-xs font-black uppercase tracking-widest">
                         Appointment History
                       </h3>
-                      <div className="grid gap-3 text-sm">
+                      <div className="grid gap-4 text-sm">
                         <div className="flex justify-between">
                           <span className="text-slate-500">Last Visit</span>
                           <span className="text-foreground">
@@ -774,7 +771,7 @@ export default function PatientProfiles() {
                     </div>
 
                     {/* ACTIONS */}
-                    <div className="pt-6 space-y-3 mt-auto">
+                    <div className="pt-4 space-y-4 mt-auto">
                       <Button className="w-full">View Full Profile</Button>
                       <Button variant="secondary" className="w-full">
                         Schedule Appointment

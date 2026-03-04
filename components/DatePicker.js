@@ -27,7 +27,7 @@ export default function DatePicker({ date, setDate }) {
         <Button
           variant="outline"
           data-empty={!date}
-          className="data-[empty=true]:text-muted-foreground sm:shrink md:w-[175px] justify-between text-left cursor-pointer"
+          className="text-foreground sm:shrink md:w-[175px] justify-between text-left cursor-pointer"
           onClick={() => setOpen((prev) => !prev)}
         >
           {date ? (

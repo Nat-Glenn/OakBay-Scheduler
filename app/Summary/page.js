@@ -55,17 +55,14 @@ export default function Summary() {
     <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
       <NavBarComp />
 
-      <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded p-4">
+      <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
         {/* PAGE HEADER */}
-        <header className="pb-4">
+        <header className="py-4">
           <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-          <p className="text-lg text-muted-foreground mt-1">
-            A snapshot of your clinic&apos;s current activity and finances.
-          </p>
         </header>
 
         {/* STATISTICAL OVERVIEW CARDS */}
-        <div className="pb-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
           <StatCard
             title="Total Patients"
             value="1,284"
@@ -93,7 +90,7 @@ export default function Summary() {
         </div>
 
         {/* MAIN DASHBOARD CONTENT */}
-        <div className="pb-8 grid grid-cols-1 lg:grid-cols-3 gap-10">
+        <div className="pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* RECENT VISITS TABLE */}
           <Card className="lg:col-span-2 shadow-sm border-none">
             <CardHeader className="flex flex-row items-center justify-between py-6 px-8">

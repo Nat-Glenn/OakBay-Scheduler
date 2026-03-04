@@ -186,9 +186,9 @@ export default function Billing() {
         </DialogContent>
       </Dialog>
 
-      <div className="flex flex-col min-h-0 overflow-hidden px-4">
+      <div className="flex flex-col min-h-0 overflow-hidden px-4 pb-4">
         {/* Header */}
-        <header className="pb-4">
+        <header className="py-4">
           <h1 className="text-3xl font-bold text-foreground">Billing</h1>
         </header>
 

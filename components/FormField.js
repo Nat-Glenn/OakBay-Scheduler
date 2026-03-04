@@ -33,7 +33,7 @@ export default function FormField({
             <ChevronDownIcon />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-full h-50 p-2">
+        <DropdownMenuContent className="w-full h-50 p-2 scrollbar-rounded">
           {/* Search input */}
           <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
             <InputGroupInput

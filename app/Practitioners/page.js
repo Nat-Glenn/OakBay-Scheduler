@@ -77,20 +77,17 @@ export default function Practitioners() {
     <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
       <NavBarComp />
 
-      <div className="flex flex-col min-w-0 px-4">
+      <div className="flex flex-col min-w-0 px-4 pb-4">
         {/* PAGE HEADER */}
-        <header className="pb-4">
+        <header className="py-4">
           <h1 className="text-3xl font-bold text-foreground">
             Practitioner Profiles
           </h1>
-          <p className="text-muted-foreground">
-            Manage and view all current practitioners.
-          </p>
         </header>
 
-        <div className="flex flex-col pb-8 min-h-0">
+        <div className="flex flex-col min-h-0">
           {/* SEARCH & ACTIONS BAR */}
-          <div className="flex flex-row items-center gap-4 mb-6">
+          <div className="flex flex-row items-center gap-4 pb-4">
             <div className="relative flex-1 max-w-md">
               <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
                 <InputGroupInput
