@@ -32,7 +32,7 @@ export default function MenuComp({ closeNav }) {
   const CurrentPage = (href) => {
     const isActive = pathname === href || pathname.startsWith(href + "/");
 
-    return `p-4 flex flex-row items-center gap-2 font-bold transition-all duration-200 ${
+    return `p-4 px-5 flex flex-row items-center gap-2 font-bold transition-all duration-200 ${
       isActive
         ? "bg-sidebar-button-primary hover:bg-sidebar-button-primary-foreground text-background shadow-inner border-r-4 border-[#A0CE66]"
         : "text-foreground hover:text-background bg-background hover:bg-sidebar-button-primary-foreground"
@@ -49,7 +49,7 @@ export default function MenuComp({ closeNav }) {
         className="flex flex-col animate-in slide-in-from-left-4 slide-out-from-left-4 duration-200 w-64 min-h-screen bg-background border-r border-white/5 shadow-2xl relative"
       >
         {/* Logo Section */}
-        <div className="flex flex-row self-center items-center p-4 w-full">
+        <div className="flex flex-row self-center items-center py-2 px-2 w-full">
           <Menu
             onClick={closeNav}
             size={40}
@@ -118,7 +118,7 @@ export default function MenuComp({ closeNav }) {
         <div className="mt-auto flex flex-row text-white justify-between font-bold border-t border-white/5">
           <button
             onClick={handleSignOut}
-            className="flex flex-1 flex-row items-center gap-2 p-4 bg-sidebar-button-primary hover:bg-sidebar-button-primary-foreground transition-all"
+            className="flex flex-1 flex-row items-center gap-2 p-4 px-5 bg-sidebar-button-primary hover:bg-sidebar-button-primary-foreground transition-all"
           >
             <GrPower />
             Sign Out

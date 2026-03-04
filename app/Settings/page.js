@@ -49,11 +49,11 @@ export default function Settings() {
   };
 
   return (
-    <main className="flex h-dvh w-full bg-background overflow-hidden">
+    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
       <NavBarComp />
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex flex-col overflow-hidden px-4">
         {/* PAGE HEADER & GLOBAL ACTIONS */}
-        <header className="p-8 pb-4 flex justify-between items-end">
+        <header className="pb-4 flex justify-between items-end">
           <div>
             <h1 className="text-3xl font-bold text-foreground">Settings</h1>
             <p className="text-muted-foreground">
@@ -67,7 +67,7 @@ export default function Settings() {
           </Button>
         </header>
 
-        <div className="flex-1 overflow-y-auto space-y-6 pb-8 px-8 no-scrollbar min-h-0">
+        <div className="flex-1 overflow-y-auto space-y-6 pb-8 scrollbar-rounded min-h-0">
           {/* ADMIN PROFILE SECTION */}
           <Card className="border-border bg-background">
             <CardHeader>

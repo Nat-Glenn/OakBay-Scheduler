@@ -538,12 +538,12 @@ export default function PatientProfiles() {
   const { boolDark } = useDarkMode();
 
   return (
-    <main className="flex h-dvh w-full bg-background text-foreground overflow-hidden">
+    <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
       <NavBarComp />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex flex-col min-w-0 px-4">
         {/* PAGE HEADER */}
-        <header className="p-8 pb-4">
+        <header className="pb-4">
           <h1 className="text-3xl font-bold text-foreground">
             Patient Profiles
           </h1>
@@ -552,7 +552,7 @@ export default function PatientProfiles() {
           </p>
         </header>
 
-        <div className="flex-1 flex flex-col px-8 pb-8 min-h-0">
+        <div className="flex flex-col pb-8 min-h-0">
           {/* SEARCH & ACTIONS BAR */}
           <div className="flex flex-row items-center gap-4 mb-6">
             <div className="relative flex-1 max-w-md">
@@ -585,8 +585,8 @@ export default function PatientProfiles() {
           {/* MAIN CONTENT AREA */}
           <div className="flex flex-row gap-6 flex-1 min-h-0">
             {/* PATIENT LIST TABLE */}
-            <div className="flex-1 rounded-xl border border-border bg-input/50 overflow-hidden flex flex-col">
-              <div className="overflow-y-auto flex-1 no-scrollbar">
+            <div className="w-full rounded-xl border border-border bg-input/50 overflow-hidden flex flex-col">
+              <div className="overflow-y-auto scrollbar-rounded">
                 <Table>
                   <TableHeader className="sticky top-0 bg-input z-20 border-b border-border">
                     <TableRow className="hover:bg-transparent border-border">

@@ -102,9 +102,9 @@ export default function Appointments() {
   const small = useMediaQuery("(max-width: 768px)");
 
   return (
-    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden p-4">
+    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
       <NavBarComp />
-      <div className="flex flex-col min-h-0">
+      <div className="flex flex-col min-h-0 px-4 pb-4">
         <header className="pb-4">
           <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
           <p className="text-muted-foreground">

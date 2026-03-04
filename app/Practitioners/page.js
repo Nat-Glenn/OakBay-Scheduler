@@ -74,12 +74,12 @@ export default function Practitioners() {
   const { boolDark } = useDarkMode();
 
   return (
-    <main className="flex h-dvh w-full bg-background text-foreground overflow-hidden">
+    <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
       <NavBarComp />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex flex-col min-w-0 px-4">
         {/* PAGE HEADER */}
-        <header className="p-8 pb-4">
+        <header className="pb-4">
           <h1 className="text-3xl font-bold text-foreground">
             Practitioner Profiles
           </h1>
@@ -88,7 +88,7 @@ export default function Practitioners() {
           </p>
         </header>
 
-        <div className="flex-1 flex flex-col px-8 pb-8 min-h-0">
+        <div className="flex flex-col pb-8 min-h-0">
           {/* SEARCH & ACTIONS BAR */}
           <div className="flex flex-row items-center gap-4 mb-6">
             <div className="relative flex-1 max-w-md">

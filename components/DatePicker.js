@@ -46,7 +46,10 @@ export default function DatePicker({ date, setDate }) {
         </Button>
       </DropdownMenuTrigger>
 
-      <DropdownMenuContent className="w-auto h-63 p-0" align="start">
+      <DropdownMenuContent
+        className="w-auto h-63 p-0 scrollbar-rounded"
+        align="start"
+      >
         {/* Close button */}
         <button
           type="button"

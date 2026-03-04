@@ -35,7 +35,7 @@ export default function NavBarComp() {
   }, [router]);
 
   return (
-    <div className="flex flex-row items-center justify-center relative z-40">
+    <div className="flex flex-row items-center justify-center relative z-40 px-2 pt-2">
       <Menu
         className="mr-auto hover:bg-muted-foreground/30 rounded-full p-2 cursor-pointer"
         onClick={handleOpen}
