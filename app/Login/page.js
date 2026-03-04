@@ -2,10 +2,15 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import {
+  signInWithEmailAndPassword,
+  sendEmailVerification,
+  getMultiFactorResolver,
+  PhoneMultiFactorGenerator,
+} from "firebase/auth";
 import { auth } from "./Firebase/firebase";
+import { setPendingMfa } from "./TwoFactor/mfaStore";
 import { useRouter } from "next/navigation";
-import { sendEmailVerification } from "firebase/auth";
 import Image from "next/image";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +31,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     try {
       const cred = await signInWithEmailAndPassword(auth, username, password);
       const user = cred.user;
@@ -36,13 +42,54 @@ export default function LoginPage() {
           "Your login credentials are saved. Please verify your email and login again.",
           { position: "top-center" },
         );
-
         return;
       }
 
       router.push("/Appointments");
     } catch (err) {
       console.log(err);
+
+      // ✅ MFA challenge required (SMS second factor)
+      if (err?.code === "auth/multi-factor-auth-required") {
+        try {
+          const resolver = getMultiFactorResolver(auth, err);
+
+          // Pick the first phone factor on the account (you can expand later for multiple factors)
+          const phoneHint = resolver.hints.find(
+            (hint) => hint.factorId === PhoneMultiFactorGenerator.FACTOR_ID,
+          );
+
+          if (!phoneHint) {
+            toast.warning(
+              "This account requires 2FA, but no SMS phone factor was found.",
+              { position: "top-center" },
+            );
+            return;
+          }
+
+          setPendingMfa({
+            resolver,
+            hint: phoneHint,
+            selectedHintUid: phoneHint.uid,
+          });
+
+          toast.info(
+            `2FA required. We’ll send a code to ${phoneHint.phoneNumber || "your phone"}.`,
+            { position: "top-center" }
+          );
+
+          router.push("/Login/TwoFactor");
+          return;
+          
+        } catch (mfaErr) {
+          console.log(mfaErr);
+          toast.warning("Could not start 2FA. Please try again.", {
+            position: "top-center",
+          });
+          return;
+        }
+      }
+
       toast.warning(
         "Your login credentials could not be processed. Please check your credentials and try again.",
         { position: "top-center" },
@@ -91,6 +138,7 @@ export default function LoginPage() {
             value={username}
             onChange={(username) => setUsername(username.target.value)}
           />
+
           <InputGroup className="bg-slate-50 text-center">
             <InputGroupInput
               type={showPassword ? "text" : "password"}
@@ -98,25 +146,22 @@ export default function LoginPage() {
               placeholder="Password"
               value={password}
               onChange={(password) => setPassword(password.target.value)}
-            ></InputGroupInput>
+            />
             <InputGroupAddon align="inline-end">
               {showPassword ? (
                 <EyeOff
-                  onClick={() => {
-                    setShowPassword(!showPassword);
-                  }}
+                  onClick={() => setShowPassword(!showPassword)}
                   style={{ cursor: "pointer" }}
                 />
               ) : (
                 <Eye
-                  onClick={() => {
-                    setShowPassword(!showPassword);
-                  }}
+                  onClick={() => setShowPassword(!showPassword)}
                   style={{ cursor: "pointer" }}
                 />
               )}
             </InputGroupAddon>
           </InputGroup>
+
           <Button
             className="bg-[#01488D] hover:bg-[#7BC043]/80 hover:text-white/60 cursor-pointer"
             type="submit"
@@ -128,6 +173,7 @@ export default function LoginPage() {
         <p
           style={{ backgroundColor: "#000000", height: "1px", width: "100%" }}
         ></p>
+
         <p style={{ color: "#000000" }}>
           <Link
             style={{ color: "#00AEEF", textDecoration: "underline" }}
