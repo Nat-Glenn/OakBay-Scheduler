@@ -1,0 +1,393 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import {
+  PhoneAuthProvider,
+  PhoneMultiFactorGenerator,
+  RecaptchaVerifier,
+} from "firebase/auth";
+import { auth } from "../Firebase/firebase";
+import { getPendingMfa, clearPendingMfa } from "./mfaStore";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
+
+export default function TwoFactorPage() {
+  const router = useRouter();
+
+  const [verificationCode, setVerificationCode] = useState("");
+  const [verificationId, setVerificationId] = useState("");
+  const [maskedPhone, setMaskedPhone] = useState("");
+  const [isSendingCode, setIsSendingCode] = useState(false);
+  const [isVerifyingCode, setIsVerifyingCode] = useState(false);
+  const [isRecaptchaReady, setIsRecaptchaReady] = useState(false);
+  const [showCaptcha, setShowCaptcha] = useState(true);
+
+  const recaptchaRef = useRef(null);
+  const mountedRef = useRef(false);
+
+  const clearRecaptcha = () => {
+    try {
+      recaptchaRef.current?.clear();
+    } catch (e) {
+      // ignore cleanup errors
+    }
+
+    recaptchaRef.current = null;
+    setIsRecaptchaReady(false);
+
+    const el = document.getElementById("mfa-recaptcha-container");
+    if (el) el.innerHTML = "";
+  };
+
+  const ensureRecaptcha = async ({ forceNew = false } = {}) => {
+    if (forceNew) {
+      clearRecaptcha();
+    }
+
+    if (recaptchaRef.current) return recaptchaRef.current;
+
+    const containerId = "mfa-recaptcha-container";
+    const el = document.getElementById(containerId);
+    if (!el) throw new Error("reCAPTCHA container not found");
+
+    el.innerHTML = "";
+
+    const verifier = new RecaptchaVerifier(auth, containerId, {
+      size: "normal",
+      callback: () => {
+        // User solved captcha
+      },
+      "expired-callback": () => {
+        toast.info("reCAPTCHA expired. Please check the box again.", {
+          position: "top-center",
+        });
+      },
+    });
+
+    recaptchaRef.current = verifier;
+
+    await verifier.render();
+
+    if (mountedRef.current) {
+      setIsRecaptchaReady(true);
+    }
+
+    return verifier;
+  };
+
+  const getMfaContext = () => {
+    const pending = getPendingMfa();
+    if (!pending?.resolver) return null;
+
+    const resolver = pending.resolver;
+    let hint = null;
+
+    // Prefer selected hint UID 
+    if (pending.selectedHintUid && Array.isArray(resolver.hints)) {
+      hint = resolver.hints.find((h) => h?.uid === pending.selectedHintUid) || null;
+    }
+
+    // Fallbacks
+    if (!hint && pending.hint) hint = pending.hint;
+
+    if (!hint && Array.isArray(resolver.hints)) {
+      hint =
+        resolver.hints.find(
+          (h) =>
+            h?.factorId === PhoneMultiFactorGenerator.FACTOR_ID && !!h?.uid
+        ) || null;
+    }
+
+    if (!hint || !resolver.session) return null;
+
+    return { resolver, hint };
+  };
+
+  const sendCode = async ({ forceNewRecaptcha = false } = {}) => {
+    const ctx = getMfaContext();
+
+    if (!ctx) {
+      toast.warning("Your 2FA session expired. Please log in again.", {
+        position: "top-center",
+      });
+      clearPendingMfa();
+      router.replace("/Login");
+      return;
+    }
+
+    setIsSendingCode(true);
+
+    try {
+      const { resolver, hint } = ctx;
+      setMaskedPhone(hint.phoneNumber || "your phone");
+
+      // Make sure captcha is visible while sending/resending
+      setShowCaptcha(true);
+
+      const verifier = await ensureRecaptcha({ forceNew: forceNewRecaptcha });
+
+      const phoneInfoOptions = {
+        multiFactorUid: hint.uid,
+        session: resolver.session,
+      };
+
+      const provider = new PhoneAuthProvider(auth);
+
+      const newVerificationId = await provider.verifyPhoneNumber(
+        phoneInfoOptions,
+        verifier
+      );
+
+      if (!mountedRef.current) return;
+
+      setVerificationId(newVerificationId);
+
+      //  Hide/remove captcha AFTER SMS was successfully sent
+      clearRecaptcha();
+      setShowCaptcha(false);
+
+      toast.success("Verification code sent by text message.", {
+        position: "top-center",
+      });
+    } catch (err) {
+      console.error("MFA sendCode error:", err);
+      console.error("code:", err?.code);
+      console.error("message:", err?.message);
+
+      // Rebuild widget after failures
+      clearRecaptcha();
+      setShowCaptcha(true);
+
+      if (err?.code === "auth/invalid-multi-factor-session") {
+        toast.warning("2FA session expired. Please log in again.", {
+          position: "top-center",
+        });
+        clearPendingMfa();
+        router.replace("/Login");
+        return;
+      }
+
+      if (err?.code === "auth/captcha-check-failed") {
+        toast.warning(
+          "reCAPTCHA validation failed. Please check the box again and click Send Code right away.",
+          { position: "top-center" }
+        );
+        return;
+      }
+
+      if (err?.code === "auth/invalid-app-credential") {
+        toast.warning(
+          "The reCAPTCHA token was invalid/expired. Please check the box again, then click Send Code.",
+          { position: "top-center" }
+        );
+        return;
+      }
+
+      if (err?.code === "auth/network-request-failed") {
+        toast.warning(
+          "Network request failed. Turn off ad blockers/VPN and try again.",
+          { position: "top-center" }
+        );
+        return;
+      }
+
+      toast.warning(
+        `Could not send 2FA code (${err?.code || "unknown"}). Please try again.`,
+        { position: "top-center" }
+      );
+    } finally {
+      if (mountedRef.current) {
+        setIsSendingCode(false);
+      }
+    }
+  };
+
+  const handleVerifyCode = async (e) => {
+    e.preventDefault();
+
+    const ctx = getMfaContext();
+
+    if (!ctx || !verificationId) {
+      toast.warning("Your 2FA session expired. Please log in again.", {
+        position: "top-center",
+      });
+      clearPendingMfa();
+      router.replace("/Login");
+      return;
+    }
+
+    if (!verificationCode.trim()) {
+      toast.warning("Enter the 6-digit code from your text message.", {
+        position: "top-center",
+      });
+      return;
+    }
+
+    setIsVerifyingCode(true);
+
+    try {
+      const cred = PhoneAuthProvider.credential(
+        verificationId,
+        verificationCode.trim()
+      );
+
+      const assertion = PhoneMultiFactorGenerator.assertion(cred);
+
+      await ctx.resolver.resolveSignIn(assertion);
+
+      clearPendingMfa();
+      clearRecaptcha();
+
+      toast.success("2FA verified. Welcome!", { position: "top-center" });
+      router.push("/Appointments");
+    } catch (err) {
+      console.error("MFA verify error:", err);
+      toast.warning("Invalid or expired code. Please try again.", {
+        position: "top-center",
+      });
+    } finally {
+      if (mountedRef.current) {
+        setIsVerifyingCode(false);
+      }
+    }
+  };
+
+  const handleResendCode = async () => {
+    // Show a fresh captcha for resend, then send again
+    setShowCaptcha(true);
+    await sendCode({ forceNewRecaptcha: true });
+  };
+
+  const handleCancel = () => {
+    clearPendingMfa();
+    clearRecaptcha();
+    router.replace("/Login");
+  };
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    const ctx = getMfaContext();
+    if (!ctx) {
+      toast.warning("Your 2FA session expired. Please log in again.", {
+        position: "top-center",
+      });
+      router.replace("/Login");
+      return () => {
+        mountedRef.current = false;
+      };
+    }
+
+    setMaskedPhone(ctx.hint.phoneNumber || "your phone");
+
+    if (!verificationId) {
+      ensureRecaptcha().catch((err) => {
+        console.error("reCAPTCHA init error:", err);
+        toast.warning("Could not load reCAPTCHA. Refresh and try again.", {
+          position: "top-center",
+        });
+      });
+    }
+
+    return () => {
+      mountedRef.current = false;
+      clearRecaptcha();
+    };
+  }, []);
+
+  return (
+    <main
+      className="flex flex-col items-center justify-center min-h-screen"
+      style={{ backgroundColor: "#00AEEF" }}
+    >
+      <div
+        className="flex flex-col items-center gap-5"
+        style={{
+          backgroundColor: "#FFFFFF",
+          borderRadius: "20px",
+          width: "420px",
+          padding: "32px",
+        }}
+      >
+        <p
+          style={{
+            textAlign: "center",
+            color: "#000000",
+            fontSize: "24px",
+            fontWeight: "bold",
+          }}
+        >
+          Two-Factor Verification
+        </p>
+
+        <p className="text-center text-sm text-slate-700">
+          {verificationId
+            ? `Enter the code sent to ${maskedPhone || "your phone"}.`
+            : `Complete reCAPTCHA, then click "Send Code" for ${maskedPhone || "your phone"}.`}
+        </p>
+
+        <div
+          id="mfa-recaptcha-container"
+          className={`w-full justify-center ${showCaptcha ? "flex" : "hidden"}`}
+        />
+
+        <form className="flex flex-col gap-4 w-full" onSubmit={handleVerifyCode}>
+          {!verificationId && (
+            <Button
+              type="button"
+              className="bg-[#01488D] hover:bg-[#7BC043]/80 hover:text-white/60 cursor-pointer"
+              onClick={() => sendCode()}
+              disabled={!isRecaptchaReady || isSendingCode}
+            >
+              {isSendingCode ? "Sending..." : "Send Code"}
+            </Button>
+          )}
+
+          <Input
+            className="bg-slate-50"
+            type="text"
+            placeholder="6-digit code"
+            inputMode="numeric"
+            maxLength={6}
+            value={verificationCode}
+            onChange={(e) => setVerificationCode(e.target.value)}
+            disabled={!verificationId}
+          />
+
+          <Button
+            className="bg-[#01488D] hover:bg-[#7BC043]/80 hover:text-white/60 cursor-pointer"
+            type="submit"
+            disabled={isSendingCode || isVerifyingCode || !verificationId}
+          >
+            {isVerifyingCode ? "Verifying..." : "Verify Code"}
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleResendCode}
+            disabled={isSendingCode || isVerifyingCode}
+          >
+            {isSendingCode ? "Sending..." : "Resend Code"}
+          </Button>
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleCancel}
+            disabled={isVerifyingCode}
+          >
+            Back to Login
+          </Button>
+        </form>
+
+        <p className="text-xs text-slate-500 text-center">
+          If this page is refreshed, your 2FA session may expire and you may need
+          to log in again.
+        </p>
+      </div>
+    </main>
+  );
+}
