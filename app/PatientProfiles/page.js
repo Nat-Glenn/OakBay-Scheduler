@@ -587,21 +587,15 @@ export default function PatientProfiles() {
                 <Table>
                   <TableHeader className="bg-input z-20 border-b border-border">
                     <TableRow className="hover:bg-transparent border-border">
-                      <TableHead className="w-[120px] text-ring font-bold">
+                      <TableHead className="w-[120px] text-button-primary font-bold">
                         ID
                       </TableHead>
-                      <TableHead className="text-muted-foreground">
-                        Name
-                      </TableHead>
-                      <TableHead className="text-muted-foreground">
-                        Age
-                      </TableHead>
-                      <TableHead className="text-muted-foreground">
+                      <TableHead className="text-foreground">Name</TableHead>
+                      <TableHead className="text-foreground">Age</TableHead>
+                      <TableHead className="text-foreground">
                         Last Visit
                       </TableHead>
-                      <TableHead className="text-muted-foreground">
-                        Status
-                      </TableHead>
+                      <TableHead className="text-foreground">Status</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -622,14 +616,14 @@ export default function PatientProfiles() {
                           }
                         }}
                       >
-                        <TableCell className="font-mono text-sm text-ring">
+                        <TableCell className="font-mono text-sm text-button-primary">
                           {patient.id}
                         </TableCell>
                         <TableCell className="font-medium text-foreground">
                           {patient.name}
                         </TableCell>
                         <TableCell>{patient.age}</TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
+                        <TableCell className="text-sm text-foreground">
                           {patient.lastVisit}
                         </TableCell>
                         <TableCell>
@@ -649,19 +643,19 @@ export default function PatientProfiles() {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-muted-foreground hover:text-white hover:bg-border"
+                                className="text-muted-foreground hover:bg-border"
                               >
                                 <MoreVertical size={16} />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className={`border-border text-foreground ${boolDark && "bg-[#1a1f29] text-background"}`}
+                              className={`border-border text-foreground`}
                             >
-                              <DropdownMenuItem className="focus:bg-border focus:text-white">
+                              <DropdownMenuItem className="focus:bg-border">
                                 View Details
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="focus:border focus:text-white">
+                              <DropdownMenuItem className="focus:bg-border">
                                 Edit
                               </DropdownMenuItem>
                               <DropdownMenuItem className="text-red-400 focus:bg-red-500/10 focus:text-red-400">
@@ -685,7 +679,7 @@ export default function PatientProfiles() {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-2 h-8 w-8 rounded-full text-slate-500 hover:bg-slate-800 hover:text-white z-10"
+                    className="absolute right-2 top-2 h-8 w-8 rounded-full text-white hover:bg-slate-800 hover:text-white/80 cursor-pointer z-10"
                     onClick={() => setSelectedPatient(null)}
                   >
                     <X size={16} />
@@ -700,7 +694,7 @@ export default function PatientProfiles() {
                         <p className="font-bold text-xl text-foreground leading-tight">
                           {selectedPatient.name}
                         </p>
-                        <p className="text-sm text-ring font-mono">
+                        <p className="text-sm text-button-primary font-mono">
                           {selectedPatient.id}
                         </p>
                       </div>
@@ -715,25 +709,33 @@ export default function PatientProfiles() {
                       </h3>
                       <div className="grid gap-4 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-slate-500">Date of Birth</span>
+                          <span className="text-muted-foreground font-bold">
+                            Date of Birth
+                          </span>
                           <span className="text-foreground">
                             {selectedPatient.dob} ({selectedPatient.age})
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500">Email</span>
+                          <span className="text-muted-foreground font-bold">
+                            Email
+                          </span>
                           <span className="text-foreground truncate ml-4">
                             {selectedPatient.email}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500">Phone</span>
+                          <span className="text-muted-foreground font-bold">
+                            Phone
+                          </span>
                           <span className="text-foreground">
                             {selectedPatient.phone}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-500">Status</span>
+                          <span className="text-muted-foreground font-bold">
+                            Status
+                          </span>
                           <Badge
                             className={
                               selectedPatient.status === "Active"
@@ -754,16 +756,18 @@ export default function PatientProfiles() {
                       </h3>
                       <div className="grid gap-4 text-sm">
                         <div className="flex justify-between">
-                          <span className="text-slate-500">Last Visit</span>
+                          <span className="text-muted-foreground font-bold">
+                            Last Visit
+                          </span>
                           <span className="text-foreground">
                             {selectedPatient.lastVisit}
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-slate-500">
+                          <span className="text-muted-foreground font-bold">
                             Next Appointment
                           </span>
-                          <span className="text-ring font-medium">
+                          <span className="text-button-primary font-medium">
                             {selectedPatient.nextAppt || "None scheduled"}
                           </span>
                         </div>

@@ -14,7 +14,7 @@ import { useDarkMode } from "@/utils/DarkModeProvider";
 
 export default function NavBarComp() {
   const router = useRouter();
-  const { boolOpen, handleOpen } = useNavBar();
+  const { navState, handleOpen } = useNavBar();
   const { boolDark, handleBool } = useDarkMode();
 
   useEffect(() => {
@@ -56,7 +56,7 @@ export default function NavBarComp() {
           </div>
         )}
       </div>
-      {boolOpen && <MenuComp closeNav={handleOpen} />}
+      {navState !== "closed" && <MenuComp />}
     </div>
   );
 }

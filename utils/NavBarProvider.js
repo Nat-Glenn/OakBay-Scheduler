@@ -5,12 +5,19 @@ import { useContext, createContext, useState } from "react";
 const NavBarContext = createContext();
 
 export const NavBarProvider = ({ children }) => {
-  const [boolOpen, setBoolOpen] = useState(false);
+  const [navState, setNavState] = useState("closed");
   const handleOpen = () => {
-    setBoolOpen((prev) => !prev);
+    setNavState("open");
+  };
+  const handleClose = () => {
+    if (navState === "open") {
+      setNavState("closing");
+    }
   };
   return (
-    <NavBarContext.Provider value={{ boolOpen, handleOpen }}>
+    <NavBarContext.Provider
+      value={{ navState, setNavState, handleOpen, handleClose }}
+    >
       {children}
     </NavBarContext.Provider>
   );

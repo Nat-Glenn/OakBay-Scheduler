@@ -14,8 +14,10 @@ import {
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/Login/Firebase/firebase";
 import { Menu } from "lucide-react";
+import { useNavBar } from "@/utils/NavBarProvider";
 
-export default function MenuComp({ closeNav }) {
+export default function MenuComp() {
+  const { handleClose, navState, setNavState } = useNavBar();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -41,17 +43,26 @@ export default function MenuComp({ closeNav }) {
 
   return (
     <div
-      onClick={closeNav}
-      className="fixed inset-0 flex items-start animate-in fade-in-4 duration-200 bg-gray-700/60 z-2"
+      onClick={handleClose}
+      onAnimationEnd={(e) => {
+        if (navState === "closing" && e.target === e.currentTarget) {
+          setNavState("closed");
+        }
+      }}
+      className={`fixed inset-0 duration-200 flex items-start bg-gray-700/60 z-2 will-change-transform
+        ${
+          navState === "open" ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className="flex flex-col animate-in slide-in-from-left-4 slide-out-from-left-4 duration-200 w-64 min-h-screen bg-background border-r border-white/5 shadow-2xl relative"
+        className={`flex flex-col w-64 min-h-screen bg-background border-r border-white/5 shadow-2xl relative transform transition-transform
+          ${navState === "open" ? "translate-x-0" : "-translate-x-full"}`}
       >
         {/* Logo Section */}
         <div className="flex flex-row self-center items-center py-2 px-2 w-full">
           <Menu
-            onClick={closeNav}
+            onClick={handleClose}
             size={40}
             className="mr-auto hover:bg-muted-foreground/30 p-2 rounded-full cursor-pointer"
           />
@@ -62,7 +73,7 @@ export default function MenuComp({ closeNav }) {
         {/* Navigation Links */}
         <Link
           href="/"
-          onClick={closeNav}
+          onClick={handleClose}
           className={CurrentPage("/Appointments")}
         >
           <GrScorecard />
@@ -70,7 +81,7 @@ export default function MenuComp({ closeNav }) {
         </Link>
 
         <Link
-          onClick={closeNav}
+          onClick={handleClose}
           href="/Billing"
           className={CurrentPage("/Billing")}
         >
@@ -79,7 +90,7 @@ export default function MenuComp({ closeNav }) {
         </Link>
 
         <Link
-          onClick={closeNav}
+          onClick={handleClose}
           href="/Practitioners"
           className={CurrentPage("/Practitioners")}
         >
@@ -88,7 +99,7 @@ export default function MenuComp({ closeNav }) {
         </Link>
 
         <Link
-          onClick={closeNav}
+          onClick={handleClose}
           href="/Summary"
           className={CurrentPage("/Summary")}
         >
@@ -98,7 +109,7 @@ export default function MenuComp({ closeNav }) {
 
         <Link
           href="/PatientProfiles"
-          onClick={closeNav}
+          onClick={handleClose}
           className={CurrentPage("/PatientProfiles")}
         >
           <GrUser />
@@ -107,7 +118,7 @@ export default function MenuComp({ closeNav }) {
 
         <Link
           href="/Settings"
-          onClick={closeNav}
+          onClick={handleClose}
           className={CurrentPage("/Settings")}
         >
           <GrSettingsOption />

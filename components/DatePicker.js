@@ -19,15 +19,15 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
 
-export default function DatePicker({ date, setDate }) {
+export default function DatePicker({ date, setDate, variant = "default" }) {
   const [open, setOpen] = useState(false);
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
+          variant={variant == "default" ? "outline" : "third"}
           data-empty={!date}
-          className="text-foreground sm:shrink md:w-[175px] justify-between text-left cursor-pointer"
+          className="sm:shrink md:w-[175px] justify-between text-left cursor-pointer"
           onClick={() => setOpen((prev) => !prev)}
         >
           {date ? (

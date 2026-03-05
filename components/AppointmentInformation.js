@@ -224,7 +224,9 @@ export default function AppointmentInformation({
                             setItemSearch={setEditType}
                           />
                           <Field>
-                            <FieldLabel htmlFor="date">Date</FieldLabel>
+                            <FieldLabel className="font-bold" htmlFor="date">
+                              Date
+                            </FieldLabel>
                             <DatePicker date={editDate} setDate={setEditDate} />
                           </Field>
                         </div>
@@ -254,11 +256,9 @@ export default function AppointmentInformation({
                 </div>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel className="mr-auto">
-                  Cancel
-                </AlertDialogCancel>
                 <AlertDialogAction
                   variant="destructive"
+                  className="mr-auto"
                   onClick={(e) => {
                     const success = handleDeleteAppointment();
                     if (!success) {
@@ -268,6 +268,7 @@ export default function AppointmentInformation({
                 >
                   Delete
                 </AlertDialogAction>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction
                   className="bg-button-primary"
                   onClick={(e) => {
@@ -286,32 +287,40 @@ export default function AppointmentInformation({
       </Item>
       <Item size="xs">
         <ItemContent>
-          <ItemTitle>Type</ItemTitle>
-          <ItemDescription>{active?.type}</ItemDescription>
+          <ItemTitle className="text-muted-foreground">Type</ItemTitle>
+          <ItemDescription className="text-foreground">
+            {active?.type}
+          </ItemDescription>
         </ItemContent>
       </Item>
       <Item size="xs">
         <ItemContent>
-          <ItemTitle>Practitioner</ItemTitle>
-          <ItemDescription>{`Dr. ${active?.practitioner}`}</ItemDescription>
+          <ItemTitle className="text-muted-foreground">Practitioner</ItemTitle>
+          <ItemDescription className="text-foreground">{`Dr. ${active?.practitioner}`}</ItemDescription>
         </ItemContent>
       </Item>
       <Item size="xs">
         <ItemContent>
-          <ItemTitle>Dob</ItemTitle>
-          <ItemDescription>{active?.dob}</ItemDescription>
+          <ItemTitle className="text-muted-foreground">Dob</ItemTitle>
+          <ItemDescription className="text-foreground">
+            {active?.dob}
+          </ItemDescription>
         </ItemContent>
       </Item>
       <Item size="xs">
         <ItemContent>
-          <ItemTitle>Email</ItemTitle>
-          <ItemDescription>{active?.email}</ItemDescription>
+          <ItemTitle className="text-muted-foreground">Email</ItemTitle>
+          <ItemDescription className="text-foreground">
+            {active?.email}
+          </ItemDescription>
         </ItemContent>
       </Item>
       <Item className="w-full" size="xs">
         <ItemContent>
-          <ItemTitle>Phone</ItemTitle>
-          <ItemDescription>{active?.phone}</ItemDescription>
+          <ItemTitle className="text-muted-foreground">Phone</ItemTitle>
+          <ItemDescription className="text-foreground">
+            {active?.phone}
+          </ItemDescription>
         </ItemContent>
       </Item>
     </PopoverHeader>

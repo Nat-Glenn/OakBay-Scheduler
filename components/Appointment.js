@@ -13,9 +13,19 @@ export default function Appointment({ appointment, active, setActive }) {
       case "checked-in":
         return "bg-[#A0CE66]";
       case "checked-out":
-        return "bg-[#002D58]";
+        return "bg-foreground";
       default:
-        return "bg-[#00D0FF]";
+        return "bg-[#002D58]";
+    }
+  };
+  const getStatusText = (status) => {
+    switch (status) {
+      case "checked-in":
+        return "text-foreground";
+      case "checked-out":
+        return "text-background";
+      default:
+        return "dark:text-foreground text-background";
     }
   };
   return (
@@ -30,8 +40,14 @@ export default function Appointment({ appointment, active, setActive }) {
         appointment.status,
       )} hover:opacity-80 cursor-pointer flex h-10 w-full truncate flex-col rounded-lg`}
     >
-      <p className="font-extrabold text-white text-sm">{appointment.name}</p>
-      <p className="font-extralight text-xs text-white/80">
+      <p
+        className={`${getStatusText(
+          appointment.status,
+        )} font-extrabold text-sm`}
+      >
+        {appointment.name}
+      </p>
+      <p className={`${getStatusText(appointment.status)} font-medium text-xs`}>
         {appointment.type}
       </p>
     </div>

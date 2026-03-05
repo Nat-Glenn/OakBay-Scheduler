@@ -28,27 +28,24 @@ import {
   FieldLabel,
   FieldSet,
 } from "@/components/ui/field";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  formatDay,
-  formatMonthDropdown,
-  formatYearDropdown,
-} from "react-day-picker";
+import DatePicker from "@/components/DatePicker";
+import FormField from "@/components/FormField";
+
 export default function AddPatientPage() {
+  const [stat, setStat] = useState("");
   const [dob, setDob] = useState("");
+  const status = [
+    { id: 1, name: "Active" },
+    { id: 2, name: "Inactive" },
+  ];
   return (
-    <main className="flex h-dvh w-full overflow-hidden bg-background">
+    <main className="flex h-dvh flex-col w-full overflow-hidden bg-background">
       <NavBarComp />
 
-      <div className="flex-1 min-w-0 overflow-y-auto no-scrollbar pb-8">
+      <div className="min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
         {/* HEADER SECTION */}
-        <header className="pb-4 p-8">
-          <div className="flex items-center gap-2 mb-2">
+        <header className="py-4">
+          <div className="flex items-center gap-4">
             {/* BACK BUTTON */}
             <Link
               href="/PatientProfiles"
@@ -61,9 +58,6 @@ export default function AddPatientPage() {
           <h1 className="text-3xl font-bold text-foreground">
             Register New Patient
           </h1>
-          <p className="text-muted-foreground">
-            Enter patient information to create a profile.
-          </p>
         </header>
 
         {/* FORM CONTAINER */}
@@ -83,151 +77,87 @@ export default function AddPatientPage() {
                   <FieldSet>
                     {/* NAME ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field>
-                        <FieldLabel htmlFor="firstName">First Name</FieldLabel>
-                        <Input
-                          id="firstName"
-                          placeholder="First Name"
-                          className="bg-input border border-border"
-                          required
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="lastName">Last Name</FieldLabel>
-                        <Input
-                          id="lastName"
-                          placeholder="Last Name"
-                          required
-                          className="bg-input border border-border"
-                        />
-                      </Field>
+                      <FormField
+                        fieldLabel="First Name"
+                        placeholder="First Name"
+                        variant="add"
+                      />
+                      <FormField
+                        fieldLabel="Last Name"
+                        placeholder="Last Name"
+                        variant="add"
+                      />
                     </div>
 
                     {/* DATE OF BIRTH & AGE ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <Field>
-                        <FieldLabel htmlFor="dateEdit">Date</FieldLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              id="date"
-                              variant="outline"
-                              className="justify-between text-left font-normal bg-input border-border"
-                            >
-                              {dob ? (
-                                [
-                                  formatMonthDropdown(dob) +
-                                    " " +
-                                    formatDay(dob) +
-                                    ", " +
-                                    " " +
-                                    formatYearDropdown(dob),
-                                ]
-                              ) : (
-                                <span>Pick a date</span>
-                              )}
-                              <ChevronDownIcon />
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="center">
-                            <Calendar
-                              mode="single"
-                              selected={dob}
-                              onSelect={(day) => {
-                                if (day) setDob(day);
-                              }}
-                            />
-                          </PopoverContent>
-                        </Popover>
+                        <FieldLabel className="font-bold" htmlFor="dateEdit">
+                          Date
+                        </FieldLabel>
+                        <DatePicker date={dob} setDate={setDob} />
                       </Field>
-                      <Field>
-                        <FieldLabel htmlFor="age">Age</FieldLabel>
-                        <Input
-                          id="age"
-                          type="number"
-                          min="0"
-                          max="150"
-                          className="bg-input border border-border"
-                          required
-                        />
-                      </Field>
+                      <FormField
+                        fieldLabel="Age"
+                        placeholder="0"
+                        variant="add"
+                        mode="number"
+                      />
                     </div>
 
                     {/* CONTACT INFORMATION ROW */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field>
-                        <FieldLabel htmlFor="email">Email</FieldLabel>
-                        <Input
-                          id="email"
-                          type="email"
-                          placeholder="johndoe@gmail.com"
-                          className="bg-input border border-border"
-                          required
-                        />
-                      </Field>
-                      <Field>
-                        <FieldLabel htmlFor="phone">Phone Number</FieldLabel>
-                        <Input
-                          id="phone"
-                          type="tel"
-                          placeholder="587-999-9999"
-                          className="bg-input border border-border"
-                          required
-                        />
-                      </Field>
+                      <FormField
+                        fieldLabel="Email"
+                        placeholder="johndoe@gmail.com"
+                        variant="add"
+                        mode="email"
+                      />
+                      <FormField
+                        fieldLabel="Phone Number"
+                        placeholder="587-999-9999"
+                        variant="add"
+                        mode="tel"
+                      />
                     </div>
 
                     {/* STATUS DROPDOWN */}
-                    <Field>
-                      <FieldLabel htmlFor="status">Status</FieldLabel>
-                      <Select defaultValue="Active">
-                        <SelectTrigger id="status">
-                          <SelectValue placeholder="Select status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Active">Active</SelectItem>
-                          <SelectItem value="Inactive">Inactive</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </Field>
+                    <FormField
+                      fieldLabel="Address"
+                      placeholder="123 Main St, Calgary, AB"
+                      variant="add"
+                    />
+
+                    <FormField
+                      fieldLabel="Status"
+                      displayText={stat}
+                      setItemSearch={setStat}
+                      itemsArray={status}
+                      variant="select"
+                    />
 
                     {/* ADDRESS */}
-                    <Field>
-                      <FieldLabel htmlFor="address">
-                        Address (Optional)
-                      </FieldLabel>
-                      <Input
-                        id="address"
-                        placeholder="123 Main St, Calgary, AB"
-                        className="bg-input border border-border"
-                      />
-                    </Field>
+                    <FormField
+                      fieldLabel="Address"
+                      placeholder="123 Main St, Calgary, AB"
+                      variant="add"
+                    />
 
                     {/* EMERGENCY CONTACT SECTION */}
                     <div className="pt-4 border-t">
                       <h3 className="font-bold mb-4">Emergency Contact</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Field>
-                          <FieldLabel htmlFor="emergencyName">
-                            Contact Name
-                          </FieldLabel>
-                          <Input
-                            id="emergencyName"
-                            placeholder="Jane Doe"
-                            className="bg-input border border-border"
-                          />
-                        </Field>
-                        <Field>
-                          <FieldLabel htmlFor="emergencyPhone">
-                            Contact Phone
-                          </FieldLabel>
-                          <Input
-                            id="emergencyPhone"
-                            type="tel"
-                            placeholder="587-888-8888"
-                            className="bg-input border border-border"
-                          />
-                        </Field>
+                        <FormField
+                          fieldLabel="Contact Name"
+                          placeholder="Jane Doe"
+                          variant="add"
+                        />
+                        <FormField
+                          fieldLabel="Contact Phone"
+                          placeholder="587-888-8888"
+                          variant="add"
+                          mode="tel"
+                        />
                       </div>
                     </div>
 

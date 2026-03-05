@@ -118,10 +118,10 @@ export default function Appointments() {
               className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
               onClick={() => date && setDate(addDays(date, 1))}
             />
-            <DatePicker date={date} setDate={setDate} />
+            <DatePicker date={date} setDate={setDate} variant="form" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="hidden md:flex w-[175px] cursor-pointer bg-secondary-button border-button-secondary-border hover:bg-button-secondary-foreground font-bold border text-button-secondary-text hover:text-foreground">
+                <Button className="hidden md:flex w-[175px] cursor-pointer bg-button-secondary-foreground border-button-secondary-border hover:bg-button-secondary-foreground/80 font-bold border text-white">
                   {`Dr. ${practitioner}`}
                   <ChevronDownIcon />
                 </Button>
