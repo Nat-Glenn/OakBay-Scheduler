@@ -106,10 +106,10 @@ export default function Appointments() {
       <NavBarComp />
       <div className="flex flex-col min-h-0 px-4 pb-4">
         <header className="flex flex-row justify-between items-center py-4">
-          <div className="flex flex-col">
+          <div className="hidden w-full md:inline-flex flex flex-col">
             <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
           </div>
-          <div className="flex flex-row items-center gap-4">
+          <div className="flex w-full flex-row items-center justify-between">
             <ChevronLeftIcon
               className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
               onClick={() => date && setDate(subDays(date, 1))}
@@ -121,7 +121,7 @@ export default function Appointments() {
             <DatePicker date={date} setDate={setDate} variant="form" />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="hidden md:flex w-[175px] cursor-pointer bg-button-secondary-foreground border-button-secondary-border hover:bg-button-secondary-foreground/80 font-bold border text-white">
+                <Button className="flex cursor-pointer bg-button-secondary-foreground border-button-secondary-border hover:bg-button-secondary-foreground/80 font-bold border text-white">
                   {`Dr. ${practitioner}`}
                   <ChevronDownIcon />
                 </Button>
@@ -143,6 +143,7 @@ export default function Appointments() {
               setAppointments={setAppointments}
               date={date}
               setDate={setDate}
+              variant={small ? "icon" : "default"}
             />
           </div>
         </header>

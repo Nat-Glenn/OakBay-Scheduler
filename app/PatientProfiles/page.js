@@ -543,15 +543,12 @@ export default function PatientProfiles() {
 
       <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden">
         {/* PAGE HEADER */}
-        <header className="py-4">
-          <h1 className="text-3xl font-bold text-foreground">
+        <header className="flex flex-row py-4 justify-between">
+          <h1 className="text-3xl w-full font-bold text-foreground">
             Patient Profiles
           </h1>
-        </header>
-
-        <div className="flex flex-col min-h-0">
           {/* SEARCH & ACTIONS BAR */}
-          <div className="flex flex-row items-center gap-4 pb-4">
+          <div className="flex flex-row items-center justify-between w-full">
             <div className="relative flex-1 max-w-md">
               <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
                 <InputGroupInput
@@ -578,14 +575,16 @@ export default function PatientProfiles() {
               </Button>
             </Link>
           </div>
+        </header>
 
+        <div className="flex flex-col min-h-0">
           {/* MAIN CONTENT AREA */}
-          <div className="flex flex-row gap-4 min-h-0">
+          <div className="flex flex-col md:flex-row gap-4 min-h-0">
             {/* PATIENT LIST TABLE */}
-            <div className="w-full rounded-xl border border-border bg-input/50 flex flex-col min-h-0">
-              <div className="flex-1 min-h-0 overflow-y-auto scrollbar-rounded">
+            <div className="rounded-xl border border-border bg-dropdown flex flex-1 flex-col min-h-0">
+              <div className="min-h-0 overflow-y-auto scrollbar-rounded rounded-xl">
                 <Table>
-                  <TableHeader className="bg-input z-20 border-b border-border">
+                  <TableHeader className="bg-input border-b border-border">
                     <TableRow className="hover:bg-transparent border-border">
                       <TableHead className="w-[120px] text-button-primary font-bold">
                         ID
@@ -673,8 +672,8 @@ export default function PatientProfiles() {
 
             {/* PATIENT DETAIL SIDE-CARD */}
             {selectedPatient && (
-              <div className="w-96 animate-in slide-in-from-right-4 duration-200">
-                <Card className="h-full bg-dropdown border-border text-foreground relative overflow-hidden flex flex-col">
+              <div className="flex w-full md:w-1/4 animate-in slide-in-from-bottom-4 md:slide-in-from-right-4 duration-200">
+                <Card className="h-full w-full bg-dropdown border-border text-foreground relative overflow-hidden flex flex-col">
                   {/* CLOSE BUTTON */}
                   <Button
                     variant="ghost"
@@ -701,7 +700,7 @@ export default function PatientProfiles() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-6 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
+                  <CardContent className="space-y-4 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
                     {/* PERSONAL INFO */}
                     <div className="space-y-4">
                       <h3 className="text-title text-xs font-black uppercase tracking-widest">
@@ -768,14 +767,14 @@ export default function PatientProfiles() {
                             Next Appointment
                           </span>
                           <span className="text-button-primary font-medium">
-                            {selectedPatient.nextAppt || "None scheduled"}
+                            {selectedPatient.nextAppt || "N/A"}
                           </span>
                         </div>
                       </div>
                     </div>
 
                     {/* ACTIONS */}
-                    <div className="pt-4 space-y-4 mt-auto">
+                    <div className="pt-4 space-y-2 mt-auto">
                       <Button className="w-full">View Full Profile</Button>
                       <Button variant="secondary" className="w-full">
                         Schedule Appointment

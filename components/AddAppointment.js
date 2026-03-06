@@ -25,12 +25,14 @@ import {
 } from "@/components/RenderAppointment";
 import DatePicker from "./DatePicker";
 import FormField from "@/components/FormField";
+import { Plus } from "lucide-react";
 
 export default function AddAppointment({
   appointments,
   setAppointments,
   date,
   setDate,
+  variant = "default",
 }) {
   const [formName, setFormName] = useState("");
   const [formType, setFormType] = useState("");
@@ -185,7 +187,11 @@ export default function AddAppointment({
   return (
     <AlertDialog className="bg-background">
       <AlertDialogTrigger asChild>
-        <Button className="w-[175px]">New Appointment</Button>
+        <Button
+          className={`${variant === "icon" ? "flex items-center" : "flex"}`}
+        >
+          {variant === "icon" ? "Add" : "New Appointment"}
+        </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="bg-background text-foreground">
         <AlertDialogHeader>

@@ -71,11 +71,7 @@ export default function MenuComp() {
         </div>
 
         {/* Navigation Links */}
-        <Link
-          href="/"
-          onClick={handleClose}
-          className={CurrentPage("/Appointments")}
-        >
+        <Link href="/" onClick={handleClose} className={CurrentPage("/")}>
           <GrScorecard />
           Appointments
         </Link>

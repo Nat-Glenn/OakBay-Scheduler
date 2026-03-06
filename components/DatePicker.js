@@ -27,7 +27,7 @@ export default function DatePicker({ date, setDate, variant = "default" }) {
         <Button
           variant={variant == "default" ? "outline" : "third"}
           data-empty={!date}
-          className="sm:shrink md:w-[175px] justify-between text-left cursor-pointer"
+          className="flex justify-between text-left cursor-pointer"
           onClick={() => setOpen((prev) => !prev)}
         >
           {date ? (
@@ -69,6 +69,7 @@ export default function DatePicker({ date, setDate, variant = "default" }) {
             if (day) setDate(day);
             setOpen(false);
           }}
+          defaultMonth={date}
         />
       </DropdownMenuContent>
     </DropdownMenu>
