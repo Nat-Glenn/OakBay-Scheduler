@@ -190,7 +190,8 @@ export default function AddAppointment({
         <Button
           className={`${variant === "icon" ? "flex items-center" : "flex"}`}
         >
-          {variant === "icon" ? "Add" : "New Appointment"}
+          <Plus size={18} />
+          {variant === "icon" ? "" : "New Appointment"}
         </Button>
       </AlertDialogTrigger>
       <AlertDialogContent className="bg-background text-foreground">

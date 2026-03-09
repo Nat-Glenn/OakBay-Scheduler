@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { ChevronDownIcon, X } from "lucide-react";
+import { CalendarPlus, ChevronDownIcon, X } from "lucide-react";
 import {
   formatDay,
   formatMonthDropdown,
@@ -30,7 +30,9 @@ export default function DatePicker({ date, setDate, variant = "default" }) {
           className="flex justify-between text-left cursor-pointer"
           onClick={() => setOpen((prev) => !prev)}
         >
-          {date ? (
+          {variant === "icon" ? (
+            <CalendarPlus />
+          ) : (
             [
               formatMonthDropdown(date) +
                 " " +
@@ -39,8 +41,6 @@ export default function DatePicker({ date, setDate, variant = "default" }) {
                 " " +
                 formatYearDropdown(date),
             ]
-          ) : (
-            <span>Pick a date</span>
           )}
           <ChevronDownIcon />
         </Button>

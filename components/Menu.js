@@ -104,12 +104,12 @@ export default function MenuComp() {
         </Link>
 
         <Link
-          href="/PatientProfiles"
+          href="/Patients"
           onClick={handleClose}
-          className={CurrentPage("/PatientProfiles")}
+          className={CurrentPage("/Patients")}
         >
           <GrUser />
-          Patient Profile
+          Patients
         </Link>
 
         <Link

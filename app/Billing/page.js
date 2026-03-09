@@ -29,6 +29,8 @@ import {
   DialogTrigger,
   DialogHeader,
 } from "@/components/ui/dialog";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
+
 function maskCard(num) {
   const digits = String(num || "").replace(/\D/g, "");
   const last4 = digits.slice(-4) || "••••";
@@ -52,6 +54,7 @@ export default function Billing() {
   const [manageBrand, setManageBrand] = useState("Visa");
   const [manageLast4, setManageLast4] = useState("");
   const [manageExp, setManageExp] = useState("");
+  const small = useMediaQuery("(max-width: 768px)");
   const handleReprint = (appt) => {
     // TODO: replace with your receipt logic (route to receipt page, open print window, fetch PDF, etc.)
     console.log("Reprinting receipt for:", appt);
@@ -188,17 +191,20 @@ export default function Billing() {
 
       <div className="flex flex-col min-h-0 overflow-hidden px-4 pb-4">
         {/* Header */}
-        <header className="py-4">
-          <h1 className="text-3xl font-bold text-foreground">Billing</h1>
-        </header>
-
-        <div className="flex-1 min-h-0 pb-8 overflow-y-auto scrollbar-rounded space-y-6">
+        <header className="flex flex-row gap-4 items-center py-4">
+          {!small && (
+            <div className="w-full flex flex-col">
+              <h1 className="text-3xl font-bold text-foreground">Billing</h1>
+            </div>
+          )}
           {/* Buttons */}
-          <div className="flex flex-wrap gap-3">
+          <div
+            className={`flex w-full flex-row ${small ? "" : "justify-end gap-4"}`}
+          >
             <Dialog open={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <PencilLine className="size-4" />
+                <Button variant="third" className={`${small ? "text-xs" : ""}`}>
+                  <PencilLine size={18} />
                   Billing Adjustment
                 </Button>
               </DialogTrigger>
@@ -227,8 +233,8 @@ export default function Billing() {
 
             <Dialog open={isReprintOpen} onOpenChange={setIsReprintOpen}>
               <DialogTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Printer className="size-4" />
+                <Button variant="third" className={`${small ? "text-xs" : ""}`}>
+                  <Printer size={18} />
                   Re-Print Receipt
                 </Button>
               </DialogTrigger>
@@ -254,9 +260,9 @@ export default function Billing() {
 
             <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
               <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="size-4" />
-                  Add Card
+                <Button>
+                  <Plus size={18} />
+                  {small ? "" : "New Card"}
                 </Button>
               </DialogTrigger>
 
@@ -313,7 +319,8 @@ export default function Billing() {
               </DialogContent>
             </Dialog>
           </div>
-
+        </header>
+        <div className="flex-1 min-h-0 pb-8 overflow-y-auto scrollbar-rounded space-y-6">
           <Separator className="bg-border" />
 
           {/* Cards on File */}

@@ -22,10 +22,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 export default function Summary() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const small = useMediaQuery("(max-width: 768px)");
 
   const recentVisits = [
     {
@@ -57,9 +59,13 @@ export default function Summary() {
 
       <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
         {/* PAGE HEADER */}
-        <header className="py-4">
-          <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-        </header>
+        {!small ? (
+          <header className="py-4">
+            <h1 className="text-3xl font-bold text-foreground">Summary</h1>
+          </header>
+        ) : (
+          <header className="py-2"></header>
+        )}
 
         {/* STATISTICAL OVERVIEW CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
@@ -97,7 +103,7 @@ export default function Summary() {
               <CardTitle className="text-xl font-bold">
                 Recent Patient Visits
               </CardTitle>
-              <Button className="flex h-12 text-md bg-secondary-button hover:bg-button-secondary-foreground border border-button-secondary-border text-button-secondary-text hover:text-black font-semibold">
+              <Button variant="secondary" className="h-12 font-semibold">
                 View All History
               </Button>
             </CardHeader>
@@ -215,9 +221,9 @@ export default function Summary() {
       </div>
 
       {/* AI CHATBOT UI */}
-      <div className="fixed bottom-8 right-8 flex flex-col items-end z-50">
+      <div className="fixed bottom-8 right-8 flex flex-col items-end z-1">
         {isChatOpen && (
-          <Card className="w-96 mb-6 shadow-2xl border-none overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300">
+          <Card className="w-75 lg:w-96 mb-2 shadow-2xl border-none overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300">
             <CardHeader className="bg-[#002D58] text-white p-5 flex flex-row items-center justify-between space-y-0">
               <div className="flex flex-col">
                 <CardTitle className="text-md font-bold text-white">
@@ -236,14 +242,14 @@ export default function Summary() {
                 <X size={22} />
               </Button>
             </CardHeader>
-            <CardContent className="p-6 h-80 overflow-y-auto bg-white flex flex-col justify-end">
+            <CardContent className="p-4 h-80 overflow-y-auto bg-white flex flex-col justify-end">
               <div className="bg-slate-100 p-4 rounded-2xl rounded-bl-none text-base text-slate-700 mb-2 max-w-[85%] shadow-sm">
                 Hello! How can I help you manage your practice today?
               </div>
             </CardContent>
             <div className="p-4 border-t bg-white">
               <form
-                className="flex gap-3 items-center"
+                className="flex gap-4 items-center"
                 onSubmit={(e) => {
                   e.preventDefault();
                   setQuery("");
@@ -251,7 +257,7 @@ export default function Summary() {
               >
                 <Input
                   placeholder="Type your message..."
-                  className="bg-slate-50 h-12 text-base border-slate-200 focus-visible:ring-[#002D58]"
+                  className="bg-slate-50 h-12 text-background border-slate-200 focus-visible:ring-[#002D58]"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                 />

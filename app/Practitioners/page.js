@@ -27,6 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 import { useState } from "react";
 
@@ -65,6 +66,7 @@ export default function Practitioners() {
   ];
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPractitioner, setSelectedPractitioner] = useState(null);
+  const small = useMediaQuery("(max-width: 768px)");
 
   const filteredPractitioners = practitioners.filter(
     (p) =>
@@ -78,12 +80,15 @@ export default function Practitioners() {
 
       <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden">
         {/* PAGE HEADER */}
-        <header className="flex flex-row py-4 justify-between">
-          <h1 className="text-3xl w-full font-bold text-foreground">
-            Patient Profiles
-          </h1>
+        <header className="flex flex-row py-4">
+          {!small && (
+            <h1 className="text-3xl w-full font-bold text-foreground">
+              Practitioners
+            </h1>
+          )}
+
           {/* SEARCH & ACTIONS BAR */}
-          <div className="flex flex-row items-center justify-between w-full">
+          <div className="flex flex-row justify-end gap-4 w-full">
             <div className="relative flex-1 max-w-md">
               <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
                 <InputGroupInput
@@ -105,7 +110,7 @@ export default function Practitioners() {
 
             <Button className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2 shadow-lg shadow-[#A0CE66]/10">
               <Plus size={18} />
-              Add Practitioner
+              {small ? "" : "Add Practitioner"}
             </Button>
           </div>
         </header>

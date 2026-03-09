@@ -11,11 +11,15 @@ import Image from "next/image";
 import { Moon, Sun } from "lucide-react";
 import { Switch } from "./ui/switch";
 import { useDarkMode } from "@/utils/DarkModeProvider";
+import { usePathname } from "next/navigation";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 export default function NavBarComp() {
   const router = useRouter();
   const { navState, handleOpen } = useNavBar();
   const { boolDark, handleBool } = useDarkMode();
+  const path = usePathname();
+  const small = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (user) => {
@@ -42,8 +46,14 @@ export default function NavBarComp() {
         size={40}
       />
 
-      <div>&nbsp;</div>
-      <div className="">
+      {small ? (
+        <div className="mr-auto ml-auto text-xl font-bold text-center">
+          {path === "/" ? "Scheduler" : path.split("/")}
+        </div>
+      ) : (
+        <div>&nbsp;</div>
+      )}
+      <div className="ml-auto">
         {boolDark ? (
           <div className="flex flex-row gap-2 items-center">
             <Moon />

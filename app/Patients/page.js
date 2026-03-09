@@ -28,6 +28,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 const Patients = [
   {
@@ -529,13 +530,13 @@ const Patients = [
 export default function PatientProfiles() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const small = useMediaQuery("(max-width: 768px)");
 
   const filteredPatients = Patients.filter(
     (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       p.id.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-  const { boolDark } = useDarkMode();
 
   return (
     <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
@@ -543,12 +544,15 @@ export default function PatientProfiles() {
 
       <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden">
         {/* PAGE HEADER */}
-        <header className="flex flex-row py-4 justify-between">
-          <h1 className="text-3xl w-full font-bold text-foreground">
-            Patient Profiles
-          </h1>
+        <header className="flex flex-row py-4">
+          {!small && (
+            <h1 className="text-3xl w-full font-bold text-foreground">
+              Patients
+            </h1>
+          )}
+
           {/* SEARCH & ACTIONS BAR */}
-          <div className="flex flex-row items-center justify-between w-full">
+          <div className="flex flex-row justify-end gap-4 w-full">
             <div className="relative flex-1 max-w-md">
               <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
                 <InputGroupInput
@@ -571,7 +575,7 @@ export default function PatientProfiles() {
             <Link href="/PatientProfiles/AddPatient">
               <Button className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2 shadow-lg shadow-[#A0CE66]/10">
                 <Plus size={18} />
-                Add Patient
+                {small ? "" : "Add Patient"}
               </Button>
             </Link>
           </div>

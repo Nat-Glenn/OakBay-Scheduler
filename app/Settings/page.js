@@ -26,12 +26,14 @@ import {
   DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
-
+import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { toast } from "sonner";
+
 export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
   const [resetStep, setResetStep] = useState("request");
   const [recoveryCode, setRecoveryCode] = useState("");
+  const small = useMediaQuery("(max-width: 768px)");
 
   const handleSave = () => {
     setIsSaving(true);
@@ -54,9 +56,14 @@ export default function Settings() {
       <div className="flex flex-col overflow-hidden px-4 pb-4">
         {/* PAGE HEADER & GLOBAL ACTIONS */}
         <header className="py-4 flex justify-between items-end">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-          </div>
+          {!small ? (
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Settings</h1>
+            </div>
+          ) : (
+            <div>&nbsp;</div>
+          )}
+
           {/* Save Button */}
           <Button onClick={handleSave} disabled={isSaving}>
             <Save size={18} />
@@ -78,7 +85,9 @@ export default function Settings() {
                 <div className="h-20 w-20 rounded-full bg-background border-2 flex items-center justify-center">
                   <User className="text-foreground" size={36} />
                 </div>
-                <Button size="lg">Change Photo</Button>
+                <Button variant="secondary" size="lg">
+                  Change Photo
+                </Button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-foreground">

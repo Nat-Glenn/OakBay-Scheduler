@@ -105,11 +105,16 @@ export default function Appointments() {
     <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
       <NavBarComp />
       <div className="flex flex-col min-h-0 px-4 pb-4">
-        <header className="flex flex-row justify-between items-center py-4">
-          <div className="hidden w-full md:inline-flex flex flex-col">
-            <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
-          </div>
-          <div className="flex w-full flex-row items-center justify-between">
+        <header className="flex flex-row gap-4 items-center py-4">
+          {!small && (
+            <div className="w-full flex flex-col">
+              <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
+            </div>
+          )}
+
+          <div
+            className={`flex w-full flex-row ${small ? "justify-between" : "justify-end gap-4"}`}
+          >
             <ChevronLeftIcon
               className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
               onClick={() => date && setDate(subDays(date, 1))}
@@ -118,10 +123,17 @@ export default function Appointments() {
               className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
               onClick={() => date && setDate(addDays(date, 1))}
             />
-            <DatePicker date={date} setDate={setDate} variant="form" />
+            <DatePicker
+              date={date}
+              setDate={setDate}
+              variant={small ? "icon" : ""}
+            />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="flex cursor-pointer bg-button-secondary-foreground border-button-secondary-border hover:bg-button-secondary-foreground/80 font-bold border text-white">
+                <Button
+                  variant="secondary"
+                  className="flex cursor-pointer text-white"
+                >
                   {`Dr. ${practitioner}`}
                   <ChevronDownIcon />
                 </Button>
@@ -148,26 +160,26 @@ export default function Appointments() {
           </div>
         </header>
         <div className="flex flex-row flex-1 min-h-0">
-          <div className="w-full flex-1 grid grid-cols-10 overflow-y-auto min-h-0 rounded-lg border border-foreground scrollbar-rounded">
-            <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-foreground">
+          <div className="w-full flex-1 grid grid-cols-10 overflow-y-auto min-h-0 rounded-lg border border-border scrollbar-rounded">
+            <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-foreground/20">
               Time
             </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20">
               Slot 1
             </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20">
               Slot 2
             </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20">
               Slot 3
             </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground">
+            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20">
               Slot 4
             </div>
             {time.map((hours) => (
               <React.Fragment key={hours}>
                 <div
-                  className="col-span-2 text-center text-foreground border-foreground border font-mono py-3"
+                  className="col-span-2 text-center text-foreground border-foreground/20 border font-mono py-3"
                   key={hours.key}
                 >
                   {hours}
