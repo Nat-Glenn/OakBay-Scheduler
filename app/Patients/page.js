@@ -572,7 +572,7 @@ export default function PatientProfiles() {
               </InputGroup>
             </div>
 
-            <Link href="/PatientProfiles/AddPatient">
+            <Link href="/Patients/AddPatient">
               <Button className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2 shadow-lg shadow-[#A0CE66]/10">
                 <Plus size={18} />
                 {small ? "" : "Add Patient"}

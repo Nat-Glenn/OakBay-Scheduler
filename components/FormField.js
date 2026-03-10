@@ -15,21 +15,26 @@ import {
 } from "./ui/input-group";
 import { Check, ChevronDownIcon, Search, X } from "lucide-react";
 import { Input } from "./ui/input";
+
 export default function FormField({
   fieldLabel,
   displayText,
   search,
   setSearch,
-  itemsArray,
+  itemsArray = [],
   emptyText,
   setItemSearch,
   placeholder,
   mode,
   variant = "default",
+  value,
+  onChange,
+  name,
 }) {
   return (
     <Field>
       <FieldLabel className="font-bold">{fieldLabel}</FieldLabel>
+
       {variant == "default" && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -59,6 +64,7 @@ export default function FormField({
                 </InputGroupButton>
               </InputGroupAddon>
             </InputGroup>
+
             {/* Results */}
             {itemsArray.length === 0 ? (
               <div className="px-2 py-1 text-sm text-foreground">
@@ -88,15 +94,20 @@ export default function FormField({
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+
       {variant === "add" && (
         <Input
           className="border-foreground shadow-xs outline-none"
           placeholder={placeholder}
-          type={mode}
-          min={0}
-          max={110}
+          type={mode || "text"}
+          min={mode === "number" ? 0 : undefined}
+          max={mode === "number" ? 110 : undefined}
+          value={value ?? ""}
+          onChange={onChange}
+          name={name}
         ></Input>
       )}
+
       {variant === "select" && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
