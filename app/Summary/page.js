@@ -325,7 +325,7 @@ export default function Summary() {
               <form className="flex gap-4 items-center" onSubmit={handleSend}>
                 <Input
                   placeholder="Type your message..."
-                  className="bg-slate-50 h-12 text-background border-slate-200 focus-visible:ring-[#002D58]"
+                  className="bg-slate-700 h-12 text-background border-slate-200 focus-visible:ring-[#002D58]"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   disabled={isLoading}
