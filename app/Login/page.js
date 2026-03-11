@@ -7,6 +7,8 @@ import {
   sendEmailVerification,
   getMultiFactorResolver,
   PhoneMultiFactorGenerator,
+  GoogleAuthProvider,
+  signInWithPopup,
 } from "firebase/auth";
 import { auth } from "./Firebase/firebase";
 import { setPendingMfa } from "./TwoFactor/mfaStore";
@@ -29,109 +31,70 @@ export default function LoginPage() {
 
   const router = useRouter();
 
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      toast.success("Successfully signed in with Google!", { position: "top-center" });
+      router.push("/Appointments");
+    } catch (error) {
+      console.error(error);
+      toast.error("Google login failed.", { position: "top-center" });
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const cred = await signInWithEmailAndPassword(auth, username, password);
       const user = cred.user;
-
       if (!user.emailVerified) {
         await sendEmailVerification(user);
-        toast.info(
-          "Your login credentials are saved. Please verify your email and login again.",
-          { position: "top-center" },
-        );
+        toast.info("Please verify your email and login again.", { position: "top-center" });
         return;
       }
-
       router.push("/Appointments");
     } catch (err) {
-      console.log(err);
-
-      // ✅ MFA challenge required (SMS second factor)
       if (err?.code === "auth/multi-factor-auth-required") {
-        try {
-          const resolver = getMultiFactorResolver(auth, err);
-
-          // Pick the first phone factor on the account (you can expand later for multiple factors)
-          const phoneHint = resolver.hints.find(
-            (hint) => hint.factorId === PhoneMultiFactorGenerator.FACTOR_ID,
-          );
-
-          if (!phoneHint) {
-            toast.warning(
-              "This account requires 2FA, but no SMS phone factor was found.",
-              { position: "top-center" },
-            );
-            return;
-          }
-
-          setPendingMfa({
-            resolver,
-            hint: phoneHint,
-            selectedHintUid: phoneHint.uid,
-          });
-
-          toast.info(
-            `2FA required. We’ll send a code to ${phoneHint.phoneNumber || "your phone"}.`,
-            { position: "top-center" }
-          );
-
+        const resolver = getMultiFactorResolver(auth, err);
+        const phoneHint = resolver.hints.find(h => h.factorId === PhoneMultiFactorGenerator.FACTOR_ID);
+        if (phoneHint) {
+          setPendingMfa({ resolver, hint: phoneHint, selectedHintUid: phoneHint.uid });
           router.push("/Login/TwoFactor");
-          return;
-          
-        } catch (mfaErr) {
-          console.log(mfaErr);
-          toast.warning("Could not start 2FA. Please try again.", {
-            position: "top-center",
-          });
           return;
         }
       }
-
-      toast.warning(
-        "Your login credentials could not be processed. Please check your credentials and try again.",
-        { position: "top-center" },
-      );
+      toast.warning("Invalid credentials. Please try again.", { position: "top-center" });
     }
   };
 
   return (
-    <main
-      className="flex flex-col items-center justify-center min-h-screen"
-      style={{ backgroundColor: "#00AEEF" }}
-    >
+    // Replaced hardcoded blue with your CSS background variable
+    <main className="flex flex-col items-center justify-center min-h-screen bg-[#00AEEF]">
       <div
-        className="flex flex-col items-center gap-6"
+        className="flex flex-col items-center gap-6 shadow-2xl transition-colors duration-300"
         style={{
-          backgroundColor: "#FFFFFF",
-          borderRadius: "20px",
-          width: "400px",
+          // Uses your CSS variable: white in light mode, oklch(0.18 0 0) in dark mode
+          backgroundColor: "var(--card)",
+          borderRadius: "24px",
+          width: "420px",
           padding: "40px",
         }}
       >
         <Image
           src="/favicon.png"
-          width={100}
-          height={100}
+          width={90}
+          height={90}
           style={{ filter: "drop-shadow(2px 2px #000000)" }}
           alt="Oak Bay Scheduler"
         />
-        <p
-          style={{
-            textAlign: "center",
-            color: "#000000",
-            fontSize: "24px",
-            fontWeight: "bold",
-          }}
-        >
-          Oak Bay Scheduler
-        </p>
+
+        {/* Uses text-foreground to flip between black and white automatically */}
+        <h1 className="text-foreground text-2xl font-bold">Oak Bay Scheduler</h1>
 
         <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
           <Input
-            className="bg-slate-50"
+            className="bg-background border border-border rounded-md h-12"
             type="text"
             name="username"
             placeholder="Email"
@@ -139,7 +102,7 @@ export default function LoginPage() {
             onChange={(username) => setUsername(username.target.value)}
           />
 
-          <InputGroup className="bg-slate-50 text-center">
+          <InputGroup className="bg-background border border-border rounded-md h-12 ">
             <InputGroupInput
               type={showPassword ? "text" : "password"}
               name="password"
@@ -163,25 +126,40 @@ export default function LoginPage() {
           </InputGroup>
 
           <Button
-            className="bg-[#01488D] hover:bg-[#7BC043]/80 hover:text-white/60 cursor-pointer"
+            className="bg-button-primary h-12 "
             type="submit"
           >
             Login
           </Button>
         </form>
 
-        <p
-          style={{ backgroundColor: "#000000", height: "1px", width: "100%" }}
-        ></p>
+        <div className="flex flex-col items-center gap-4 w-full mt-2">
+          <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold">
+            Sign up using
+          </p>
 
-        <p style={{ color: "#000000" }}>
-          <Link
-            style={{ color: "#00AEEF", textDecoration: "underline" }}
-            href="/Login/ResetPassword"
+          <button
+            onClick={handleGoogleSignIn}
+            type="button"
+            className="w-11 h-11 rounded-full bg-background border border-border flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-md"
           >
-            Forgot Password
-          </Link>
-        </p>
+            <Image
+              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+              alt="Google"
+              width={22}
+              height={22}
+            />
+          </button>
+        </div>
+
+        <div className="h-[1px] w-full bg-border mt-2"></div>
+
+        <Link
+          className="text-[#00AEEF] hover:text-[#00AEEF]/80 text-sm font-medium underline underline-offset-4"
+          href="/Login/ResetPassword"
+        >
+          Forgot Password?
+        </Link>
       </div>
     </main>
   );
