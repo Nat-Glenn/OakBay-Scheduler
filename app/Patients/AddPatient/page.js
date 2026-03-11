@@ -37,7 +37,7 @@ export default function AddPatientPage() {
 
   const [stat, setStat] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [dob, setDob] = useState("");
+  const [dob, setDob] = useState(new Date());
   const [error, setError] = useState("");
 
   const status = [
@@ -66,7 +66,11 @@ export default function AddPatientPage() {
     e.preventDefault();
     setError("");
 
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.phone.trim()) {
+    if (
+      !formData.firstName.trim() ||
+      !formData.lastName.trim() ||
+      !formData.phone.trim()
+    ) {
       setError("First name, last name, and phone number are required.");
       return;
     }
@@ -114,7 +118,7 @@ export default function AddPatientPage() {
           <div className="flex items-center gap-4">
             {/* BACK BUTTON */}
             <Link
-              href="/PatientProfiles"
+              href="/Patients"
               className="flex items-center text-ring hover:text-ring/60 font-medium"
             >
               <ChevronLeft size={20} />

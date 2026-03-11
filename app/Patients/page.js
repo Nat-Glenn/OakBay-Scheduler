@@ -676,7 +676,9 @@ export default function PatientProfiles() {
 
             {/* PATIENT DETAIL SIDE-CARD */}
             {selectedPatient && (
-              <div className="flex w-full md:w-1/4 animate-in slide-in-from-bottom-4 md:slide-in-from-right-4 duration-200">
+              <div
+                className={`flex w-full md:w-1/4 animate-in ${small ? "slide-in-from-bottom-4" : "slide-in-from-right-4"} duration-200`}
+              >
                 <Card className="h-full w-full bg-dropdown border-border text-foreground relative overflow-hidden flex flex-col">
                   {/* CLOSE BUTTON */}
                   <Button
