@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from "react";
 import NavBarComp from "@/components/NavBarComp";
 import {
@@ -27,6 +28,14 @@ import { useMediaQuery } from "@/utils/UseMediaQuery";
 export default function Summary() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [messages, setMessages] = useState([
+    {
+      role: "assistant",
+      content: "Hello! How can I help you manage your practice today?",
+    },
+  ]);
+
   const small = useMediaQuery("(max-width: 768px)");
 
   const recentVisits = [
@@ -53,12 +62,65 @@ export default function Summary() {
     },
   ];
 
+  async function handleSend(e) {
+    e.preventDefault();
+
+    const trimmed = query.trim();
+    if (!trimmed || isLoading) return;
+
+    const userMessage = { role: "user", content: trimmed };
+    const nextMessages = [...messages, userMessage];
+
+    setMessages(nextMessages);
+    setQuery("");
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/aiAssistant", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: trimmed,
+          messages: nextMessages.slice(-8),
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || `HTTP ${res.status}`);
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.reply || "Sorry, I couldn’t generate a response.",
+        },
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            error instanceof Error
+              ? error.message
+              : "Something went wrong while contacting the assistant.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
     <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
       <NavBarComp />
 
       <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
-        {/* PAGE HEADER */}
         {!small ? (
           <header className="py-4">
             <h1 className="text-3xl font-bold text-foreground">Summary</h1>
@@ -67,7 +129,6 @@ export default function Summary() {
           <header className="py-2"></header>
         )}
 
-        {/* STATISTICAL OVERVIEW CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4">
           <StatCard
             title="Total Patients"
@@ -95,9 +156,7 @@ export default function Summary() {
           />
         </div>
 
-        {/* MAIN DASHBOARD CONTENT */}
         <div className="pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* RECENT VISITS TABLE */}
           <Card className="lg:col-span-2 shadow-sm border-none">
             <CardHeader className="flex flex-row items-center justify-between py-6 px-8">
               <CardTitle className="text-xl font-bold">
@@ -131,7 +190,11 @@ export default function Summary() {
                       </TableCell>
                       <TableCell className="py-5 text-muted-foreground">
                         <span
-                          className={`text-sm px-3 py-1.5 rounded-full font-semibold ${visit.status === "Completed" ? "bg-[#a0ce66] text-black" : "bg-yellow-100 text-yellow-700"}`}
+                          className={`text-sm px-3 py-1.5 rounded-full font-semibold ${
+                            visit.status === "Completed"
+                              ? "bg-[#a0ce66] text-black"
+                              : "bg-yellow-100 text-yellow-700"
+                          }`}
                         >
                           {visit.status}
                         </span>
@@ -143,7 +206,6 @@ export default function Summary() {
             </CardContent>
           </Card>
 
-          {/* FINANCIAL OVERVIEW */}
           <Card className="shadow-sm border-none">
             <CardHeader className="py-6 px-8">
               <CardTitle className="text-xl font-bold">
@@ -152,7 +214,6 @@ export default function Summary() {
             </CardHeader>
             <CardContent className="px-8 pb-8">
               <div className="space-y-8">
-                {/* Medical Supplies */}
                 <div className="space-y-3">
                   <div className="flex justify-between text-base">
                     <span className="text-gray-600 font-medium">
@@ -168,7 +229,6 @@ export default function Summary() {
                   </div>
                 </div>
 
-                {/* Staff Salaries */}
                 <div className="space-y-3">
                   <div className="flex justify-between text-base">
                     <span className="text-gray-600 font-medium">
@@ -184,7 +244,6 @@ export default function Summary() {
                   </div>
                 </div>
 
-                {/* Facility Rent */}
                 <div className="space-y-3">
                   <div className="flex justify-between text-base">
                     <span className="text-gray-600 font-medium">
@@ -200,7 +259,6 @@ export default function Summary() {
                   </div>
                 </div>
 
-                {/* Total Summary Section */}
                 <div className="pt-6 border-t mt-8">
                   <div className="flex justify-between items-center mb-6">
                     <span className="text-lg font-bold text-foreground">
@@ -220,7 +278,6 @@ export default function Summary() {
         </div>
       </div>
 
-      {/* AI CHATBOT UI */}
       <div className="fixed bottom-8 right-8 flex flex-col items-end z-1">
         {isChatOpen && (
           <Card className="w-75 lg:w-96 mb-2 shadow-2xl border-none overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300">
@@ -242,27 +299,41 @@ export default function Summary() {
                 <X size={22} />
               </Button>
             </CardHeader>
-            <CardContent className="p-4 h-80 overflow-y-auto bg-white flex flex-col justify-end">
-              <div className="bg-slate-100 p-4 rounded-2xl rounded-bl-none text-base text-slate-700 mb-2 max-w-[85%] shadow-sm">
-                Hello! How can I help you manage your practice today?
-              </div>
+
+            <CardContent className="p-4 h-80 overflow-y-auto bg-white flex flex-col gap-3">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`p-4 rounded-2xl text-base shadow-sm max-w-[85%] ${
+                    message.role === "user"
+                      ? "bg-[#A0CE66] text-white self-end rounded-br-none"
+                      : "bg-slate-100 text-slate-700 self-start rounded-bl-none"
+                  }`}
+                >
+                  {message.content}
+                </div>
+              ))}
+
+              {isLoading && (
+                <div className="bg-slate-100 p-4 rounded-2xl rounded-bl-none text-base text-slate-500 max-w-[85%] shadow-sm self-start">
+                  Thinking...
+                </div>
+              )}
             </CardContent>
+
             <div className="p-4 border-t bg-white">
-              <form
-                className="flex gap-4 items-center"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  setQuery("");
-                }}
-              >
+              <form className="flex gap-4 items-center" onSubmit={handleSend}>
                 <Input
                   placeholder="Type your message..."
                   className="bg-slate-50 h-12 text-background border-slate-200 focus-visible:ring-[#002D58]"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
+                  disabled={isLoading}
                 />
                 <Button
+                  type="submit"
                   size="icon"
+                  disabled={isLoading || !query.trim()}
                   className="h-12 w-12 bg-[#A0CE66] hover:bg-[#A0CE66]/80 text-white shrink-0 shadow-sm transition-colors"
                 >
                   <Send size={20} />
@@ -271,9 +342,14 @@ export default function Summary() {
             </div>
           </Card>
         )}
+
         <Button
           onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`h-16 w-16 rounded-full shadow-lg transition-all duration-300 ${isChatOpen ? "bg-slate-200 text-slate-600 rotate-90" : "bg-[#7AC242] text-white hover:bg-[#7AC242]/90 scale-110"}`}
+          className={`h-16 w-16 rounded-full shadow-lg transition-all duration-300 ${
+            isChatOpen
+              ? "bg-slate-200 text-slate-600 rotate-90"
+              : "bg-[#7AC242] text-white hover:bg-[#7AC242]/90 scale-110"
+          }`}
         >
           {isChatOpen ? <X size={28} /> : <MessageCircle size={28} />}
         </Button>
@@ -282,7 +358,6 @@ export default function Summary() {
   );
 }
 
-// Reusable StatCard
 function StatCard({ title, value, icon, trend }) {
   return (
     <Card className="border-none shadow-sm hover:shadow-md transition-shadow">
