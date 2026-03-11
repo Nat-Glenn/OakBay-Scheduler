@@ -38,7 +38,7 @@ export default function Appointment({ appointment, active, setActive }) {
       }}
       className={`${getStatusColor(
         appointment.status,
-      )} hover:opacity-80 cursor-pointer flex h-10 w-full truncate flex-col rounded-lg`}
+      )} hover:opacity-80 cursor-pointer flex h-full w-full text-left text-ellipsis overflow-hidden p-1 gap-2 flex-col rounded-lg`}
     >
       <p
         className={`${getStatusText(
@@ -46,6 +46,9 @@ export default function Appointment({ appointment, active, setActive }) {
         )} font-extrabold text-sm`}
       >
         {appointment.name}
+      </p>
+      <p className={`${getStatusText(appointment.status)} font-medium text-xs`}>
+        {`${appointment.time} AM`}
       </p>
       <p className={`${getStatusText(appointment.status)} font-medium text-xs`}>
         {appointment.type}
