@@ -23,6 +23,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group";
 import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -35,7 +36,9 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
       await signInWithPopup(auth, provider);
-      toast.success("Successfully signed in with Google!", { position: "top-center" });
+      toast.success("Successfully signed in with Google!", {
+        position: "top-center",
+      });
       router.push("/Appointments");
     } catch (error) {
       console.error(error);
@@ -50,117 +53,120 @@ export default function LoginPage() {
       const user = cred.user;
       if (!user.emailVerified) {
         await sendEmailVerification(user);
-        toast.info("Please verify your email and login again.", { position: "top-center" });
+        toast.info("Please verify your email and login again.", {
+          position: "top-center",
+        });
         return;
       }
       router.push("/Appointments");
     } catch (err) {
       if (err?.code === "auth/multi-factor-auth-required") {
         const resolver = getMultiFactorResolver(auth, err);
-        const phoneHint = resolver.hints.find(h => h.factorId === PhoneMultiFactorGenerator.FACTOR_ID);
+        const phoneHint = resolver.hints.find(
+          (h) => h.factorId === PhoneMultiFactorGenerator.FACTOR_ID,
+        );
         if (phoneHint) {
-          setPendingMfa({ resolver, hint: phoneHint, selectedHintUid: phoneHint.uid });
+          setPendingMfa({
+            resolver,
+            hint: phoneHint,
+            selectedHintUid: phoneHint.uid,
+          });
           router.push("/Login/TwoFactor");
           return;
         }
       }
-      toast.warning("Invalid credentials. Please try again.", { position: "top-center" });
+      toast.warning("Invalid credentials. Please try again.", {
+        position: "top-center",
+      });
     }
   };
 
   return (
     // Replaced hardcoded blue with your CSS background variable
-    <main className="flex flex-col items-center justify-center min-h-screen bg-[#00AEEF]">
-      <div
-        className="flex flex-col items-center gap-6 shadow-2xl transition-colors duration-300"
-        style={{
-          // Uses your CSS variable: white in light mode, oklch(0.18 0 0) in dark mode
-          backgroundColor: "var(--card)",
-          borderRadius: "24px",
-          width: "420px",
-          padding: "40px",
-        }}
-      >
-        <Image
-          src="/favicon.png"
-          width={90}
-          height={90}
-          style={{ filter: "drop-shadow(2px 2px #000000)" }}
-          alt="Oak Bay Scheduler"
-        />
-
-        {/* Uses text-foreground to flip between black and white automatically */}
-        <h1 className="text-foreground text-2xl font-bold">Oak Bay Scheduler</h1>
-
-        <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
-          <Input
-            className="bg-background border border-border rounded-md h-12"
-            type="text"
-            name="username"
-            placeholder="Email"
-            value={username}
-            onChange={(username) => setUsername(username.target.value)}
+    <main className="flex flex-col items-center justify-center min-h-screen p-4 bg-sidebar">
+      <Card className="flex flex-col w-1/3 items-center shadow-2xl transition-colors duration-300">
+        <CardContent className="flex flex-col w-full gap-4 items-center">
+          <Image
+            src="/favicon.png"
+            width={90}
+            height={90}
+            style={{ filter: "drop-shadow(2px 2px #000000)" }}
+            alt="Oak Bay Scheduler"
           />
 
-          <InputGroup className="bg-background border border-border rounded-md h-12 ">
-            <InputGroupInput
-              type={showPassword ? "text" : "password"}
-              name="password"
-              placeholder="Password"
-              value={password}
-              onChange={(password) => setPassword(password.target.value)}
+          {/* Uses text-foreground to flip between black and white automatically */}
+          <h1 className="text-foreground text-2xl font-bold">
+            Oak Bay Scheduler
+          </h1>
+
+          <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
+            <Input
+              className="h-12"
+              type="text"
+              name="username"
+              placeholder="Email"
+              value={username}
+              onChange={(username) => setUsername(username.target.value)}
             />
-            <InputGroupAddon align="inline-end">
-              {showPassword ? (
-                <EyeOff
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{ cursor: "pointer" }}
-                />
-              ) : (
-                <Eye
-                  onClick={() => setShowPassword(!showPassword)}
-                  style={{ cursor: "pointer" }}
-                />
-              )}
-            </InputGroupAddon>
-          </InputGroup>
 
-          <Button
-            className="bg-button-primary h-12 "
-            type="submit"
+            <InputGroup className="border-border border h-12 ">
+              <InputGroupInput
+                className="h-full"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                placeholder="Password"
+                value={password}
+                onChange={(password) => setPassword(password.target.value)}
+              />
+              <InputGroupAddon align="inline-end">
+                {showPassword ? (
+                  <EyeOff
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ cursor: "pointer" }}
+                  />
+                ) : (
+                  <Eye
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{ cursor: "pointer" }}
+                  />
+                )}
+              </InputGroupAddon>
+            </InputGroup>
+
+            <Button className="bg-button-primary h-12 " type="submit">
+              Login
+            </Button>
+          </form>
+
+          <div className="flex flex-col items-center gap-4 w-full mt-2">
+            <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold">
+              Sign up using
+            </p>
+
+            <button
+              onClick={handleGoogleSignIn}
+              type="button"
+              className="w-11 h-11 rounded-full bg-background border border-border flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-md"
+            >
+              <Image
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt="Google"
+                width={22}
+                height={22}
+              />
+            </button>
+          </div>
+
+          <div className="h-[1px] w-full bg-border mt-2"></div>
+
+          <Link
+            className="text-[#00AEEF] hover:text-[#00AEEF]/80 text-sm font-medium underline underline-offset-4"
+            href="/Login/ResetPassword"
           >
-            Login
-          </Button>
-        </form>
-
-        <div className="flex flex-col items-center gap-4 w-full mt-2">
-          <p className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold">
-            Sign up using
-          </p>
-
-          <button
-            onClick={handleGoogleSignIn}
-            type="button"
-            className="w-11 h-11 rounded-full bg-background border border-border flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-md"
-          >
-            <Image
-              src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
-              alt="Google"
-              width={22}
-              height={22}
-            />
-          </button>
-        </div>
-
-        <div className="h-[1px] w-full bg-border mt-2"></div>
-
-        <Link
-          className="text-[#00AEEF] hover:text-[#00AEEF]/80 text-sm font-medium underline underline-offset-4"
-          href="/Login/ResetPassword"
-        >
-          Forgot Password?
-        </Link>
-      </div>
+            Forgot Password?
+          </Link>
+        </CardContent>
+      </Card>
     </main>
   );
 }
