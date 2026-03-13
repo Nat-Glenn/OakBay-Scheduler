@@ -58,6 +58,9 @@ model Appointment {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
+  reminderSent Boolean @default(false)
+  reminderSentAt DateTime?
+
   payment Payment?
 }
 
