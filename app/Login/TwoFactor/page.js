@@ -241,7 +241,7 @@ export default function TwoFactorPage() {
       clearRecaptcha();
 
       toast.success("2FA verified. Welcome!", { position: "top-center" });
-      router.push("/Appointments");
+      router.push("/");
     } catch (err) {
       console.error("MFA verify error:", err);
       toast.warning("Invalid or expired code. Please try again.", {

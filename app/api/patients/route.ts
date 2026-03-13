@@ -4,15 +4,38 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    const firstName = String(body.firstName ?? "").trim();
+    const lastName = String(body.lastName ?? "").trim();
+    const phone = String(body.phone ?? "").trim();
+    const email =
+      body.email !== undefined && body.email !== null
+        ? String(body.email).trim()
+        : null;
+    const ahcNumber =
+      body.ahcNumber !== undefined && body.ahcNumber !== null
+        ? String(body.ahcNumber).trim()
+        : null;
+    const notes =
+      body.notes !== undefined && body.notes !== null
+        ? String(body.notes).trim()
+        : null;
+
+    if (!firstName || !lastName || !phone) {
+      return Response.json(
+        { error: "First name, last name, and phone are required" },
+        { status: 400 }
+      );
+    }
+
     const patient = await prisma.patient.create({
       data: {
-        firstName: body.firstName,
-        lastName: body.lastName,
-        phone: body.phone,
-        email: body.email ?? null,
-        ahcNumber: body.ahcNumber ?? null,
+        firstName,
+        lastName,
+        phone,
+        email: email || null,
+        ahcNumber: ahcNumber || null,
         reminderOptIn: body.reminderOptIn ?? true,
-        notes: body.notes ?? null,
+        notes: notes || null,
       },
     });
 
@@ -41,7 +64,7 @@ export async function GET(req: Request) {
               { phone: { contains: search } },
             ],
           }
-        : undefined,
+        : undefined, 
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
       take: 25,
     });
