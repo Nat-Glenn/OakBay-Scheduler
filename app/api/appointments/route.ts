@@ -80,25 +80,42 @@ export async function POST(req: Request) {
       where: { id: patientId },
       select: { id: true },
     });
+
     if (!patient) return notFound("Patient not found");
 
     const providerId = body.providerId ? parseIntStrict(body.providerId) : null;
 
+    //Validate provider exists
     if (providerId) {
-      const overlap = await findProviderOverlap({ providerId, startTime, endTime });
+      const provider = await prisma.user.findUnique({
+        where: { id: providerId },
+        select: { id: true },
+      });
+
+      if (!provider) {
+        return notFound("Provider not found");
+      }
+
+      const overlap = await findProviderOverlap({
+        providerId,
+        startTime,
+        endTime,
+      });
+
       if (overlap) {
         return conflict("Time conflict for provider", { overlap });
       }
     }
 
     // Prevent patient double-booking (even if providerId is null)
-const patientOverlap = await findPatientOverlap({ patientId, startTime, endTime });
-if (patientOverlap) {
-  return conflict(
-    "Time conflict: patient already has an appointment in that time range",
-    { overlap: patientOverlap }
-  );
-}
+    const patientOverlap = await findPatientOverlap({ patientId, startTime, endTime });
+    
+    if (patientOverlap) {
+      return conflict(
+        "Time conflict: patient already has an appointment in that time range",
+        { overlap: patientOverlap }
+      );
+    }
 
     const appointment = await prisma.appointment.create({
       data: {

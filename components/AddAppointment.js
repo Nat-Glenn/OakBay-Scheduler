@@ -46,12 +46,9 @@ export default function AddAppointment({
   const [patient, setPatient] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [patients, setPatients] = useState([]);
+  const [practitioners, setPractitioners] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState(patientId || null);
   
-  const practitioners = [
-    { id: 1, name: "Brad Pritchard" },
-    { id: 2, name: "Tyler Vickerson" },
-  ];
   const types = [
     { id: 1, name: "Chiropractic Adjustment" },
     { id: 2, name: "Massage" },
@@ -124,6 +121,28 @@ export default function AddAppointment({
 
     loadPatients();
   }, [patientId]);
+
+  useEffect(() => {
+    async function loadPractitioners() {
+      try {
+        const res = await fetch("/api/practitioners");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load practitioners");
+        }
+
+        setPractitioners(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load practitioners.", {
+          position: "top-center",
+        });
+      }
+    }
+
+    loadPractitioners();
+  }, []);
 
   const filteredArray = (type) => {
     if(type === "customers") {
@@ -238,19 +257,27 @@ export default function AddAppointment({
       });
 
       const data = await res.json();
+      console.log("Created appointment response:", data);
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to create appointment");
       }
 
+      const providerName = data.provider?.name || formPractitioner;
+
+      const patientName =
+        data.patient
+          ? `${data.patient.firstName ?? ""} ${data.patient.lastName ?? ""}`.trim()
+          : formName || "Unknown Patient";
+
       const newAppointment = {
         id: data.id,
-        name: `${data.patient.firstName} ${data.patient.lastName}`,
+        name: patientName,
         dob: "—",
-        email: data.patient.email || "—",
-        phone: data.patient.phone,
+        email: data.patient?.email || "—",
+        phone: data.patient?.phone || "—",
         type: data.type,
-        practitioner: data.provider?.name || formPractitioner,
+        practitioner: providerName,
         time: formTime,
         slot: availableSlot,
         date: formattedDate,
