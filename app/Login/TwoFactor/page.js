@@ -26,16 +26,23 @@ export default function TwoFactorPage() {
 
   const recaptchaRef = useRef(null);
   const mountedRef = useRef(false);
+  const initStartedRef = useRef(false);
 
   const clearRecaptcha = () => {
     try {
-      recaptchaRef.current?.clear();
+      if (recaptchaRef.current) {
+        recaptchaRef.current.clear();
+      }
     } catch (e) {
       // ignore cleanup errors
     }
 
     recaptchaRef.current = null;
-    setIsRecaptchaReady(false);
+    initStartedRef.current = false;
+
+    if (mountedRef.current) {
+      setIsRecaptchaReady(false);
+    }
 
     const el = document.getElementById("mfa-recaptcha-container");
     if (el) el.innerHTML = "";
@@ -46,35 +53,52 @@ export default function TwoFactorPage() {
       clearRecaptcha();
     }
 
-    if (recaptchaRef.current) return recaptchaRef.current;
-
-    const containerId = "mfa-recaptcha-container";
-    const el = document.getElementById(containerId);
-    if (!el) throw new Error("reCAPTCHA container not found");
-
-    el.innerHTML = "";
-
-    const verifier = new RecaptchaVerifier(auth, containerId, {
-      size: "normal",
-      callback: () => {
-        // User solved captcha
-      },
-      "expired-callback": () => {
-        toast.info("reCAPTCHA expired. Please check the box again.", {
-          position: "top-center",
-        });
-      },
-    });
-
-    recaptchaRef.current = verifier;
-
-    await verifier.render();
-
-    if (mountedRef.current) {
-      setIsRecaptchaReady(true);
+    if (recaptchaRef.current) {
+      return recaptchaRef.current;
     }
 
-    return verifier;
+    if (initStartedRef.current) {
+      return null;
+    }
+
+    initStartedRef.current = true;
+
+    try {
+      const containerId = "mfa-recaptcha-container";
+      const el = document.getElementById(containerId);
+
+      if (!el) {
+        initStartedRef.current = false;
+        throw new Error("reCAPTCHA container not found");
+      }
+
+      el.innerHTML = "";
+
+      const verifier = new RecaptchaVerifier(auth, containerId, {
+        size: "normal",
+        callback: () => {
+          // solved
+        },
+        "expired-callback": () => {
+          toast.info("reCAPTCHA expired. Please check the box again.", {
+            position: "top-center",
+          });
+        },
+      });
+
+      await verifier.render();
+
+      recaptchaRef.current = verifier;
+
+      if (mountedRef.current) {
+        setIsRecaptchaReady(true);
+      }
+
+      return verifier;
+    } catch (err) {
+      initStartedRef.current = false;
+      throw err;
+    }
   };
 
   const getMfaContext = () => {
@@ -84,25 +108,23 @@ export default function TwoFactorPage() {
     const resolver = pending.resolver;
     let hint = null;
 
-    // Prefer selected hint UID 
     if (pending.selectedHintUid && Array.isArray(resolver.hints)) {
-      hint = resolver.hints.find((h) => h?.uid === pending.selectedHintUid) || null;
+      hint =
+        resolver.hints.find((h) => h?.uid === pending.selectedHintUid) || null;
     }
 
-    // Fallbacks
     if (!hint && pending.hint) hint = pending.hint;
 
     if (!hint && Array.isArray(resolver.hints)) {
       hint =
         resolver.hints.find(
-          (h) =>
-            h?.factorId === PhoneMultiFactorGenerator.FACTOR_ID && !!h?.uid
+          (h) => h?.factorId === PhoneMultiFactorGenerator.FACTOR_ID && !!h?.uid,
         ) || null;
     }
 
     if (!hint || !resolver.session) return null;
 
-    return { resolver, hint };
+    return { resolver, hint, pending };
   };
 
   const sendCode = async ({ forceNewRecaptcha = false } = {}) => {
@@ -122,11 +144,16 @@ export default function TwoFactorPage() {
     try {
       const { resolver, hint } = ctx;
       setMaskedPhone(hint.phoneNumber || "your phone");
-
-      // Make sure captcha is visible while sending/resending
       setShowCaptcha(true);
 
       const verifier = await ensureRecaptcha({ forceNew: forceNewRecaptcha });
+
+      if (!verifier) {
+        toast.warning("reCAPTCHA is still loading. Please try again.", {
+          position: "top-center",
+        });
+        return;
+      }
 
       const phoneInfoOptions = {
         multiFactorUid: hint.uid,
@@ -137,14 +164,13 @@ export default function TwoFactorPage() {
 
       const newVerificationId = await provider.verifyPhoneNumber(
         phoneInfoOptions,
-        verifier
+        verifier,
       );
 
       if (!mountedRef.current) return;
 
       setVerificationId(newVerificationId);
 
-      //  Hide/remove captcha AFTER SMS was successfully sent
       clearRecaptcha();
       setShowCaptcha(false);
 
@@ -156,7 +182,6 @@ export default function TwoFactorPage() {
       console.error("code:", err?.code);
       console.error("message:", err?.message);
 
-      // Rebuild widget after failures
       clearRecaptcha();
       setShowCaptcha(true);
 
@@ -172,30 +197,30 @@ export default function TwoFactorPage() {
       if (err?.code === "auth/captcha-check-failed") {
         toast.warning(
           "reCAPTCHA validation failed. Please check the box again and click Send Code right away.",
-          { position: "top-center" }
+          { position: "top-center" },
         );
         return;
       }
 
       if (err?.code === "auth/invalid-app-credential") {
         toast.warning(
-          "The reCAPTCHA token was invalid/expired. Please check the box again, then click Send Code.",
-          { position: "top-center" }
+          "The reCAPTCHA token was invalid or expired. Please check the box again, then click Send Code.",
+          { position: "top-center" },
         );
         return;
       }
 
       if (err?.code === "auth/network-request-failed") {
         toast.warning(
-          "Network request failed. Turn off ad blockers/VPN and try again.",
-          { position: "top-center" }
+          "Network request failed. Turn off ad blockers or VPN and try again.",
+          { position: "top-center" },
         );
         return;
       }
 
       toast.warning(
         `Could not send 2FA code (${err?.code || "unknown"}). Please try again.`,
-        { position: "top-center" }
+        { position: "top-center" },
       );
     } finally {
       if (mountedRef.current) {
@@ -230,18 +255,20 @@ export default function TwoFactorPage() {
     try {
       const cred = PhoneAuthProvider.credential(
         verificationId,
-        verificationCode.trim()
+        verificationCode.trim(),
       );
 
       const assertion = PhoneMultiFactorGenerator.assertion(cred);
 
       await ctx.resolver.resolveSignIn(assertion);
 
+      const redirectTo = ctx.pending?.postMfaRedirect || "/";
+
       clearPendingMfa();
       clearRecaptcha();
 
       toast.success("2FA verified. Welcome!", { position: "top-center" });
-      router.push("/");
+      router.push(redirectTo);
     } catch (err) {
       console.error("MFA verify error:", err);
       toast.warning("Invalid or expired code. Please try again.", {
@@ -255,7 +282,6 @@ export default function TwoFactorPage() {
   };
 
   const handleResendCode = async () => {
-    // Show a fresh captcha for resend, then send again
     setShowCaptcha(true);
     await sendCode({ forceNewRecaptcha: true });
   };
@@ -275,6 +301,7 @@ export default function TwoFactorPage() {
         position: "top-center",
       });
       router.replace("/Login");
+
       return () => {
         mountedRef.current = false;
       };
@@ -282,14 +309,12 @@ export default function TwoFactorPage() {
 
     setMaskedPhone(ctx.hint.phoneNumber || "your phone");
 
-    if (!verificationId) {
-      ensureRecaptcha().catch((err) => {
-        console.error("reCAPTCHA init error:", err);
-        toast.warning("Could not load reCAPTCHA. Refresh and try again.", {
-          position: "top-center",
-        });
+    ensureRecaptcha().catch((err) => {
+      console.error("reCAPTCHA init error:", err);
+      toast.warning("Could not load reCAPTCHA. Refresh and try again.", {
+        position: "top-center",
       });
-    }
+    });
 
     return () => {
       mountedRef.current = false;

@@ -1,70 +1,182 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import NavBarComp from "@/components/NavBarComp";
+import {
+  connectGoogleAccount,
+  disconnectGoogleAccount,
+  isGoogleConnected,
+} from "./connectAccount";
 import {
   User,
   ShieldCheck,
   Save,
-  Mail,
   Lock,
   KeyRound,
-  PenLine,
-  Palette,
+  Link as LinkIcon,
+  Check,
+  Unlink,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
+import { toast } from "sonner";
+import { auth } from "@/app/Login/Firebase/firebase";
+import {
+  getMultiFactorResolver,
+  PhoneMultiFactorGenerator,
+} from "firebase/auth";
+import { setPendingMfa } from "@/app/Login/TwoFactor/mfaStore";
+import { useRouter } from "next/navigation";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
+  DialogDescription,
   DialogFooter,
+  DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
-import { useMediaQuery } from "@/utils/UseMediaQuery";
-import { toast } from "sonner";
+import { sendAdminPasswordReset } from "./resetpassword";
 
 export default function Settings() {
   const [isSaving, setIsSaving] = useState(false);
-  const [resetStep, setResetStep] = useState("request");
-  const [recoveryCode, setRecoveryCode] = useState("");
+  const [googleConnected, setGoogleConnected] = useState(false);
+  const [connectingGoogle, setConnectingGoogle] = useState(false);
+  const [disconnectingGoogle, setDisconnectingGoogle] = useState(false);
+  const [resettingPassword, setResettingPassword] = useState(false);
+
   const small = useMediaQuery("(max-width: 768px)");
+  const router = useRouter();
 
   const handleSave = () => {
     setIsSaving(true);
     setTimeout(() => setIsSaving(false), 800);
   };
 
-  const handlePasswordUpdate = () => {
-    if (recoveryCode.length !== 6) {
-      toast.warning("Please enter a valid 6-digit recovery code.");
-      return;
+  useEffect(() => {
+    setGoogleConnected(isGoogleConnected());
+  }, []);
+
+  const handleConnectGoogle = async () => {
+    try {
+      setConnectingGoogle(true);
+
+      await connectGoogleAccount();
+      setGoogleConnected(true);
+
+      toast.success("Google account successfully connected!");
+    } catch (error) {
+      console.error(error);
+
+      if (error?.code === "auth/multi-factor-auth-required") {
+        const resolver = getMultiFactorResolver(auth, error);
+        const phoneHint = resolver.hints.find(
+          (h) => h.factorId === PhoneMultiFactorGenerator.FACTOR_ID,
+        );
+
+        if (phoneHint) {
+          setPendingMfa({
+            resolver,
+            hint: phoneHint,
+            selectedHintUid: phoneHint.uid,
+            postMfaRedirect: "/Settings",
+            mfaContext: "connect-google",
+          });
+
+          router.push("/Login/TwoFactor");
+          return;
+        }
+
+        toast.error(
+          "A second factor is required, but no supported phone factor was found.",
+        );
+        return;
+      }
+
+      if (error?.code === "auth/provider-already-linked") {
+        setGoogleConnected(true);
+        toast.info("Google account is already connected.");
+        return;
+      }
+
+      if (error?.code === "auth/popup-closed-by-user") {
+        toast.warning("Google connection was cancelled.");
+        return;
+      }
+
+      if (error?.code === "auth/credential-already-in-use") {
+        toast.error("That Google account is already linked to another user.");
+        return;
+      }
+
+      toast.error(error?.message || "Failed to connect Google account.");
+    } finally {
+      setConnectingGoogle(false);
     }
-    // Proceed with update logic
-    setResetStep("request");
-    setRecoveryCode("");
+  };
+
+  const handleDisconnectGoogle = async () => {
+    try {
+      setDisconnectingGoogle(true);
+
+      await disconnectGoogleAccount();
+      setGoogleConnected(false);
+
+      toast.success("Google account disconnected.");
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.message || "Failed to disconnect Google account.");
+    } finally {
+      setDisconnectingGoogle(false);
+    }
+  };
+
+  const handleResetConfirm = async () => {
+    try {
+      const email = auth.currentUser?.email;
+
+      if (!email) {
+        toast.error("No authenticated email found.", {
+          position: "top-center",
+        });
+        return;
+      }
+
+      setResettingPassword(true);
+
+      await sendAdminPasswordReset(email);
+
+      toast.info("Password reset email sent. Check your inbox.", {
+        position: "top-center",
+      });
+
+      router.push("/Login");
+    } catch (err) {
+      console.error(err);
+      toast.error("Could not send password reset email.", {
+        position: "top-center",
+      });
+    } finally {
+      setResettingPassword(false);
+    }
   };
 
   return (
     <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
       <NavBarComp />
+
       <div className="flex flex-col overflow-hidden px-4 pb-4">
-        {/* PAGE HEADER & GLOBAL ACTIONS */}
         <header className="py-4 flex justify-between items-end">
           {!small ? (
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-            </div>
+            <h1 className="text-3xl font-bold text-foreground">Settings</h1>
           ) : (
             <div>&nbsp;</div>
           )}
 
-          {/* Save Button */}
           <Button onClick={handleSave} disabled={isSaving}>
             <Save size={18} />
             {isSaving ? "Saving..." : "Save Changes"}
@@ -72,7 +184,6 @@ export default function Settings() {
         </header>
 
         <div className="flex-1 overflow-y-auto space-y-4 pb-8 scrollbar-rounded min-h-0">
-          {/* ADMIN PROFILE SECTION */}
           <Card className="border-border bg-background">
             <CardHeader>
               <div className="flex items-center gap-2 text-foreground">
@@ -80,10 +191,11 @@ export default function Settings() {
                 <CardTitle>Admin Profile</CardTitle>
               </div>
             </CardHeader>
+
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4 pb-2">
                 <div className="h-20 w-20 rounded-full bg-background border-2 flex items-center justify-center">
-                  <User className="text-foreground" size={36} />
+                  <User size={36} />
                 </div>
                 <Button variant="secondary" size="lg">
                   Change Photo
@@ -93,21 +205,17 @@ export default function Settings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-foreground">
                 <div className="space-y-2">
                   <Label>Full Name</Label>
-                  <Input
-                    className="border-border bg-input text-foreground placeholder:text-muted-foreground"
-                    placeholder="Admin User"
-                  />
+                  <Input placeholder="Admin User" />
                 </div>
+
                 <div className="space-y-2">
                   <Label>Email Address</Label>
-                  <Input
-                    className="border-border bg-input text-foreground placeholder:text-muted-foreground"
-                    placeholder="admin@chiropractic.com"
-                  />
+                  <Input placeholder="admin@chiropractic.com" />
                 </div>
               </div>
             </CardContent>
           </Card>
+
           <Card className="border-border bg-background">
             <CardHeader>
               <div className="flex items-center gap-2 text-foreground">
@@ -115,116 +223,96 @@ export default function Settings() {
                 <CardTitle>Security & Access</CardTitle>
               </div>
             </CardHeader>
-            <CardContent className="space-y-6">
+
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-10">
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Lock size={16} className="text-muted-foreground" />
                   <p>Password Management</p>
                 </div>
+
                 <p className="text-sm text-muted-foreground">
                   Securely update your administrative credentials using email
                   verification.
                 </p>
 
-                <Dialog
-                  onOpenChange={(open) => {
-                    if (!open) {
-                      setResetStep("request");
-                      setRecoveryCode("");
-                    }
-                  }}
-                >
+                <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="destructive">
                       <KeyRound size={16} />
                       Reset Account Password
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
+
+                  <DialogContent className="sm:max-w-[425px] text-center">
+                    <DialogHeader className="items-center text-center">
                       <DialogTitle>Reset Password</DialogTitle>
                       <DialogDescription>
-                        {resetStep === "request"
-                          ? "Verify your identity via email to receive a recovery code."
-                          : "Enter the 6-digit code and choose a new password."}
+                        Are you sure you want to reset your password?
+                        <br />
+                        If you continue, a reset email will be sent and you will
+                        be logged out.
                       </DialogDescription>
                     </DialogHeader>
 
-                    {resetStep === "request" ? (
-                      <div className="grid gap-4 py-4">
-                        <Button
-                          variant="outline"
-                          className="justify-start gap-4 h-16 border-blue-100 hover:bg-blue-50"
-                          onClick={() => setResetStep("verify")}
-                        >
-                          <Mail className="text-blue-500" />
-                          <div className="text-left">
-                            <p className="text-sm font-bold">Email Recovery</p>
-                            <p className="text-xs text-muted-foreground">
-                              ad***@chiropractic.com
-                            </p>
-                          </div>
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="code">
-                            Recovery Code{" "}
-                            <span className="text-red-500">*</span>
-                          </Label>
-                          <Input
-                            id="code"
-                            placeholder="000000"
-                            className="text-center text-2xl tracking-[0.5em] font-mono"
-                            maxLength={6}
-                            value={recoveryCode}
-                            onChange={(e) => setRecoveryCode(e.target.value)}
-                            required
-                          />
-                        </div>
-                        <Separator className="my-2" />
-                        <div className="space-y-2">
-                          <Label htmlFor="new-pass">New Password</Label>
-                          <Input
-                            id="new-pass"
-                            type="password"
-                            placeholder="••••••••"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm-pass">
-                            Confirm New Password
-                          </Label>
-                          <Input
-                            id="confirm-pass"
-                            type="password"
-                            placeholder="••••••••"
-                          />
-                        </div>
-                      </div>
-                    )}
+                    <DialogFooter className="flex flex-col items-center justify-center gap-2 sm:flex-row sm:justify-center">
+                      <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                      </DialogClose>
 
-                    <DialogFooter>
-                      {resetStep === "verify" ? (
-                        <Button
-                          className="bg-[#A0CE66] hover:bg-[#A0CE66]/80 w-full disabled:opacity-50 disabled:cursor-not-allowed"
-                          onClick={handlePasswordUpdate}
-                          disabled={recoveryCode.length < 6}
-                        >
-                          Update Password
-                        </Button>
-                      ) : (
-                        <Button
-                          variant="ghost"
-                          className="w-full text-xs text-muted-foreground"
-                        >
-                          Contact System Support
-                        </Button>
-                      )}
+                      <Button
+                        variant="destructive"
+                        onClick={handleResetConfirm}
+                        disabled={resettingPassword}
+                      >
+                        {resettingPassword ? "Sending..." : "Continue"}
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm font-medium">
+                  <LinkIcon size={16} className="text-muted-foreground" />
+                  <p>Google Account</p>
+                </div>
+
+                <p className="text-sm text-muted-foreground">
+                  Connect your Google account to sign in faster and securely.
+                </p>
+
+                {googleConnected ? (
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button
+                      className="bg-green-600 hover:bg-green-600/80 cursor-default"
+                      disabled
+                    >
+                      <Check size={16} />
+                      Connected
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      onClick={handleDisconnectGoogle}
+                      disabled={disconnectingGoogle}
+                    >
+                      <Unlink size={16} />
+                      {disconnectingGoogle
+                        ? "Disconnecting..."
+                        : "Disconnect Google"}
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleConnectGoogle}
+                    disabled={connectingGoogle}
+                    variant="secondary"
+                  >
+                    <LinkIcon size={16} />
+                    {connectingGoogle ? "Connecting..." : "Connect Google"}
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
