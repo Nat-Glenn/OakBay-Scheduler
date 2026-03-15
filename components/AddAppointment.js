@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -33,39 +34,23 @@ export default function AddAppointment({
   date,
   setDate,
   variant = "default",
+  patientId = null,
 }) {
+  const router = useRouter();
+  
   const [formName, setFormName] = useState("");
   const [formType, setFormType] = useState("");
   const [formPractitioner, setFormPractitioner] = useState("");
   const [formTime, setFormTime] = useState("");
   const [search, setSearch] = useState("");
-  const customers = [
-    {
-      id: "1",
-      name: "John Doe",
-      dob: "June 01, 2000 (25)",
-      email: "johndoe@gmail.com",
-      phone: "587-999-999",
-    },
-    {
-      id: "2",
-      name: "Bob",
-      dob: "August 29, 2000 (25)",
-      email: "bob@gmail.com",
-      phone: "517-949-929",
-    },
-    {
-      id: "3",
-      name: "Jane Smith",
-      dob: "March 12, 1995 (30)",
-      email: "jane@gmail.com",
-      phone: "403-222-1111",
-    },
-  ];
+  const [patient, setPatient] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [patients, setPatients] = useState([]);
+  const [selectedPatientId, setSelectedPatientId] = useState(patientId || null);
+  
   const practitioners = [
     { id: 1, name: "Brad Pritchard" },
-    { id: 2, name: "Kyle James" },
-    { id: 3, name: "Daniel Topala" },
+    { id: 2, name: "Tyler Vickerson" },
   ];
   const types = [
     { id: 1, name: "Chiropractic Adjustment" },
@@ -84,41 +69,110 @@ export default function AddAppointment({
     { id: 9, name: "11:00" },
     { id: 10, name: "11:15" },
   ];
-  const filteredArray = (type) => {
-    if (type == "customers") {
-      return customers.filter(
-        (c) =>
-          c.name.toLowerCase().includes(search.toLowerCase()) ||
-          c.id.toLowerCase().includes(search.toLowerCase()),
-      );
+
+  useEffect(() => {
+    async function loadPatient() {
+      if (!patientId) {
+        setPatient(null);
+        setFormName("");
+        setSelectedPatientId(null);
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/patients/${patientId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.Error || "Failed to load patient");
+        }
+
+        setPatient(data);
+        setSelectedPatientId(data.id);
+        setFormName(`${data.firstName} ${data.lastName}`);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load selected patient.", {
+          position: "top-center",
+        });
+      }
     }
-    if (type == "types") {
+
+    loadPatient();
+  }, [patientId]);
+
+  useEffect(() => {
+    async function loadPatients() {
+      if (patientId) return;
+
+      try {
+        const res = await fetch("/api/patients");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load patients");
+        }
+
+        setPatients(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load patients.", {
+          position: "top-center",
+        });
+      }
+    }
+
+    loadPatients();
+  }, [patientId]);
+
+  const filteredArray = (type) => {
+    if(type === "customers") {
+      return patients
+        .map((p) => ({
+          id: p.id,
+          name: `${p.firstName} ${p.lastName}`,
+          email: p.email,
+          email: p.email,
+        }))
+        .filter(
+          (p) =>
+            p.name.toLowerCase().includes(search.toLowerCase()) ||
+            String(p.id).includes(search)
+        );
+    }
+
+    if (type === "types") {
       return types.filter((c) =>
         c.name.toLowerCase().includes(search.toLowerCase()),
       );
     }
-    if (type == "practitioners") {
+
+    if (type === "practitioners") {
       return practitioners.filter((c) =>
         c.name.toLowerCase().includes(search.toLowerCase()),
       );
     }
-    if (type == "time") {
+    if (type === "time") {
       return time.filter((c) =>
         c.name.toLowerCase().includes(search.toLowerCase()),
       );
     }
+
+    return [];
   };
-  const handleCreateAppointment = () => {
-    if (!formName || !formType || !formPractitioner || !formTime || !date) {
-      toast.warning("Please fill out all of the fields.", {
+
+  const handleCreateAppointment = async () => {
+    const finalPatientId = patientId || selectedPatientId;
+
+    if (!finalPatientId) {
+      toast.warning("Please select a patient.", {
         position: "top-center",
       });
       return false;
     }
 
-    const customer = customers.find((c) => c.name === formName);
-    if (!customer) {
-      toast.warning("Customer needs to be selected from the list.", {
+    if (!formType || !formPractitioner || !formTime || !date) {
+      toast.warning("Please fill out all of the fields.", {
         position: "top-center",
       });
       return false;
@@ -153,37 +207,77 @@ export default function AddAppointment({
       return false;
     }
 
-    const newAppointment = {
-      id: appointments.length + 1,
-      name: customer.name,
-      dob: customer.dob,
-      email: customer.email,
-      phone: customer.phone,
-      type: formType,
-      practitioner: formPractitioner,
-      time: formTime,
-      slot: availableSlot,
-      date: formattedDate,
-      status: "scheduled",
-    };
+    try {
+      setSubmitting(true);
 
-    setAppointments((prev) => [...prev, newAppointment]);
+      const [hours, minutes] = formTime.split(":").map(Number);
 
-    // Reset form
-    setFormName("");
-    setFormType("");
-    setFormPractitioner("");
-    setFormTime("");
+      const start = new Date(date);
+      start.setHours(hours, minutes, 0, 0);
 
-    toast.success(
-      `Appointment created on ${newAppointment.date} at ${newAppointment.time} for Dr.${newAppointment.practitioner}.`,
-      {
+      const end = new Date(start);
+      end.setMinutes(end.getMinutes() + 15);
+
+      const practitioner = practitioners.find(
+        (p) => p.name === formPractitioner
+      );
+
+      const res = await fetch("/api/appointments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          patientId: Number(finalPatientId),
+          providerId: practitioner ? Number(practitioner.id) : null,
+          type: formType,
+          startTime: start.toISOString(),
+          endTime: end.toISOString(),
+          status: "confirmed",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to create appointment");
+      }
+
+      const newAppointment = {
+        id: data.id,
+        name: `${data.patient.firstName} ${data.patient.lastName}`,
+        dob: "—",
+        email: data.patient.email || "—",
+        phone: data.patient.phone,
+        type: data.type,
+        practitioner: data.provider?.name || formPractitioner,
+        time: formTime,
+        slot: availableSlot,
+        date: formattedDate,
+        status: data.status,
+      };
+
+      setAppointments((prev) => [...prev, newAppointment]);
+
+      toast.success(
+        `Appointment created on ${newAppointment.date} at ${newAppointment.time} for ${newAppointment.name}.`,
+        {
+          position: "top-center",
+        }
+      );
+
+      router.refresh();
+      return true;
+    } catch (err) {
+      toast.error(err.message || "Failed to create appointment.", {
         position: "top-center",
-      },
-    );
-
-    return true;
+      });
+      return false;
+    } finally {
+      setSubmitting(false);
+    }
   };
+
   return (
     <AlertDialog className="bg-background">
       <AlertDialogTrigger asChild>
@@ -194,9 +288,11 @@ export default function AddAppointment({
           {variant === "icon" ? "" : "New Appointment"}
         </Button>
       </AlertDialogTrigger>
+
       <AlertDialogContent className="bg-background text-foreground">
         <AlertDialogHeader>
           <AlertDialogTitle>Add a new appointment</AlertDialogTitle>
+
           <div className="w-full max-w-md">
             <form>
               <FieldGroup>
@@ -204,15 +300,36 @@ export default function AddAppointment({
                   <FieldDescription>
                     Create a new appointment and add it to the schedule.
                   </FieldDescription>
-                  <FormField
-                    fieldLabel={"Customer Name"}
-                    displayText={formName}
-                    search={search}
-                    setSearch={setSearch}
-                    itemsArray={filteredArray("customers")}
-                    emptyText={"No customer found"}
-                    setItemSearch={setFormName}
-                  />
+
+                  {patientId ? (
+                    <Field>
+                      <FieldLabel className="font-bold">
+                        Customer Name
+                      </FieldLabel>
+                      <div className="w-full rounded-md border border-foreground px-3 py-2 text-sm">
+                        {patient
+                          ? `${patient.firstName} ${patient.lastName}`
+                          : "No patient selected"}
+                      </div>
+                    </Field>
+                  ) : (
+                    <FormField 
+                      fieldLabel={"Customer Name"}
+                      displayText={formName}
+                      search={search}
+                      setSearch={setSearch}
+                      itemsArray={filteredArray("customers")}
+                      emptyText={"No patient found"}
+                      setItemSearch={(selectedName) => {
+                        setFormName(selectedName);
+                        const selected = patients.find(
+                          (p) => `${p.firstName} ${p.lastName}` === selectedName
+                        );
+                        setSelectedPatientId(selected ? selected.id : null);
+                      }}
+                    />
+                  )}
+
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       fieldLabel={"Type"}
@@ -223,6 +340,7 @@ export default function AddAppointment({
                       emptyText={"No types found"}
                       setItemSearch={setFormType}
                     />
+                  
                     <Field>
                       <FieldLabel className="font-bold" htmlFor="date">
                         Date
@@ -230,6 +348,7 @@ export default function AddAppointment({
                       <DatePicker date={date} setDate={setDate} />
                     </Field>
                   </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
                       fieldLabel={"Practitioner"}
@@ -255,18 +374,21 @@ export default function AddAppointment({
             </form>
           </div>
         </AlertDialogHeader>
+
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
+
           <AlertDialogAction
+            disabled={submitting}
             className="bg-button-primary hover:bg-button-primary-foreground text-white"
-            onClick={(e) => {
-              const success = handleCreateAppointment();
+            onClick={async (e) => {
+              const success = await handleCreateAppointment();
               if (!success) {
                 e.preventDefault();
               }
             }}
           >
-            Create
+            {submitting ? "Creating..." : "Create"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
