@@ -64,7 +64,7 @@ export async function POST(req: Request) {
             return notFound("Appointment not found");
         }
         // Cancelled appointment wont be checked out.
-        if (appointment.status === "CANCELLED") {
+        if (appointment.status === "cancelled") {
             return badRequest("Cannot record payment for a cancelled appointment");
         }
 
@@ -93,7 +93,7 @@ export async function POST(req: Request) {
             //Marks the appointment as completed once payment is recorded
             prisma.appointment.update({
                 where: { id: appointmentId },
-                data: { status: "COMPLETED" },
+                data: { status: "completed" },
             }),
         ]);
 
