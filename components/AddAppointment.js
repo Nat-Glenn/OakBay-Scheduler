@@ -35,9 +35,10 @@ export default function AddAppointment({
   setDate,
   variant = "default",
   patientId = null,
+  open,
 }) {
   const router = useRouter();
-  
+
   const [formName, setFormName] = useState("");
   const [formType, setFormType] = useState("");
   const [formPractitioner, setFormPractitioner] = useState("");
@@ -48,7 +49,7 @@ export default function AddAppointment({
   const [patients, setPatients] = useState([]);
   const [practitioners, setPractitioners] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState(patientId || null);
-  
+
   const types = [
     { id: 1, name: "Chiropractic Adjustment" },
     { id: 2, name: "Massage" },
@@ -145,7 +146,7 @@ export default function AddAppointment({
   }, []);
 
   const filteredArray = (type) => {
-    if(type === "customers") {
+    if (type === "customers") {
       return patients
         .map((p) => ({
           id: p.id,
@@ -156,7 +157,7 @@ export default function AddAppointment({
         .filter(
           (p) =>
             p.name.toLowerCase().includes(search.toLowerCase()) ||
-            String(p.id).includes(search)
+            String(p.id).includes(search),
         );
     }
 
@@ -238,7 +239,7 @@ export default function AddAppointment({
       end.setMinutes(end.getMinutes() + 15);
 
       const practitioner = practitioners.find(
-        (p) => p.name === formPractitioner
+        (p) => p.name === formPractitioner,
       );
 
       const res = await fetch("/api/appointments", {
@@ -265,10 +266,9 @@ export default function AddAppointment({
 
       const providerName = data.provider?.name || formPractitioner;
 
-      const patientName =
-        data.patient
-          ? `${data.patient.firstName ?? ""} ${data.patient.lastName ?? ""}`.trim()
-          : formName || "Unknown Patient";
+      const patientName = data.patient
+        ? `${data.patient.firstName ?? ""} ${data.patient.lastName ?? ""}`.trim()
+        : formName || "Unknown Patient";
 
       const newAppointment = {
         id: data.id,
@@ -290,7 +290,7 @@ export default function AddAppointment({
         `Appointment created on ${newAppointment.date} at ${newAppointment.time} for ${newAppointment.name}.`,
         {
           position: "top-center",
-        }
+        },
       );
 
       router.refresh();
@@ -306,7 +306,7 @@ export default function AddAppointment({
   };
 
   return (
-    <AlertDialog className="bg-background">
+    <AlertDialog defaultOpen={open} className="bg-background">
       <AlertDialogTrigger asChild>
         <Button
           className={`${variant === "icon" ? "flex items-center" : "flex"}`}
@@ -340,7 +340,7 @@ export default function AddAppointment({
                       </div>
                     </Field>
                   ) : (
-                    <FormField 
+                    <FormField
                       fieldLabel={"Customer Name"}
                       displayText={formName}
                       search={search}
@@ -350,7 +350,8 @@ export default function AddAppointment({
                       setItemSearch={(selectedName) => {
                         setFormName(selectedName);
                         const selected = patients.find(
-                          (p) => `${p.firstName} ${p.lastName}` === selectedName
+                          (p) =>
+                            `${p.firstName} ${p.lastName}` === selectedName,
                         );
                         setSelectedPatientId(selected ? selected.id : null);
                       }}
@@ -367,7 +368,7 @@ export default function AddAppointment({
                       emptyText={"No types found"}
                       setItemSearch={setFormType}
                     />
-                  
+
                     <Field>
                       <FieldLabel className="font-bold" htmlFor="date">
                         Date

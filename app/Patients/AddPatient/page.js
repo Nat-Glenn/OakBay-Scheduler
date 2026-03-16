@@ -3,6 +3,14 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NavBarComp from "@/components/NavBarComp";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from "@/components/ui/select";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,12 +20,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import {
-  Field,
-  FieldGroup,
-  FieldLabel,
-  FieldSet,
-} from "@/components/ui/field";
+import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
 
 export default function AddPatientPage() {
@@ -26,11 +29,39 @@ export default function AddPatientPage() {
   const [stat, setStat] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
+  const [dob, setDob] = useState({
+    year: "",
+    month: "",
+    day: "",
+  });
   const status = [
     { id: 1, name: "Active" },
     { id: 2, name: "Inactive" },
   ];
+
+  function getYearsRange() {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+
+    for (let y = currentYear; y >= 1900; y--) {
+      years.push(y);
+    }
+
+    return years;
+  }
+  function getMonthsRange() {
+    let months = [];
+    for (let i = 1; i <= 12; i++) {
+      months.push(i);
+    }
+    return months;
+  }
+  const getDaysInMonth = (year, month) => {
+    if (!year || !month) return [];
+
+    const days = new Date(year, month, 0).getDate();
+    return Array.from({ length: days }, (_, i) => i + 1);
+  };
 
   // UPDATED: dob is now part of formData for easier handling
   const [formData, setFormData] = useState({
@@ -43,6 +74,13 @@ export default function AddPatientPage() {
     notes: "",
   });
 
+  function updateDOB(field, value) {
+    setDob((prev) => ({
+      ...prev,
+      [field]: value,
+      ...(field === "month" || field === "year" ? { day: "" } : {}),
+    }));
+  }
   function handleChange(e) {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -50,6 +88,13 @@ export default function AddPatientPage() {
       [name]: value,
     }));
   }
+
+  const formattedDOB =
+    dob.year && dob.month && dob.day
+      ? `${dob.year}-${String(dob.month).padStart(2, "0")}-${String(
+          dob.day,
+        ).padStart(2, "0")}`
+      : null;
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -62,7 +107,9 @@ export default function AddPatientPage() {
       !formData.phone.trim() ||
       !formData.dob
     ) {
-      setError("First name, last name, phone number, and date of birth are required.");
+      setError(
+        "First name, last name, phone number, and date of birth are required.",
+      );
       return;
     }
 
@@ -80,7 +127,7 @@ export default function AddPatientPage() {
           phone: formData.phone.trim(),
           email: formData.email.trim() || null,
           ahcNumber: formData.ahcNumber.trim() || null,
-          dob: formData.dob, // HTML date input returns "YYYY-MM-DD"
+          dob: formattedDOB, // HTML date input returns "YYYY-MM-DD"
           notes: formData.notes.trim() || null,
           reminderOptIn: stat !== "Inactive",
         }),
@@ -102,7 +149,7 @@ export default function AddPatientPage() {
   }
 
   return (
-    <main className="flex h-dvh flex-col w-full overflow-hidden bg-background text-foreground">
+    <main className="flex h-dvh flex-col w-full bg-background text-foreground">
       <NavBarComp />
 
       <div className="min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
@@ -120,10 +167,14 @@ export default function AddPatientPage() {
         </header>
 
         <div className="flex justify-center">
-          <Card className="w-full h-full max-w-2xl bg-dropdown border-border">
+          <Card className="w-full h-full max-w-2xl bg-dropdown border-foreground">
             <CardHeader>
-              <CardTitle className="text-xl font-bold">Patient Information</CardTitle>
-              <CardDescription>Fill in the required patient details below.</CardDescription>
+              <CardTitle className="text-xl font-bold">
+                Patient Information
+              </CardTitle>
+              <CardDescription>
+                Fill in the required patient details below.
+              </CardDescription>
             </CardHeader>
 
             <CardContent>
@@ -179,20 +230,79 @@ export default function AddPatientPage() {
                         value={formData.ahcNumber}
                         onChange={handleChange}
                       />
-                      
-                      {/* UPDATED: Native HTML Date Input */}
-                      <div className="flex flex-col gap-2">
-                        <FieldLabel className="font-bold">Date of Birth</FieldLabel>
-                        <input
-                          type="date"
-                          name="dob"
-                          value={formData.dob}
-                          onChange={handleChange}
-                          className="flex h-10 w-full rounded-md border border-foreground bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        />
-                      </div>
-                    </div>
 
+                      {/* UPDATED: Native HTML Date Input */}
+                      <FieldGroup>
+                        <div className="grid grid-cols-3 gap-2">
+                          <Field>
+                            <FieldLabel>Year</FieldLabel>
+                            <Select
+                              onValueChange={(value) =>
+                                updateDOB("year", value)
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Year" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getYearsRange().map((year) => (
+                                  <SelectItem
+                                    key={year}
+                                    value={year.toString()}
+                                  >
+                                    {year}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </Field>
+                          <Field>
+                            <FieldLabel>Month</FieldLabel>
+                            <Select
+                              onValueChange={(value) =>
+                                updateDOB("month", value)
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Month" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getMonthsRange().map((month) => (
+                                  <SelectItem
+                                    key={month}
+                                    value={month.toString()}
+                                  >
+                                    {month}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </Field>
+                          <Field>
+                            <FieldLabel>Day</FieldLabel>
+                            <Select
+                              onValueChange={(value) => updateDOB("day", value)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Day" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {getDaysInMonth(dob.year, dob.month).map(
+                                  (day) => (
+                                    <SelectItem
+                                      key={day}
+                                      value={day.toString()}
+                                    >
+                                      {day}
+                                    </SelectItem>
+                                  ),
+                                )}
+                              </SelectContent>
+                            </Select>
+                          </Field>
+                        </div>
+                      </FieldGroup>
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         fieldLabel="Status"
@@ -206,7 +316,7 @@ export default function AddPatientPage() {
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="font-bold">Notes</FieldLabel>
                       <textarea
-                        className="w-full min-h-24 rounded-md border border-foreground px-3 py-2 text-sm bg-background text-foreground"
+                        className="w-full min-h-24 rounded-md border border-foreground px-3 py-2 text-sm bg-background dark:bg-input/30"
                         name="notes"
                         value={formData.notes}
                         onChange={handleChange}
@@ -215,7 +325,9 @@ export default function AddPatientPage() {
                     </Field>
 
                     {error && (
-                      <p className="pt-4 text-sm text-red-500 font-medium">{error}</p>
+                      <p className="pt-4 text-sm text-red-500 font-medium">
+                        {error}
+                      </p>
                     )}
 
                     <div className="flex gap-4 pt-6">

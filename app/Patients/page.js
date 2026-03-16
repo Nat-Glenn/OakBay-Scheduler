@@ -45,7 +45,7 @@ export default function PatientProfiles() {
         setError("");
 
         const res = await fetch(
-          `/api/patients?search=${encodeURIComponent(searchTerm)}`
+          `/api/patients?search=${encodeURIComponent(searchTerm)}`,
         );
         const data = await res.json();
 
@@ -59,7 +59,7 @@ export default function PatientProfiles() {
           const updatedSelected = data.find((p) => p.id === selectedPatient.id);
           // If the patient still exists, update the selected state with fresh data
           if (updatedSelected) {
-             setSelectedPatient(getDisplayedPatient(updatedSelected));
+            setSelectedPatient(getDisplayedPatient(updatedSelected));
           }
         }
       } catch (err) {
@@ -113,7 +113,7 @@ export default function PatientProfiles() {
           {/* SEARCH & ACTIONS BAR */}
           <div className="flex flex-row justify-end gap-4 w-full">
             <div className="relative flex-1 max-w-md">
-              <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
+              <InputGroup className="bg-input text-foreground placeholder:text-muted-foreground ">
                 <InputGroupInput
                   placeholder="Search by name or ID..."
                   className="focus-visible:ring-ring"
@@ -144,11 +144,11 @@ export default function PatientProfiles() {
           {/* MAIN CONTENT AREA */}
           <div className="flex flex-col md:flex-row gap-4 min-h-0">
             {/* PATIENT LIST TABLE */}
-            <div className="rounded-xl border border-border bg-dropdown flex flex-1 flex-col min-h-0">
+            <div className="rounded-xl border border-foreground bg-dropdown flex flex-1 flex-col min-h-0">
               <div className="min-h-0 overflow-y-auto scrollbar-rounded rounded-xl">
                 <Table>
-                  <TableHeader className="bg-input border-b border-border">
-                    <TableRow className="hover:bg-transparent border-border">
+                  <TableHeader className="bg-input border-b border-foreground">
+                    <TableRow className="hover:bg-transparent border-foreground">
                       <TableHead className="w-[120px] text-button-primary font-bold">
                         ID
                       </TableHead>
@@ -171,7 +171,7 @@ export default function PatientProfiles() {
                       </TableRow>
                     ) : patients.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-center py-8"> 
+                        <TableCell colSpan={6} className="text-center py-8">
                           No Patients Found
                         </TableCell>
                       </TableRow>
@@ -182,7 +182,7 @@ export default function PatientProfiles() {
                         return (
                           <TableRow
                             key={patient.id}
-                            className={`cursor-pointer border-border/50 transition-colors ${
+                            className={`cursor-pointer border-foreground/30 transition-colors ${
                               selectedPatient?.id === patient.id
                                 ? "bg-ring/10"
                                 : "hover:bg-border/30"
@@ -211,13 +211,14 @@ export default function PatientProfiles() {
                                   patient.status === "Active"
                                     ? "bg-[#a0ce66] text-black"
                                     : "bg-slate-800 text-slate-100"
-                                }`} 
+                                }`}
                               >
                                 {patient.status}
                               </Badge>
                             </TableCell>
-                            <TableCell onClick={(e) => e.stopPropagation()}>
-                            </TableCell>
+                            <TableCell
+                              onClick={(e) => e.stopPropagation()}
+                            ></TableCell>
                           </TableRow>
                         );
                       })
@@ -229,8 +230,10 @@ export default function PatientProfiles() {
 
             {/* PATIENT DETAIL SIDE-CARD */}
             {selectedPatient && (
-              <div className={`flex w-full md:w-1/4 animate-in ${small ? "slide-in-from-bottom-4" : "slide-in-from-right-4"} duration-200`}>
-                <Card className="h-full w-full bg-dropdown border-border text-foreground relative overflow-hidden flex flex-col">
+              <div
+                className={`flex w-full md:w-1/4 animate-in ${small ? "slide-in-from-bottom-4" : "slide-in-from-right-4"} duration-200`}
+              >
+                <Card className="h-full w-full bg-dropdown border-foreground text-foreground relative overflow-hidden flex flex-col">
                   {/* CLOSE BUTTON */}
                   <Button
                     variant="ghost"
@@ -241,7 +244,7 @@ export default function PatientProfiles() {
                     <X size={16} />
                   </Button>
 
-                  <CardHeader className="border-b border-border/50 pb-6">
+                  <CardHeader className="border-b border-foreground/30 pb-6">
                     <div className="flex flex-row items-center gap-4">
                       <div className="h-14 w-14 rounded-2xl bg-ring/20 flex items-center justify-center border border-ring/30">
                         <User className="text-ring" size={28} />
@@ -306,8 +309,8 @@ export default function PatientProfiles() {
                     </div>
 
                     {/* HISTORY */}
-                    <div className="space-y-4 pt-4 border-t border-border/50">
-                      <h3 className="text-title text-xs font-black uppercase tracking-widest text-muted-foreground">
+                    <div className="space-y-4 pt-4 border-t border-foreground/30">
+                      <h3 className="text-foreground text-xs font-black uppercase tracking-widest">
                         Appointment History
                       </h3>
                       <div className="grid gap-4 text-sm">
@@ -332,11 +335,11 @@ export default function PatientProfiles() {
 
                     {/* ACTIONS */}
                     <div className="pt-4 space-y-2 mt-auto">
-
-                      <Link
-                        href={"/Appointments/AddAppointment"}
-                      >
-                        <Button variant="secondary" className="w-full font-bold">
+                      <Link href={"/Appointments?fromPatient=true"}>
+                        <Button
+                          variant="secondary"
+                          className="w-full font-bold"
+                        >
                           Schedule Appointment
                         </Button>
                       </Link>

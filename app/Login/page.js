@@ -63,7 +63,9 @@ export default function LoginPage() {
           return;
         }
 
-        setError("A second factor is required, but no supported phone factor was found.");
+        setError(
+          "A second factor is required, but no supported phone factor was found.",
+        );
         return;
       }
 
@@ -165,10 +167,14 @@ export default function LoginPage() {
           </h1>
 
           {/* Input Fields*/}
-          <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit} noValidate>
+          <form
+            className="flex flex-col gap-4 w-full"
+            onSubmit={handleSubmit}
+            noValidate
+          >
             <Input
-              className="h-12"
-              type="email"
+              className="h-12 border-foreground"
+              type="text"
               name="username"
               placeholder="Email"
               value={username}
@@ -176,7 +182,7 @@ export default function LoginPage() {
               autoComplete="email"
             />
 
-            <InputGroup className="border-border border h-12">
+            <InputGroup className="border-foreground dark:bg-input/30 bg-background border h-12 ">
               <InputGroupInput
                 className="h-full"
                 type={showPassword ? "text" : "password"}
@@ -227,7 +233,7 @@ export default function LoginPage() {
               onClick={handleGoogleSignIn}
               type="button"
               disabled={googleLoading}
-              className="w-11 h-11 rounded-full bg-background border border-border flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100"
+              className="w-11 h-11 rounded-full bg-background border border-foreground flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100"
             >
               <Image
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
@@ -241,7 +247,8 @@ export default function LoginPage() {
           <div className="h-[1px] w-full bg-border mt-2"></div>
 
           <p className="text-muted-foreground text-[10px] tracking-widest font-bold text-center">
-            Google login will not work if email isn&apos;t already registered in database.
+            Google login will not work if email isn&apos;t already registered in
+            database.
           </p>
 
           <Link

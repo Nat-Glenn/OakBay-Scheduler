@@ -48,7 +48,7 @@ export default function FormField({
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-full h-50 p-2 scrollbar-rounded">
             {/* Search input */}
-            <InputGroup className="border-border text-foreground placeholder:text-muted-foreground ">
+            <InputGroup className="border-foreground text-foreground placeholder:text-muted-foreground ">
               <InputGroupInput
                 placeholder="Search by name..."
                 className="focus-visible:ring-ring"

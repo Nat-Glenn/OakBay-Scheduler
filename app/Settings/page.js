@@ -184,7 +184,7 @@ export default function Settings() {
         </header>
 
         <div className="flex-1 overflow-y-auto space-y-4 pb-8 scrollbar-rounded min-h-0">
-          <Card className="border-border bg-background">
+          <Card className="border-foreground bg-background">
             <CardHeader>
               <div className="flex items-center gap-2 text-foreground">
                 <User size={20} />
@@ -215,8 +215,7 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
-
-          <Card className="border-border bg-background">
+          <Card className="bg-background">
             <CardHeader>
               <div className="flex items-center gap-2 text-foreground">
                 <ShieldCheck size={20} />

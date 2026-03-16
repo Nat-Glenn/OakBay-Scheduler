@@ -48,7 +48,7 @@ export default function NavBarComp() {
 
       {small ? (
         <div className="mr-auto ml-auto text-xl font-bold text-center">
-          {path === "/" ? "Scheduler" : path.split("/")}
+          {path === "/" ? "Scheduler" : path.split("/", 2)}
         </div>
       ) : (
         <div>&nbsp;</div>
