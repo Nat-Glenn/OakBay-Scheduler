@@ -11,43 +11,70 @@ export default function AppointmentButtons({
   setAppointments,
   setActive,
 }) {
-  const isAppointmentToday = (apptDate) => {
-    return isSameDay(parseDMYToDate(apptDate), new Date());
-  };
-  const handleCheckIn = () => {
-    if (!isAppointmentToday(active.date)) {
-      toast.warning("You can only check in appointments scheduled for today.", {
-        position: "top-center",
-      });
-      return;
-    }
+  const selectedAppointment = appointment || active;
+
+  const updateAppointmentStatus = (newStatus) => {
+    if (!selectedAppointment) return false;
+
+    const updatedAppointment = {
+      ...selectedAppointment,
+      status: newStatus,
+    };
 
     setAppointments((prev) =>
       prev.map((appt) =>
-        appt.id === active.id ? { ...appt, status: "checked-in" } : appt,
+        appt.id === selectedAppointment.id ? updatedAppointment : appt,
       ),
     );
 
-    setActive({ ...active, status: "checked-in" });
+    setActive(updatedAppointment);
+    return true;
+  };
+
+  const isAppointmentToday = (apptDate) => {
+    return isSameDay(parseDMYToDate(apptDate), new Date());
+  };
+  
+  const handleCheckIn = () => {
+    if (!selectedAppointment) return false;
+
+    if (selectedAppointment.status !== "scheduled") {
+      toast.warning(
+        "You can only check in appointments that are scheduled.",
+        { position: "top-center" },
+      );
+      return false;
+    }
+
+    updateAppointmentStatus("checked-in");
+
+    toast.success("Appointment checked in.", {
+      position: "top-center",
+    });
+
+    return true;
   };
 
   const handleCheckOut = () => {
-    if (active.status != "checked-in") {
+    if (!selectedAppointment) return false;
+
+    if (selectedAppointment.status !== "checked-in") {
       toast.warning(
         "You can only check out appointments that are checked-in.",
         { position: "top-center" },
       );
-      return;
+      return false;
     }
 
-    setAppointments((prev) =>
-      prev.map((appt) =>
-        appt.id === active.id ? { ...appt, status: "checked-out" } : appt,
-      ),
-    );
+    updateAppointmentStatus("checked-out");
 
-    setActive({ ...active, status: "checked-out" });
+    toast.success("Appointment checked out.", {
+      position: "top-center",
+    });
+
+    return true;
   };
+  
   return (
     <Item>
       <ItemContent>

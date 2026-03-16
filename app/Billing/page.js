@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Printer, PencilLine, Plus } from "lucide-react";
+import { CreditCard, Printer, PencilLine, Plus, Search, X } from "lucide-react";
 
 import {
   Select,
@@ -27,7 +27,6 @@ import {
   DialogHeader as DHeader,
   DialogTitle as DTitle,
   DialogTrigger,
-  DialogHeader,
 } from "@/components/ui/dialog";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 
