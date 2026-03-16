@@ -67,6 +67,7 @@ export function renderAppointment(
             align="center"
           >
             <AppointmentInformation
+              appointment={appointment}
               active={active}
               setActive={setActive}
               appointments={appointments}

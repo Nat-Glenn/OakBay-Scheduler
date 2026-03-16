@@ -2,7 +2,7 @@
 import NavBarComp from "@/components/NavBarComp";
 import { renderAppointment } from "@/components/RenderAppointment";
 import React from "react";
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import DatePicker from "@/components/DatePicker";
 import {
@@ -21,60 +21,6 @@ import AddAppointment from "@/components/AddAppointment";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 export default function Appointments() {
-  const [appointments, setAppointments] = useState([
-    {
-      id: 1,
-      name: "John Doe",
-      dob: "June 01, 2000 (25)",
-      email: "johndoe@gmail.com",
-      phone: "587-999-999",
-      type: "Chiropractic Adjustment",
-      practitioner: "Brad Pritchard",
-      time: "9:00",
-      slot: 1,
-      date: "13/02/2026",
-      status: "scheduled",
-    },
-    {
-      id: 2,
-      name: "Bob",
-      dob: "August 29, 2000 (25)",
-      email: "bob@gmail.com",
-      phone: "517-949-929",
-      type: "Massage",
-      practitioner: "Brad Pritchard",
-      time: "10:15",
-      slot: 1,
-      date: "13/02/2026",
-      status: "scheduled",
-    },
-    {
-      id: 3,
-      name: "Bob",
-      dob: "August 29, 2000 (25)",
-      email: "bob@gmail.com",
-      phone: "517-949-929",
-      type: "Chiropractic Adjustment",
-      practitioner: "Brad Pritchard",
-      time: "10:15",
-      slot: 1,
-      date: "09/02/2026",
-      status: "checked-out",
-    },
-    {
-      id: 4,
-      name: "Bob",
-      dob: "August 29, 2000 (25)",
-      email: "bob@gmail.com",
-      phone: "517-949-929",
-      type: "Intense Massage",
-      practitioner: "Brad Pritchard",
-      time: "9:15",
-      slot: 1,
-      date: "19/02/2026",
-      status: "scheduled",
-    },
-  ]);
   const time = [
     "9:00",
     "9:15",
@@ -95,11 +41,89 @@ export default function Appointments() {
     "15:00",
     "15:15",
   ];
-  const practitioners = ["Brad Pritchard", "Kyle James", "Daniel Topala"];
+
+  const [appointments, setAppointments] = useState([]);
+  const [practitioners, setPractitioners] = useState([]);
   const [date, setDate] = useState(new Date());
-  const [practitioner, setPractitioner] = useState(practitioners[0]);
+  const [practitioner, setPractitioner] = useState("");
   const [active, setActive] = useState(null);
   const small = useMediaQuery("(max-width: 768px)");
+
+  function formatDateForApi(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  useEffect(() => {
+    async function loadPractitioners() {
+      try {
+        const res = await fetch("/api/practitioners");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load practitioners");
+        }
+
+        const names = data.map((p) => p.name);
+        setPractitioners(names);
+
+        if (names.length > 0) {
+          setPractitioner((prev) => prev || names[0]);
+        }
+      } catch (err) {
+        console.error("Failed to load practitioners:", err);
+      }
+    }
+
+    loadPractitioners();
+  }, []);
+
+  useEffect(() => {
+    async function loadAppointments() {
+      try {
+        const dateStr = formatDateForApi(date);
+        const res = await fetch(`/api/appointments?date=${dateStr}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load appointments");
+        }
+
+        const mappedAppointments = data.map((appt, index) => {
+          const start = new Date(appt.startTime);
+
+          const hours = start.getHours();
+          const minutes = String(start.getMinutes()).padStart(2, "0");
+          const displayHour = `${hours}:${minutes}`;
+
+          return {
+            id: appt.id,
+            name: appt.patient
+              ? `${appt.patient.firstName ?? ""} ${appt.patient.lastName ?? ""}`.trim()
+              : "Unknown Patient",
+            dob: "—",
+            email: appt.patient?.email || "—",
+            phone: appt.patient?.phone || "—",
+            type: appt.type || "—",
+            practitioner: appt.provider?.name || "Unassigned",
+            time: displayHour,
+            slot: 1,
+            date: date.toLocaleDateString("en-GB"),
+            status: appt.status === "requested" ? "scheduled" : appt.status,
+          };
+        });
+
+        setAppointments(mappedAppointments);
+      } catch (err) {
+        console.error("Failed to load appointments:", err);
+        setAppointments([]);
+      }
+    }
+
+    loadAppointments();
+  }, [date]);
 
   return (
     <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">

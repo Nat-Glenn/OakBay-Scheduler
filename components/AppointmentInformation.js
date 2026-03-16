@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import Image from "next/image";
 import { toast } from "sonner";
 import {
   formatDateDMY,
@@ -49,6 +50,7 @@ import FormField from "@/components/FormField";
 import { Settings } from "lucide-react";
 
 export default function AppointmentInformation({
+  appointment,
   active,
   setActive,
   appointments,
@@ -59,16 +61,21 @@ export default function AppointmentInformation({
   const [editTime, setEditTime] = useState("");
   const [editDate, setEditDate] = useState(null);
   const [search, setSearch] = useState("");
+
+  const selectedAppointment = appointment || active;
+
   const practitioners = [
     { id: 1, name: "Brad Pritchard" },
     { id: 2, name: "Kyle James" },
     { id: 3, name: "Daniel Topala" },
   ];
+
   const types = [
     { id: 1, name: "Chiropractic Adjustment" },
     { id: 2, name: "Massage" },
     { id: 3, name: "Intense Massage" },
   ];
+
   const time = [
     { id: 1, name: "9:00" },
     { id: 2, name: "9:15" },
@@ -81,6 +88,7 @@ export default function AppointmentInformation({
     { id: 9, name: "11:00" },
     { id: 10, name: "11:15" },
   ];
+
   const filteredArray = (type) => {
     if (type == "types") {
       return types.filter((c) =>
@@ -98,15 +106,26 @@ export default function AppointmentInformation({
       );
     }
   };
+
   const handleDeleteAppointment = () => {
-    const filteredArray = appointments.filter((appt) => appt.id != active?.id);
+    if (!selectedAppointment) return false;
+
+    const filteredArray = appointments.filter(
+      (appt) => appt.id != selectedAppointment.id,
+    );
     setAppointments(filteredArray);
+    setActive(null);
+    return true;
   };
+
   const handleEditAppointment = () => {
+    if (!selectedAppointment) return false;
+
     if (!editType || !editPractitioner || !editTime || !editDate) {
       toast.warning("Please fill out all fields.", { position: "top-center" });
       return false;
     }
+
     const selected = new Date(editDate);
     selected.setHours(0, 0, 0, 0);
 
@@ -125,9 +144,9 @@ export default function AppointmentInformation({
     let slotToUse = active.slot;
 
     // If time OR practitioner changed → re-check slot
-    if (editTime !== active.time || editPractitioner !== active.practitioner) {
+    if (editTime !== active.time || editPractitioner !== selectedAppointment.practitioner) {
       const availableSlot = getAvailableSlot(
-        appointments.filter((a) => a.id !== active.id),
+        appointments.filter((a) => a.id !== selectedAppointment.id),
         formattedDate,
         editTime,
         editPractitioner,
@@ -144,7 +163,7 @@ export default function AppointmentInformation({
     }
 
     const updatedAppointment = {
-      ...active,
+      ...selectedAppointment,
       type: editType,
       practitioner: editPractitioner,
       time: editTime,
@@ -153,7 +172,7 @@ export default function AppointmentInformation({
     };
 
     setAppointments((prev) =>
-      prev.map((appt) => (appt.id === active.id ? updatedAppointment : appt)),
+      prev.map((appt) => (appt.id === selectedAppointment.id ? updatedAppointment : appt)),
     );
 
     setActive(updatedAppointment);
@@ -164,19 +183,26 @@ export default function AppointmentInformation({
 
     return true;
   };
+
   const openEditDialog = (appointment) => {
+    if(!appointment) return false;
+
     if (appointment.status === "checked-out") {
       toast.warning("Checked-out appointments cannot be edited.", {
         position: "top-center",
       });
       return false;
     }
+
     setEditType(appointment.type);
     setEditPractitioner(appointment.practitioner);
     setEditTime(appointment.time);
     setEditDate(parseDMYToDate(appointment.date));
     setActive(appointment);
+
+    return true;
   };
+
   return (
     <PopoverHeader>
       <Item size="xs">
@@ -187,7 +213,7 @@ export default function AppointmentInformation({
           </Avatar>
         </ItemMedia>
         <ItemContent>
-          <ItemTitle>{active?.name}</ItemTitle>
+          <ItemTitle>{selectedAppointment?.name || "—"}</ItemTitle>
         </ItemContent>
         <ItemActions>
           <AlertDialog className="bg-background">
@@ -195,8 +221,8 @@ export default function AppointmentInformation({
               <Button
                 variant="ghost"
                 disabled={
-                  active?.status === "checked-out" ||
-                  active?.date !== formatDateDMY(new Date())
+                  selectedAppointment?.status === "checked-out" ||
+                  selectedAppointment?.date !== formatDateDMY(new Date())
                 }
                 onClick={() => openEditDialog(active)}
               >
@@ -303,7 +329,7 @@ export default function AppointmentInformation({
         <ItemContent>
           <ItemTitle className="text-muted-foreground">Dob</ItemTitle>
           <ItemDescription className="text-foreground">
-            {active?.dob}
+            {selectedAppointment?.dob}
           </ItemDescription>
         </ItemContent>
       </Item>
@@ -311,7 +337,7 @@ export default function AppointmentInformation({
         <ItemContent>
           <ItemTitle className="text-muted-foreground">Email</ItemTitle>
           <ItemDescription className="text-foreground">
-            {active?.email}
+            {selectedAppointment?.email}
           </ItemDescription>
         </ItemContent>
       </Item>
@@ -319,7 +345,7 @@ export default function AppointmentInformation({
         <ItemContent>
           <ItemTitle className="text-muted-foreground">Phone</ItemTitle>
           <ItemDescription className="text-foreground">
-            {active?.phone}
+            {selectedAppointment?.phone}
           </ItemDescription>
         </ItemContent>
       </Item>
