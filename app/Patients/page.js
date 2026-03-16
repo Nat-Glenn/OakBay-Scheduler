@@ -57,10 +57,13 @@ export default function PatientProfiles() {
 
         if (selectedPatient) {
           const updatedSelected = data.find((p) => p.id === selectedPatient.id);
-          setSelectedPatient(updatedSelected || null);
+          // If the patient still exists, update the selected state with fresh data
+          if (updatedSelected) {
+             setSelectedPatient(getDisplayedPatient(updatedSelected));
+          }
         }
       } catch (err) {
-      setError(err.message || "Failed to load patients");
+        setError(err.message || "Failed to load patients");
       } finally {
         setLoading(false);
       }
@@ -69,13 +72,26 @@ export default function PatientProfiles() {
     loadPatients();
   }, [searchTerm]);
 
+  // NEW LOGIC: Calculate age from the "YYYY-MM-DD" string
+  function calculateAge(dobString) {
+    if (!dobString || dobString === "—") return "—";
+    const birthDate = new Date(dobString);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  }
+
   function getDisplayedPatient(patient) {
     return {
       ...patient,
       name: `${patient.firstName} ${patient.lastName}`,
       status: patient.reminderOptIn ? "Active" : "Inactive",
-      age: "—",
-      dob: "—",
+      age: calculateAge(patient.dob), // Now dynamically calculated
+      dob: patient.dob || "—",
       lastVisit: "—",
       nextAppt: null,
     };
@@ -201,25 +217,6 @@ export default function PatientProfiles() {
                               </Badge>
                             </TableCell>
                             <TableCell onClick={(e) => e.stopPropagation()}>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-muted-foreground hover:bg-border"
-                                  >
-                                    <MoreVertical size={16} />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="border-border text-foreground"
-                                >
-                                  <DropdownMenuItem className="focus:bg-border">
-                                    Edit
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </TableCell>
                           </TableRow>
                         );
@@ -260,13 +257,21 @@ export default function PatientProfiles() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-4 overflow-y-auto flex-1 scrollbar-rounded">
+                  <CardContent className="space-y-4 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
                     {/* PERSONAL INFO */}
                     <div className="space-y-4">
-                      <h3 className="text-title text-xs font-black uppercase tracking-widest">
+                      <h3 className="text-title text-xs font-black uppercase tracking-widest text-muted-foreground">
                         Personal Information
                       </h3>
                       <div className="grid gap-4 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground font-bold">
+                            Date of Birth
+                          </span>
+                          <span className="text-foreground">
+                            {selectedPatient.dob} ({selectedPatient.age})
+                          </span>
+                        </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground font-bold">
                             Email
@@ -302,7 +307,7 @@ export default function PatientProfiles() {
 
                     {/* HISTORY */}
                     <div className="space-y-4 pt-4 border-t border-border/50">
-                      <h3 className="text-title text-xs font-black uppercase tracking-widest">
+                      <h3 className="text-title text-xs font-black uppercase tracking-widest text-muted-foreground">
                         Appointment History
                       </h3>
                       <div className="grid gap-4 text-sm">
@@ -327,10 +332,11 @@ export default function PatientProfiles() {
 
                     {/* ACTIONS */}
                     <div className="pt-4 space-y-2 mt-auto">
+
                       <Link
-                        href={"components\AddAppointment.js"}
+                        href={"/Appointments/AddAppointment"}
                       >
-                        <Button variant="secondary" className="w-full">
+                        <Button variant="secondary" className="w-full font-bold">
                           Schedule Appointment
                         </Button>
                       </Link>
