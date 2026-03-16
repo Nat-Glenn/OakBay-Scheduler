@@ -13,7 +13,7 @@ import { signInWithGoogle } from "./GoogleSignIn/googleAuth";
 import { setPendingMfa } from "./TwoFactor/mfaStore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,10 +30,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const router = useRouter();
 
   const handleGoogleSignIn = async () => {
+    setError("");
     try {
       setGoogleLoading(true);
 
@@ -61,12 +63,7 @@ export default function LoginPage() {
           return;
         }
 
-        toast.error(
-          "A second factor is required, but no supported phone factor was found.",
-          {
-            position: "top-center",
-          },
-        );
+        setError("A second factor is required, but no supported phone factor was found.");
         return;
       }
 
@@ -74,9 +71,6 @@ export default function LoginPage() {
         const message = error?.message || "";
 
         if (auth.currentUser) {
-          toast.success("Successfully signed in with Google!", {
-            position: "top-center",
-          });
           router.push("/Home");
           return;
         }
@@ -86,20 +80,13 @@ export default function LoginPage() {
             "Google login is only allowed after the account has been connected in Settings.",
           )
         ) {
-          toast.error(
-            "Google login is only available for existing accounts.",
-            {
-              position: "top-center",
-            },
-          );
+          setError("Google login is only available for existing accounts.");
           return;
         }
       }
 
       console.error(error);
-      toast.error("Google login failed.", {
-        position: "top-center",
-      });
+      setError("Google login failed.");
     } finally {
       setGoogleLoading(false);
     }
@@ -107,6 +94,22 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
+    // Validation check for email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!username) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!emailRegex.test(username)) {
+      setError("Please enter a valid email address (e.g., name@gmail.com).");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
 
     try {
       setLoginLoading(true);
@@ -116,9 +119,7 @@ export default function LoginPage() {
 
       if (!user.emailVerified) {
         await sendEmailVerification(user);
-        toast.info("Please verify your email and login again.", {
-          position: "top-center",
-        });
+        setError("Please verify your email and login again.");
         return;
       }
 
@@ -141,9 +142,7 @@ export default function LoginPage() {
         }
       }
 
-      toast.warning("Invalid credentials. Please try again.", {
-        position: "top-center",
-      });
+      setError("Invalid credentials. Please try again.");
     } finally {
       setLoginLoading(false);
     }
@@ -165,7 +164,8 @@ export default function LoginPage() {
             Oak Bay Scheduler
           </h1>
 
-          <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
+          {/* Input Fields*/}
+          <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit} noValidate>
             <Input
               className="h-12"
               type="email"
@@ -200,6 +200,14 @@ export default function LoginPage() {
                 )}
               </InputGroupAddon>
             </InputGroup>
+
+            {/* Error message */}
+            {error && (
+              <div className="w-full bg-destructive/15 border border-destructive/30 p-3 rounded-md flex items-center gap-2">
+                <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
+                <p className="text-destructive text-xs font-medium">{error}</p>
+              </div>
+            )}
 
             <Button
               className="bg-button-primary h-12"

@@ -216,13 +216,7 @@ export default function PatientProfiles() {
                                   className="border-border text-foreground"
                                 >
                                   <DropdownMenuItem className="focus:bg-border">
-                                    View Details
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="focus:bg-border">
                                     Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="text-red-400 focus:bg-red-500/10 focus:text-red-400">
-                                    Delete
                                   </DropdownMenuItem>
                                 </DropdownMenuContent>
                               </DropdownMenu>
@@ -266,21 +260,13 @@ export default function PatientProfiles() {
                     </div>
                   </CardHeader>
 
-                  <CardContent className="space-y-4 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
+                  <CardContent className="space-y-4 overflow-y-auto flex-1 scrollbar-rounded">
                     {/* PERSONAL INFO */}
                     <div className="space-y-4">
                       <h3 className="text-title text-xs font-black uppercase tracking-widest">
                         Personal Information
                       </h3>
                       <div className="grid gap-4 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground font-bold">
-                            Date of Birth
-                          </span>
-                          <span className="text-foreground">
-                            {selectedPatient.dob} ({selectedPatient.age})
-                          </span>
-                        </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground font-bold">
                             Email
@@ -341,8 +327,6 @@ export default function PatientProfiles() {
 
                     {/* ACTIONS */}
                     <div className="pt-4 space-y-2 mt-auto">
-                      <Button className="w-full">View Full Profile</Button>
-
                       <Link
                         href={"components\AddAppointment.js"}
                       >
