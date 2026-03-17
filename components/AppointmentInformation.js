@@ -107,16 +107,39 @@ export default function AppointmentInformation({
     }
   };
 
-  const handleDeleteAppointment = () => {
-    if (!selectedAppointment) return false;
+  const handleDeleteAppointment = async () => {
+  if (!selectedAppointment) return false;
+
+  try {
+    const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+      method: "DELETE",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to delete appointment");
+    }
 
     const filteredArray = appointments.filter(
       (appt) => appt.id != selectedAppointment.id,
     );
+
     setAppointments(filteredArray);
     setActive(null);
+
+    toast.success("Appointment deleted.", {
+      position: "top-center",
+    });
+
     return true;
-  };
+  } catch (err) {
+    toast.error(err.message || "Failed to delete appointment.", {
+      position: "top-center",
+    });
+    return false;
+  }
+};
 
   const handleEditAppointment = () => {
     if (!selectedAppointment) return false;
@@ -290,8 +313,8 @@ export default function AppointmentInformation({
                 <AlertDialogAction
                   variant="destructive"
                   className="mr-auto"
-                  onClick={(e) => {
-                    const success = handleDeleteAppointment();
+                  onClick={async (e) => {
+                    const success = await handleDeleteAppointment();
                     if (!success) {
                       e.preventDefault();
                     }
