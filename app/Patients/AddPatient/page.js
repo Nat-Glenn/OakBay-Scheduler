@@ -62,15 +62,13 @@ export default function AddPatientPage() {
     const days = new Date(year, month, 0).getDate();
     return Array.from({ length: days }, (_, i) => i + 1);
   };
-
-  // UPDATED: dob is now part of formData for easier handling
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
     ahcNumber: "",
-    dob: "", // Default empty string for the date input
+    dob: "",
     notes: "",
   });
 
@@ -105,7 +103,7 @@ export default function AddPatientPage() {
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
       !formData.phone.trim() ||
-      !formData.dob
+      !formattedDOB
     ) {
       setError(
         "First name, last name, phone number, and date of birth are required.",
@@ -231,7 +229,6 @@ export default function AddPatientPage() {
                         onChange={handleChange}
                       />
 
-                      {/* UPDATED: Native HTML Date Input */}
                       <FieldGroup>
                         <div className="grid grid-cols-3 gap-2">
                           <Field>

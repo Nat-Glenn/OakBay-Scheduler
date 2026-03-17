@@ -333,9 +333,8 @@ export default function PatientProfiles() {
                       </div>
                     </div>
 
-                    {/* ACTIONS */}
                     <div className="pt-4 space-y-2 mt-auto">
-                      <Link href={"/Appointments?fromPatient=true"}>
+                      <Link href={"/?fromPatient=true"}>
                         <Button
                           variant="secondary"
                           className="w-full font-bold"
