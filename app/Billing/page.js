@@ -30,6 +30,13 @@ import {
 } from "@/components/ui/dialog";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 
+import { Roboto } from "next/font/google";
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+});
+
 function maskCard(last4) {
   const digits = String(last4 || "").replace(/\D/g, "").slice(-4) || "••••";
   return `•••• •••• •••• ${digits}`;
@@ -290,7 +297,7 @@ export default function Billing() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className={`${roboto.className} min-h-screen bg-background`}>
       <NavBarComp />
 
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
