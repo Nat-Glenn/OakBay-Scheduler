@@ -50,11 +50,7 @@ export default function AppointmentButtons({
     return true;
   };
 
-  const isAppointmentToday = (apptDate) => {
-    return isSameDay(parseDMYToDate(apptDate), new Date());
-  };
-  
-  const handleCheckIn = () => {
+  const handleCheckIn = async () => {
     if (!selectedAppointment) return false;
 
     if (selectedAppointment.status !== "scheduled") {
@@ -65,13 +61,36 @@ export default function AppointmentButtons({
       return false;
     }
 
-    updateAppointmentStatus("checked-in");
+    try {
+      const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "CHECKED_IN",
+        }),
+      });
 
-    toast.success("Appointment checked in.", {
-      position: "top-center",
-    });
+      const data = await res.json();
 
-    return true;
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to check in appointment");
+      }
+
+      updateAppointmentStatus("checked-in");
+
+      toast.success("Appointment checked in.", {
+        position: "top-center",
+      });
+
+      return true;
+    } catch (err) {
+      toast.error(err.message || "Failed to check in appointment.", {
+        position: "top-center",
+      });
+      return false;
+    }
   };
 
   const handleCheckOut = () => {
@@ -89,7 +108,7 @@ export default function AppointmentButtons({
     return true;
   };
 
-  const handleConfirmCheckout = () => {
+  const handleConfirmCheckout = async () => {
     if (!selectedAppointment) return false;
 
     if (!appointmentTotal || Number(appointmentTotal) <= 0) {
@@ -106,20 +125,45 @@ export default function AppointmentButtons({
       return false;
     }
 
-    updateAppointmentStatus("Checked-out", {
-      appointmentTotal,
-      paymentType,
-    });
+    try {
+      const res = await fetch("/api/payments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          appointmentId: selectedAppointment.id,
+          amount: Number(appointmentTotal),
+          paymentType,
+        }),
+      });
 
-    setCheckoutOpen(false);
-    setAppointmentTotal("");
-    setPaymentType("");
+      const data = await res.json();
 
-    toast.success("Appointmnet checked out.", {
-      position: "top-center",
-    });
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to record payment");
+      }
 
-    return true;
+      updateAppointmentStatus("checked-out", {
+        appointmentTotal: Number(appointmentTotal),
+        paymentType,
+      });
+
+      setCheckoutOpen(false);
+      setAppointmentTotal("");
+      setPaymentType("");
+
+      toast.success("Appointment checked out.", {
+        position: "top-center",
+      });
+
+      return true;
+    } catch (err) {
+      toast.error(err.message || "Failed to record payment.", {
+        position: "top-center",
+      });
+      return false;
+    }
   };
 
   return (

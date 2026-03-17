@@ -111,7 +111,18 @@ export default function Appointments() {
             time: displayHour,
             slot: 1,
             date: date.toLocaleDateString("en-GB"),
-            status: appt.status === "requested" ? "scheduled" : appt.status,
+            status:
+            appt.status?.toUpperCase() === "REQUESTED"
+              ? "scheduled"
+              : appt.status?.toUpperCase() === "CONFIRMED"
+                ? "scheduled"
+                : appt.status?.toUpperCase() === "CHECKED_IN"
+                  ? "checked-in"
+                  : appt.status?.toUpperCase() === "COMPLETED"
+                    ? "checked-out"
+                    : appt.status?.toUpperCase() === "CANCELLED"
+                      ? "cancelled"
+                      : appt.status?.toLowerCase() || "scheduled",
           };
         });
 

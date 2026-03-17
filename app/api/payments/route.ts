@@ -41,11 +41,13 @@ export async function POST(req: Request) {
         const paymentType = parseNonEmptyString(body.paymentType)?.toLowerCase().trim(); //Converts to lowercase and trims whitespace for better filtering
         const amount = Math.round(Number(body.amount) * 100) / 100; // Rounds to 2 decimal places
 
+        const allowedPaymentTypes = ["mastercard", "visa", "debit", "cash"];
+
         // Validate inputs before proceeding with database operations
         if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
             return badRequest("Missing or invalid appointmentId");
         }
-        if (!paymentType) {
+        if (!paymentType || !allowedPaymentTypes.includes(paymentType)) {
             return badRequest("Missing or invalid paymentType", {
                 accepted: ["cash", "credit_card", "insurance"],
             });
