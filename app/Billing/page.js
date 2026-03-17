@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import NavBarComp from "@/components/NavBarComp";
-
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
+import {
+  Card as UiCard,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, Printer, PencilLine, Plus, Search, X } from "lucide-react";
-
+import { CreditCard, PencilLine, Plus, Search, User } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -18,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
 import {
   Dialog,
   DialogContent,
@@ -30,102 +30,485 @@ import {
 } from "@/components/ui/dialog";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 
-function maskCard(num) {
-  const digits = String(num || "").replace(/\D/g, "");
-  const last4 = digits.slice(-4) || "••••";
-  return `•••• •••• •••• ${last4}`;
+function maskCard(last4) {
+  const digits = String(last4 || "").replace(/\D/g, "").slice(-4) || "••••";
+  return `•••• •••• •••• ${digits}`;
+}
+
+function parseExpiry(value) {
+  const raw = String(value || "").trim();
+  if (!raw.includes("/")) return { expMonth: null, expYear: null };
+
+  const [monthStr, yearStr] = raw.split("/");
+  const expMonth = Number(monthStr);
+  let expYear = Number(yearStr);
+
+  if (!Number.isInteger(expMonth) || expMonth < 1 || expMonth > 12) {
+    return { expMonth: null, expYear: null };
+  }
+
+  if (!Number.isInteger(expYear)) {
+    return { expMonth: null, expYear: null };
+  }
+
+  if (expYear < 100) {
+    expYear += 2000;
+  }
+
+  return { expMonth, expYear };
+}
+
+function formatExpiry(expMonth, expYear) {
+  if (!expMonth || !expYear) return "—";
+  const mm = String(expMonth).padStart(2, "0");
+  const yy = String(expYear).slice(-2);
+  return `${mm}/${yy}`;
 }
 
 export default function Billing() {
-  const [cards, setCards] = useState([
-    { id: "card_1", brand: "Visa", last4: "5679", exp: "01/29" },
-  ]);
+  const small = useMediaQuery("(max-width: 768px)");
+
+  const [patientSearch, setPatientSearch] = useState("");
+  const [patientResults, setPatientResults] = useState([]);
+  const [selectedPatient, setSelectedPatient] = useState(null);
+  const [loadingPatients, setLoadingPatients] = useState(false);
+
+  const [cards, setCards] = useState([]);
+  const [loadingCards, setLoadingCards] = useState(false);
+
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isManageOpen, setIsManageOpen] = useState(false);
 
   const [brand, setBrand] = useState("Visa");
   const [number, setNumber] = useState("");
   const [exp, setExp] = useState("");
-  const [isAddOpen, setIsAddOpen] = useState(false);
-  const [isReprintOpen, setIsReprintOpen] = useState(false);
-  const [reprintQuery, setReprintQuery] = useState("");
-  const [isManageOpen, setIsManageOpen] = useState(false);
-  const [selectedCardId, setSelectedCardId] = useState(null);
-  // Manage form fields
+
+  const [selectedCard, setSelectedCard] = useState(null);
   const [manageBrand, setManageBrand] = useState("Visa");
   const [manageLast4, setManageLast4] = useState("");
   const [manageExp, setManageExp] = useState("");
-  const small = useMediaQuery("(max-width: 768px)");
-  const handleReprint = (appt) => {
-    // TODO: replace with your receipt logic (route to receipt page, open print window, fetch PDF, etc.)
-    console.log("Reprinting receipt for:", appt);
 
-    // close modal after click (optional)
-    setIsReprintOpen(false);
-  };
-  const [isAdjustmentOpen, setIsAdjustmentOpen] = useState(false);
+  const selectedPatientName = useMemo(() => {
+    if (!selectedPatient) return "";
+    return `${selectedPatient.firstName} ${selectedPatient.lastName}`;
+  }, [selectedPatient]);
 
-  const handleAddCard = () => {
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadPatients() {
+      if (!patientSearch.trim()) {
+        setPatientResults([]);
+        return;
+      }
+
+      try {
+        setLoadingPatients(true);
+        const res = await fetch(
+          `/api/patients?search=${encodeURIComponent(patientSearch)}`
+        );
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load patients");
+        }
+
+        if (!ignore) {
+          setPatientResults(data);
+        }
+      } catch (err) {
+        console.error(err);
+        if (!ignore) setPatientResults([]);
+      } finally {
+        if (!ignore) setLoadingPatients(false);
+      }
+    }
+
+    loadPatients();
+
+    return () => {
+      ignore = true;
+    };
+  }, [patientSearch]);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function loadCards() {
+      if (!selectedPatient?.id) {
+        setCards([]);
+        return;
+      }
+
+      try {
+        setLoadingCards(true);
+        const res = await fetch(`/api/cards?patientId=${selectedPatient.id}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load cards");
+        }
+
+        if (!ignore) {
+          setCards(data);
+        }
+      } catch (err) {
+        console.error(err);
+        if (!ignore) setCards([]);
+      } finally {
+        if (!ignore) setLoadingCards(false);
+      }
+    }
+
+    loadCards();
+
+    return () => {
+      ignore = true;
+    };
+  }, [selectedPatient]);
+
+  function handleSelectPatient(patient) {
+    setSelectedPatient(patient);
+    setPatientSearch(`${patient.firstName} ${patient.lastName}`);
+    setPatientResults([]);
+  }
+
+  async function handleAddCard() {
+    if (!selectedPatient?.id) return;
+
     const digits = number.replace(/\D/g, "");
     const last4 = digits.slice(-4);
+    const { expMonth, expYear } = parseExpiry(exp);
 
-    if (!brand || !last4 || !exp) return;
+    if (!brand || last4.length !== 4) {
+      alert("Please enter a valid card brand and number.");
+      return;
+    }
 
-    setCards((prev) => [
-      ...prev,
-      {
-        id: `card_${Date.now()}`,
-        brand,
-        last4,
-        exp,
-      },
-    ]);
+    try {
+      const res = await fetch("/api/cards", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          patientId: selectedPatient.id,
+          brand,
+          last4,
+          expMonth,
+          expYear,
+        }),
+      });
 
-    // reset + close
-    setBrand("Visa");
-    setNumber("");
-    setExp("");
-    setIsAddOpen(false);
-  };
+      const data = await res.json();
 
-  const openManageCard = (card) => {
-    setSelectedCardId(card.id);
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to save card");
+      }
+
+      setCards((prev) => [data, ...prev]);
+      setBrand("Visa");
+      setNumber("");
+      setExp("");
+      setIsAddOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Failed to save card");
+    }
+  }
+
+  function openManageCard(card) {
+    setSelectedCard(card);
     setManageBrand(card.brand || "Visa");
     setManageLast4(card.last4 || "");
-    setManageExp(card.exp || "");
+    setManageExp(formatExpiry(card.expMonth, card.expYear));
     setIsManageOpen(true);
-  };
+  }
 
-  const handleSaveManagedCard = () => {
-    if (!selectedCardId) return;
+  async function handleSaveManagedCard() {
+    if (!selectedCard?.id) return;
 
     const cleanLast4 = manageLast4.replace(/\D/g, "").slice(-4);
-    if (!manageBrand || cleanLast4.length !== 4 || !manageExp) return;
+    const { expMonth, expYear } = parseExpiry(manageExp);
 
-    setCards((prev) =>
-      prev.map((c) =>
-        c.id === selectedCardId
-          ? { ...c, brand: manageBrand, last4: cleanLast4, exp: manageExp }
-          : c,
-      ),
-    );
+    if (!manageBrand || cleanLast4.length !== 4) {
+      alert("Please enter valid card details.");
+      return;
+    }
 
-    setIsManageOpen(false);
-  };
+    try {
+      const res = await fetch("/api/cards", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: selectedCard.id,
+          brand: manageBrand,
+          last4: cleanLast4,
+          expMonth,
+          expYear,
+        }),
+      });
 
-  const handleDeleteManagedCard = () => {
-    if (!selectedCardId) return;
+      const data = await res.json();
 
-    setCards((prev) => prev.filter((c) => c.id !== selectedCardId));
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to update card");
+      }
 
-    setIsManageOpen(false);
-  };
+      setCards((prev) => prev.map((c) => (c.id === data.id ? data : c)));
+      setIsManageOpen(false);
+      setSelectedCard(null);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Failed to update card");
+    }
+  }
+
+  async function handleDeleteManagedCard() {
+    if (!selectedCard?.id) return;
+
+    try {
+      const res = await fetch(`/api/cards?id=${selectedCard.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete card");
+      }
+
+      setCards((prev) => prev.filter((c) => c.id !== selectedCard.id));
+      setIsManageOpen(false);
+      setSelectedCard(null);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "Failed to delete card");
+    }
+  }
 
   return (
-    <main className="flex flex-col min-h-dvh w-full">
+    <div className="min-h-screen bg-background">
       <NavBarComp />
 
-      {/* Manage Card Dialog */}
+      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
+        {!small && <h1 className="mb-6 text-3xl font-semibold">Billing</h1>}
+
+        <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+          <UiCard>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Select Patient
+              </CardTitle>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <div className="relative">
+                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
+                <Input
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  placeholder="Search by name or phone"
+                  className="pl-9"
+                />
+              </div>
+
+              <div className="max-h-80 space-y-2 overflow-y-auto">
+                {loadingPatients ? (
+                  <p className="text-sm text-muted-foreground">
+                    Loading patients...
+                  </p>
+                ) : patientSearch.trim() === "" ? (
+                  <p className="text-sm text-muted-foreground">
+                    Start typing to search for a patient.
+                  </p>
+                ) : patientResults.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No patients found
+                  </p>
+                ) : (
+                  patientResults.map((patient) => (
+                    <button
+                      key={patient.id}
+                      type="button"
+                      onClick={() => handleSelectPatient(patient)}
+                      className="w-full rounded-lg border p-3 text-left transition hover:bg-muted"
+                    >
+                      <div className="font-medium">
+                        {patient.firstName} {patient.lastName}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {patient.phone}
+                      </div>
+                      {patient.email && (
+                        <div className="text-sm text-muted-foreground">
+                          {patient.email}
+                        </div>
+                      )}
+                    </button>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </UiCard>
+
+          <div className="space-y-6">
+            <UiCard>
+              <CardHeader>
+                <CardTitle>Patient</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedPatient ? (
+                  <div className="space-y-1">
+                    <div className="text-lg font-semibold">
+                      {selectedPatientName}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Phone: {selectedPatient.phone}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      Email: {selectedPatient.email || "—"}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Search for a patient to load their billing profile.
+                  </p>
+                )}
+              </CardContent>
+            </UiCard>
+
+            <UiCard>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5" />
+                    Cards on File
+                  </CardTitle>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Saved cards for the selected patient
+                  </p>
+                </div>
+
+                <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+                  <DialogTrigger asChild>
+                    <Button disabled={!selectedPatient}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      {small ? "" : "New Card"}
+                    </Button>
+                  </DialogTrigger>
+
+                  <DialogContent>
+                    <DHeader>
+                      <DTitle>Add card to patient file</DTitle>
+                      <DialogDescription>
+                        {selectedPatient
+                          ? `Adding a card for ${selectedPatientName}`
+                          : "Select a patient first"}
+                      </DialogDescription>
+                    </DHeader>
+
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Card Type</Label>
+                        <Select value={brand} onValueChange={setBrand}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select card type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Visa">Visa</SelectItem>
+                            <SelectItem value="Mastercard">Mastercard</SelectItem>
+                            <SelectItem value="Amex">Amex</SelectItem>
+                            <SelectItem value="Debit">Debit</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Card Number</Label>
+                        <Input
+                          value={number}
+                          onChange={(e) => setNumber(e.target.value)}
+                          inputMode="numeric"
+                          placeholder="•••• •••• •••• 1234"
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Expiry</Label>
+                        <Input
+                          value={exp}
+                          onChange={(e) => setExp(e.target.value)}
+                          placeholder="MM/YY"
+                        />
+                      </div>
+                    </div>
+
+                    <DialogFooter>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsAddOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddCard} disabled={!selectedPatient}>
+                        Save card
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </CardHeader>
+
+              <CardContent className="space-y-3">
+                {!selectedPatient ? (
+                  <p className="text-sm text-muted-foreground">
+                    Select a patient to view their saved cards.
+                  </p>
+                ) : loadingCards ? (
+                  <p className="text-sm text-muted-foreground">
+                    Loading cards...
+                  </p>
+                ) : cards.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No cards on file for this patient.
+                  </p>
+                ) : (
+                  cards.map((card) => (
+                    <div
+                      key={card.id}
+                      className="flex items-center justify-between rounded-xl border p-4"
+                    >
+                      <div>
+                        <div className="font-medium">{card.brand}</div>
+                        <div className="text-sm text-muted-foreground">
+                          {maskCard(card.last4)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Exp: {formatExpiry(card.expMonth, card.expYear)}
+                        </div>
+                      </div>
+
+                      <Button
+                        variant="outline"
+                        onClick={() => openManageCard(card)}
+                      >
+                        <PencilLine className="mr-2 h-4 w-4" />
+                        Manage
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </UiCard>
+          </div>
+        </div>
+      </div>
+
       <Dialog open={isManageOpen} onOpenChange={setIsManageOpen}>
-        <DialogContent className="sm:max-w-[520px]">
+        <DialogContent>
           <DHeader>
             <DTitle>Manage Card</DTitle>
             <DialogDescription>
@@ -133,12 +516,12 @@ export default function Billing() {
             </DialogDescription>
           </DHeader>
 
-          <div className="mt-2 rounded-2xl border border-foreground bg-card p-4 space-y-4">
+          <div className="space-y-4">
             <div className="space-y-2">
               <Label>Card Type</Label>
               <Select value={manageBrand} onValueChange={setManageBrand}>
-                <SelectTrigger className="bg-input text-foreground border-foreground">
-                  <SelectValue placeholder="Card Type" />
+                <SelectTrigger>
+                  <SelectValue placeholder="Select card type" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Visa">Visa</SelectItem>
@@ -150,9 +533,8 @@ export default function Billing() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="manageLast4">Card Number (Last 4)</Label>
+              <Label>Card Number (Last 4)</Label>
               <Input
-                id="manageLast4"
                 value={manageLast4}
                 onChange={(e) =>
                   setManageLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
@@ -163,9 +545,8 @@ export default function Billing() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="manageExp">Expiry</Label>
+              <Label>Expiry</Label>
               <Input
-                id="manageExp"
                 value={manageExp}
                 onChange={(e) => setManageExp(e.target.value)}
                 placeholder="MM/YY"
@@ -173,7 +554,7 @@ export default function Billing() {
             </div>
           </div>
 
-          <DialogFooter className="flex justify-between sm:justify-between">
+          <DialogFooter className="flex items-center justify-between gap-2">
             <Button variant="destructive" onClick={handleDeleteManagedCard}>
               Delete card
             </Button>
@@ -187,195 +568,6 @@ export default function Billing() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <div className="flex flex-col min-h-0 overflow-hidden px-4 pb-4">
-        {/* Header */}
-        <header className="flex flex-row gap-4 items-center py-4">
-          {!small && (
-            <div className="w-full flex flex-col">
-              <h1 className="text-3xl font-bold text-foreground">Billing</h1>
-            </div>
-          )}
-          {/* Buttons */}
-          <div
-            className={`flex w-full flex-row ${small ? "" : "justify-end gap-4"}`}
-          >
-            <Dialog open={isAdjustmentOpen} onOpenChange={setIsAdjustmentOpen}>
-              <DialogTrigger asChild>
-                <Button variant="third" className={`${small ? "text-xs" : ""}`}>
-                  <PencilLine size={18} />
-                  Billing Adjustment
-                </Button>
-              </DialogTrigger>
-
-              <DialogContent className="sm:max-w-[900px]">
-                <DHeader>
-                  <DTitle>Billing Adjustment</DTitle>
-                  <DialogDescription>
-                    Select an appointment to edit or delete
-                  </DialogDescription>
-                </DHeader>
-
-                <div className="mt-2 rounded-2xl border border-foreground bg-card p-4 space-y-4">
-                  <div className="text-sm font-medium text-foreground">
-                    Appointments
-                  </div>
-                  <div className="h-[320px] rounded-xl border border-foreground bg-background" />
-                </div>
-
-                <DialogFooter className="justify-between">
-                  <Button variant="outline">Edit</Button>
-                  <Button variant="destructive">Delete</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={isReprintOpen} onOpenChange={setIsReprintOpen}>
-              <DialogTrigger asChild>
-                <Button variant="third" className={`${small ? "text-xs" : ""}`}>
-                  <Printer size={18} />
-                  Re-Print Receipt
-                </Button>
-              </DialogTrigger>
-
-              <DialogContent className="sm:max-w-[900px]">
-                <DHeader>
-                  <DTitle>Receipt Reprint</DTitle>
-                  <DialogDescription>
-                    Select an appointment to reprint
-                  </DialogDescription>
-                </DHeader>
-
-                {/* List container */}
-                <div className="mt-2 rounded-2xl border border-foreground bg-card p-4">
-                  <div className="text-sm font-medium text-foreground mb-3">
-                    Recent Appointments
-                  </div>
-
-                  <div className="h-[320px] rounded-xl border border-foreground bg-background" />
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus size={18} />
-                  {small ? "" : "New Card"}
-                </Button>
-              </DialogTrigger>
-
-              <DialogContent className="sm:max-w-[480px]">
-                <DHeader>
-                  <DTitle>Add card to patient file</DTitle>
-                  <DialogDescription>This is a placeholder</DialogDescription>
-                </DHeader>
-
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Card Type</Label>
-                    <Select value={brand} onValueChange={setBrand}>
-                      <SelectTrigger className="bg-input text-foreground border-foreground">
-                        <SelectValue placeholder="Card Type" />
-                      </SelectTrigger>
-
-                      <SelectContent>
-                        <SelectItem value="Visa">Visa</SelectItem>
-                        <SelectItem value="Mastercard">Mastercard</SelectItem>
-                        <SelectItem value="Amex">Amex</SelectItem>
-                        <SelectItem value="Debit">Debit</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="number">Card Number</Label>
-                    <Input
-                      id="number"
-                      value={number}
-                      onChange={(e) => setNumber(e.target.value)}
-                      inputMode="numeric"
-                      placeholder="•••• •••• •••• 1234"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="exp">Expiry</Label>
-                    <Input
-                      id="exp"
-                      value={exp}
-                      onChange={(e) => setExp(e.target.value)}
-                      placeholder="MM/YY"
-                    />
-                  </div>
-                </div>
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddCard}>Save card</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </header>
-        <div className="flex-1 min-h-0 pb-8 overflow-y-auto scrollbar-rounded space-y-6">
-          <Separator className="bg-border" />
-
-          {/* Cards on File */}
-          <section className="space-y-3">
-            <div>
-              <h2 className="text-lg font-bold text-foreground">
-                Cards on File
-              </h2>
-              <p className="text-sm text-foreground">
-                Saved payment methods for patient
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {cards.map((c) => (
-                <Card key={c.id} className="border-foreground bg-card">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base text-foreground flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        <CreditCard className="size-4 text-muted-foreground" />
-                        {c.brand}
-                      </span>
-                      <Badge variant="outline">On file</Badge>
-                    </CardTitle>
-                  </CardHeader>
-
-                  <CardContent className="space-y-2">
-                    <div className="font-mono text-sm text-foreground">
-                      {maskCard(c.last4)}
-                    </div>
-                    <div className="text-sm text-foreground">Exp: {c.exp}</div>
-
-                    <div className="pt-2 flex justify-end">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openManageCard(c)}
-                      >
-                        Manage
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-
-              {cards.length === 0 && (
-                <Card className="border-foreground bg-card">
-                  <CardContent className="py-10 text-center text-sm text-muted-foreground">
-                    No cards on file for this patient.
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </section>
-        </div>
-      </div>
-    </main>
+    </div>
   );
 }
