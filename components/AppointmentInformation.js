@@ -144,7 +144,10 @@ export default function AppointmentInformation({
     let slotToUse = active.slot;
 
     // If time OR practitioner changed → re-check slot
-    if (editTime !== active.time || editPractitioner !== selectedAppointment.practitioner) {
+    if (
+      editTime !== active.time ||
+      editPractitioner !== selectedAppointment.practitioner
+    ) {
       const availableSlot = getAvailableSlot(
         appointments.filter((a) => a.id !== selectedAppointment.id),
         formattedDate,
@@ -172,7 +175,9 @@ export default function AppointmentInformation({
     };
 
     setAppointments((prev) =>
-      prev.map((appt) => (appt.id === selectedAppointment.id ? updatedAppointment : appt)),
+      prev.map((appt) =>
+        appt.id === selectedAppointment.id ? updatedAppointment : appt,
+      ),
     );
 
     setActive(updatedAppointment);
@@ -185,7 +190,7 @@ export default function AppointmentInformation({
   };
 
   const openEditDialog = (appointment) => {
-    if(!appointment) return false;
+    if (!appointment) return false;
 
     if (appointment.status === "checked-out") {
       toast.warning("Checked-out appointments cannot be edited.", {
@@ -229,7 +234,7 @@ export default function AppointmentInformation({
                 <Settings />
               </Button>
             </AlertDialogTrigger>
-            <AlertDialogContent className="bg-background text-foreground border border-border">
+            <AlertDialogContent className="bg-background text-foreground border border-foreground">
               <AlertDialogHeader>
                 <AlertDialogTitle>Edit Appointment</AlertDialogTitle>
                 <div className="w-full max-w-md">

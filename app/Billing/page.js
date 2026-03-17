@@ -133,11 +133,11 @@ export default function Billing() {
             </DialogDescription>
           </DHeader>
 
-          <div className="mt-2 rounded-2xl border border-border bg-card p-4 space-y-4">
+          <div className="mt-2 rounded-2xl border border-foreground bg-card p-4 space-y-4">
             <div className="space-y-2">
               <Label>Card Type</Label>
               <Select value={manageBrand} onValueChange={setManageBrand}>
-                <SelectTrigger className="bg-input text-foreground border-border">
+                <SelectTrigger className="bg-input text-foreground border-foreground">
                   <SelectValue placeholder="Card Type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -216,11 +216,11 @@ export default function Billing() {
                   </DialogDescription>
                 </DHeader>
 
-                <div className="mt-2 rounded-2xl border border-border bg-card p-4 space-y-4">
+                <div className="mt-2 rounded-2xl border border-foreground bg-card p-4 space-y-4">
                   <div className="text-sm font-medium text-foreground">
                     Appointments
                   </div>
-                  <div className="h-[320px] rounded-xl border border-border bg-background" />
+                  <div className="h-[320px] rounded-xl border border-foreground bg-background" />
                 </div>
 
                 <DialogFooter className="justify-between">
@@ -247,12 +247,12 @@ export default function Billing() {
                 </DHeader>
 
                 {/* List container */}
-                <div className="mt-2 rounded-2xl border border-border bg-card p-4">
+                <div className="mt-2 rounded-2xl border border-foreground bg-card p-4">
                   <div className="text-sm font-medium text-foreground mb-3">
                     Recent Appointments
                   </div>
 
-                  <div className="h-[320px] rounded-xl border border-border bg-background" />
+                  <div className="h-[320px] rounded-xl border border-foreground bg-background" />
                 </div>
               </DialogContent>
             </Dialog>
@@ -275,7 +275,7 @@ export default function Billing() {
                   <div className="space-y-2">
                     <Label>Card Type</Label>
                     <Select value={brand} onValueChange={setBrand}>
-                      <SelectTrigger className="bg-input text-foreground border-border">
+                      <SelectTrigger className="bg-input text-foreground border-foreground">
                         <SelectValue placeholder="Card Type" />
                       </SelectTrigger>
 
@@ -335,7 +335,7 @@ export default function Billing() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {cards.map((c) => (
-                <Card key={c.id} className="border-border bg-card">
+                <Card key={c.id} className="border-foreground bg-card">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-base text-foreground flex items-center justify-between">
                       <span className="flex items-center gap-2">
@@ -366,7 +366,7 @@ export default function Billing() {
               ))}
 
               {cards.length === 0 && (
-                <Card className="border-border bg-card">
+                <Card className="border-foreground bg-card">
                   <CardContent className="py-10 text-center text-sm text-muted-foreground">
                     No cards on file for this patient.
                   </CardContent>

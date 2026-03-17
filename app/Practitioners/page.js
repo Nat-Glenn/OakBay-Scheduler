@@ -90,10 +90,10 @@ export default function Practitioners() {
           {/* SEARCH & ACTIONS BAR */}
           <div className="flex flex-row justify-end gap-4 w-full">
             <div className="relative flex-1 max-w-md">
-              <InputGroup className="bg-input border-border text-foreground placeholder:text-muted-foreground ">
+              <InputGroup className="bg-input border-foreground text-foreground placeholder:text-muted-foreground ">
                 <InputGroupInput
                   placeholder="Search by name or ID..."
-                  className="focus-visible:ring-ring"
+                  className="border-foreground border-y focus-visible:ring-ring"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
@@ -119,11 +119,11 @@ export default function Practitioners() {
           {/* MAIN CONTENT AREA */}
           <div className="flex flex-col md:flex-row gap-4 min-h-0">
             {/* PATIENT LIST TABLE */}
-            <div className="rounded-xl border border-border bg-dropdown flex flex-1 flex-col min-h-0">
+            <div className="rounded-xl border border-foreground bg-dropdown flex flex-1 flex-col min-h-0">
               <div className="min-h-0 overflow-y-auto scrollbar-rounded rounded-xl">
                 <Table>
-                  <TableHeader className="bg-input border-b border-border">
-                    <TableRow className="hover:bg-transparent border-border">
+                  <TableHeader className="bg-input border-b border-foreground">
+                    <TableRow className="hover:bg-transparent border-foreground">
                       <TableHead className="w-[120px] text-button-primary font-bold">
                         ID
                       </TableHead>
@@ -137,7 +137,7 @@ export default function Practitioners() {
                     {filteredPractitioners.map((p) => (
                       <TableRow
                         key={p.id}
-                        className={`cursor-pointer border-border/50 transition-colors ${
+                        className={`cursor-pointer border-foreground/30 transition-colors ${
                           selectedPractitioner?.id === p.id
                             ? "bg-ring/10"
                             : "hover:bg-border/30"
@@ -173,7 +173,7 @@ export default function Practitioners() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
                               align="end"
-                              className={`border-border text-foreground`}
+                              className={`border-foreground text-foreground`}
                             >
                               <DropdownMenuItem className="focus:bg-border">
                                 View Details
@@ -197,7 +197,7 @@ export default function Practitioners() {
             {/* PATIENT DETAIL SIDE-CARD */}
             {selectedPractitioner && (
               <div className="flex w-full md:w-1/4 animate-in slide-in-from-bottom-4 md:slide-in-from-right-4 duration-200">
-                <Card className="h-full w-full bg-dropdown border-border text-foreground relative overflow-hidden flex flex-col">
+                <Card className="h-full w-full bg-dropdown border-foreground text-foreground relative overflow-hidden flex flex-col">
                   {/* CLOSE BUTTON */}
                   <Button
                     variant="ghost"
@@ -208,7 +208,7 @@ export default function Practitioners() {
                     <X size={16} />
                   </Button>
 
-                  <CardHeader className="border-b border-border/50 pb-6">
+                  <CardHeader className="border-b border-foreground/30 pb-6">
                     <div className="flex flex-row items-center gap-4">
                       <div className="h-14 w-14 rounded-2xl bg-ring/20 flex items-center justify-center border border-ring/30">
                         <User className="text-ring" size={28} />
@@ -251,7 +251,7 @@ export default function Practitioners() {
                     </div>
 
                     {/* HISTORY */}
-                    <div className="space-y-4 pt-4 border-t border-border/50">
+                    <div className="space-y-4 pt-4 border-t border-foreground/30">
                       <h3 className="text-title text-xs font-black uppercase tracking-widest">
                         Appointment History
                       </h3>

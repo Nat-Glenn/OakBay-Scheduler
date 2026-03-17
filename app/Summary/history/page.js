@@ -49,21 +49,126 @@ export default function PatientHistory() {
   const small = useMediaQuery("(max-width: 768px)");
 
   const historyData = [
-    { id: 10, patientName: "John Doe", status: "Requested", type: "Adjustment", startTime: "2026-03-05T14:00:00.000Z", adminNotes: "Portal request" },
-    { id: 9, patientName: "John Doe", status: "Completed", type: "Checkup", startTime: "2026-03-01T09:30:00.000Z", adminNotes: "All clear" },
-    { id: 8, patientName: "John Doe", status: "Confirmed", type: "Adjustment", startTime: "2026-02-28T11:15:00.000Z", adminNotes: "Confirmed by phone" },
-    { id: 5, patientName: "John Doe", status: "Requested", type: "Adjustment", startTime: "2026-02-22T17:15:00.000Z", adminNotes: "Patient requested via portal" },
-    { id: 4, patientName: "John Doe", status: "Confirmed", type: "Adjustment", startTime: "2026-02-20T17:00:00.000Z", adminNotes: "Confirmed by receptionist" },
-    { id: 11, patientName: "John Doe", status: "Requested", type: "Adjustment", startTime: "2026-03-05T14:00:00.000Z", adminNotes: "Portal request" },
-    { id: 12, patientName: "John Doe", status: "Completed", type: "Checkup", startTime: "2026-03-01T09:30:00.000Z", adminNotes: "All clear" },
-    { id: 13, patientName: "John Doe", status: "Confirmed", type: "Adjustment", startTime: "2026-02-28T11:15:00.000Z", adminNotes: "Confirmed by phone" },
-    { id: 14, patientName: "John Doe", status: "Requested", type: "Adjustment", startTime: "2026-02-22T17:15:00.000Z", adminNotes: "Patient requested via portal" },
-    { id: 15, patientName: "John Doe", status: "Confirmed", type: "Adjustment", startTime: "2026-02-20T17:00:00.000Z", adminNotes: "Confirmed by receptionist" },
-    { id: 16, patientName: "John Doe", status: "Requested", type: "Adjustment", startTime: "2026-03-05T14:00:00.000Z", adminNotes: "Portal request" },
-    { id: 17, patientName: "John Doe", status: "Completed", type: "Checkup", startTime: "2026-03-01T09:30:00.000Z", adminNotes: "All clear" },
-    { id: 18, patientName: "John Doe", status: "Confirmed", type: "Adjustment", startTime: "2026-02-28T11:15:00.000Z", adminNotes: "Confirmed by phone" },
-    { id: 19, patientName: "John Doe", status: "Requested", type: "Adjustment", startTime: "2026-02-22T17:15:00.000Z", adminNotes: "Patient requested via portal" },
-    { id: 20, patientName: "John Doe", status: "Confirmed", type: "Adjustment", startTime: "2026-02-20T17:00:00.000Z", adminNotes: "Confirmed by receptionist" },
+    {
+      id: 10,
+      patientName: "John Doe",
+      status: "Requested",
+      type: "Adjustment",
+      startTime: "2026-03-05T14:00:00.000Z",
+      adminNotes: "Portal request",
+    },
+    {
+      id: 9,
+      patientName: "John Doe",
+      status: "Completed",
+      type: "Checkup",
+      startTime: "2026-03-01T09:30:00.000Z",
+      adminNotes: "All clear",
+    },
+    {
+      id: 8,
+      patientName: "John Doe",
+      status: "Confirmed",
+      type: "Adjustment",
+      startTime: "2026-02-28T11:15:00.000Z",
+      adminNotes: "Confirmed by phone",
+    },
+    {
+      id: 5,
+      patientName: "John Doe",
+      status: "Requested",
+      type: "Adjustment",
+      startTime: "2026-02-22T17:15:00.000Z",
+      adminNotes: "Patient requested via portal",
+    },
+    {
+      id: 4,
+      patientName: "John Doe",
+      status: "Confirmed",
+      type: "Adjustment",
+      startTime: "2026-02-20T17:00:00.000Z",
+      adminNotes: "Confirmed by receptionist",
+    },
+    {
+      id: 11,
+      patientName: "John Doe",
+      status: "Requested",
+      type: "Adjustment",
+      startTime: "2026-03-05T14:00:00.000Z",
+      adminNotes: "Portal request",
+    },
+    {
+      id: 12,
+      patientName: "John Doe",
+      status: "Completed",
+      type: "Checkup",
+      startTime: "2026-03-01T09:30:00.000Z",
+      adminNotes: "All clear",
+    },
+    {
+      id: 13,
+      patientName: "John Doe",
+      status: "Confirmed",
+      type: "Adjustment",
+      startTime: "2026-02-28T11:15:00.000Z",
+      adminNotes: "Confirmed by phone",
+    },
+    {
+      id: 14,
+      patientName: "John Doe",
+      status: "Requested",
+      type: "Adjustment",
+      startTime: "2026-02-22T17:15:00.000Z",
+      adminNotes: "Patient requested via portal",
+    },
+    {
+      id: 15,
+      patientName: "John Doe",
+      status: "Confirmed",
+      type: "Adjustment",
+      startTime: "2026-02-20T17:00:00.000Z",
+      adminNotes: "Confirmed by receptionist",
+    },
+    {
+      id: 16,
+      patientName: "John Doe",
+      status: "Requested",
+      type: "Adjustment",
+      startTime: "2026-03-05T14:00:00.000Z",
+      adminNotes: "Portal request",
+    },
+    {
+      id: 17,
+      patientName: "John Doe",
+      status: "Completed",
+      type: "Checkup",
+      startTime: "2026-03-01T09:30:00.000Z",
+      adminNotes: "All clear",
+    },
+    {
+      id: 18,
+      patientName: "John Doe",
+      status: "Confirmed",
+      type: "Adjustment",
+      startTime: "2026-02-28T11:15:00.000Z",
+      adminNotes: "Confirmed by phone",
+    },
+    {
+      id: 19,
+      patientName: "John Doe",
+      status: "Requested",
+      type: "Adjustment",
+      startTime: "2026-02-22T17:15:00.000Z",
+      adminNotes: "Patient requested via portal",
+    },
+    {
+      id: 20,
+      patientName: "John Doe",
+      status: "Confirmed",
+      type: "Adjustment",
+      startTime: "2026-02-20T17:00:00.000Z",
+      adminNotes: "Confirmed by receptionist",
+    },
   ];
 
   const formatDate = (iso) =>
@@ -131,7 +236,7 @@ export default function PatientHistory() {
 
           <div className="flex items-center gap-2 flex-1 max-w-2xl justify-end">
             {/* Search Bar */}
-            <InputGroup className="bg-input border-border max-w-md">
+            <InputGroup className="bg-input border-foreground max-w-md">
               <InputGroupInput
                 placeholder="Search..."
                 value={searchTerm}
@@ -147,7 +252,7 @@ export default function PatientHistory() {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  className="flex gap-2 items-center border-border font-semibold h-11"
+                  className="flex gap-2 items-center border-foreground font-semibold h-11"
                 >
                   <ListFilter size={18} />
                   {!small && `Sort: ${sortLabels[sortConfig.key]}`}
@@ -173,7 +278,9 @@ export default function PatientHistory() {
 
                 <DropdownMenuLabel>Order</DropdownMenuLabel>
                 <DropdownMenuItem
-                  onClick={() => setSortConfig({ ...sortConfig, direction: "asc" })}
+                  onClick={() =>
+                    setSortConfig({ ...sortConfig, direction: "asc" })
+                  }
                   className="flex justify-between items-center cursor-pointer"
                 >
                   Ascending
@@ -182,7 +289,9 @@ export default function PatientHistory() {
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() => setSortConfig({ ...sortConfig, direction: "desc" })}
+                  onClick={() =>
+                    setSortConfig({ ...sortConfig, direction: "desc" })
+                  }
                   className="flex justify-between items-center cursor-pointer"
                 >
                   Descending
@@ -196,27 +305,27 @@ export default function PatientHistory() {
         </header>
 
         {/* Data Table */}
-        <div className="rounded-xl border border-border bg-dropdown flex flex-1 flex-col min-h-0 overflow-hidden shadow-sm">
+        <div className="rounded-xl border-foreground bg-dropdown flex flex-1 flex-col min-h-0 overflow-hidden shadow-sm">
           <div className="min-h-0 overflow-y-auto scrollbar-rounded flex-1">
             <Table className="border-separate border-spacing-0">
               <TableHeader className="sticky top-0 z-10">
                 <TableRow className="hover:bg-transparent">
-                  <TableHead className="w-[120px] px-6 bg-input border-b border-border font-bold text-foreground">
+                  <TableHead className="w-[120px] px-6 bg-input border-b border-foreground font-bold text-foreground">
                     ID
                   </TableHead>
-                  <TableHead className="bg-input border-b border-border font-bold text-foreground">
+                  <TableHead className="bg-input border-b border-foreground font-bold text-foreground">
                     Patient
                   </TableHead>
-                  <TableHead className="bg-input border-b border-border font-bold text-foreground">
+                  <TableHead className="bg-input border-b border-foreground font-bold text-foreground">
                     Date & Time
                   </TableHead>
-                  <TableHead className="bg-input border-b border-border font-bold text-foreground">
+                  <TableHead className="bg-input border-b border-foreground font-bold text-foreground">
                     Type
                   </TableHead>
-                  <TableHead className="bg-input border-b border-border font-bold text-foreground text-center">
+                  <TableHead className="bg-input border-b border-foreground font-bold text-foreground text-center">
                     Status
                   </TableHead>
-                  <TableHead className="w-[50px] bg-input border-b border-border"></TableHead>
+                  <TableHead className="w-[50px] bg-input border-b border-foreground"></TableHead>
                 </TableRow>
               </TableHeader>
 
@@ -224,7 +333,7 @@ export default function PatientHistory() {
                 {processedData.map((visit) => (
                   <TableRow
                     key={visit.id}
-                    className="border-border/50 hover:bg-border/30"
+                    className="border-foreground/30 hover:bg-border/30"
                   >
                     <TableCell className="font-mono text-sm text-button-primary px-6">
                       #{visit.id}

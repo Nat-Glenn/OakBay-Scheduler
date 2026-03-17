@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AddAppointment from "@/components/AddAppointment";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
+import { useSearchParams } from "next/navigation";
 
 export default function Appointments() {
   const time = [
@@ -48,6 +49,8 @@ export default function Appointments() {
   const [practitioner, setPractitioner] = useState("");
   const [active, setActive] = useState(null);
   const small = useMediaQuery("(max-width: 768px)");
+  const searchParams = useSearchParams();
+  const fromPatient = searchParams.get("fromPatient");
 
   function formatDateForApi(date) {
     const year = date.getFullYear();
@@ -191,6 +194,7 @@ export default function Appointments() {
               date={date}
               setDate={setDate}
               variant={small ? "icon" : "default"}
+              open={fromPatient}
             />
           </div>
         </header>

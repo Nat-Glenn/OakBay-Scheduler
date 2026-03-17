@@ -13,7 +13,7 @@ import { signInWithGoogle } from "./GoogleSignIn/googleAuth";
 import { setPendingMfa } from "./TwoFactor/mfaStore";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,10 +30,12 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [loginLoading, setLoginLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const router = useRouter();
 
   const handleGoogleSignIn = async () => {
+    setError("");
     try {
       setGoogleLoading(true);
 
@@ -61,11 +63,8 @@ export default function LoginPage() {
           return;
         }
 
-        toast.error(
+        setError(
           "A second factor is required, but no supported phone factor was found.",
-          {
-            position: "top-center",
-          },
         );
         return;
       }
@@ -74,9 +73,6 @@ export default function LoginPage() {
         const message = error?.message || "";
 
         if (auth.currentUser) {
-          toast.success("Successfully signed in with Google!", {
-            position: "top-center",
-          });
           router.push("/Home");
           return;
         }
@@ -86,20 +82,13 @@ export default function LoginPage() {
             "Google login is only allowed after the account has been connected in Settings.",
           )
         ) {
-          toast.error(
-            "Google login is only available for existing accounts.",
-            {
-              position: "top-center",
-            },
-          );
+          setError("Google login is only available for existing accounts.");
           return;
         }
       }
 
       console.error(error);
-      toast.error("Google login failed.", {
-        position: "top-center",
-      });
+      setError("Google login failed.");
     } finally {
       setGoogleLoading(false);
     }
@@ -107,6 +96,22 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+
+    // Validation check for email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!username) {
+      setError("Please enter your email address.");
+      return;
+    }
+    if (!emailRegex.test(username)) {
+      setError("Please enter a valid email address (e.g., name@gmail.com).");
+      return;
+    }
+    if (!password) {
+      setError("Please enter your password.");
+      return;
+    }
 
     try {
       setLoginLoading(true);
@@ -116,9 +121,7 @@ export default function LoginPage() {
 
       if (!user.emailVerified) {
         await sendEmailVerification(user);
-        toast.info("Please verify your email and login again.", {
-          position: "top-center",
-        });
+        setError("Please verify your email and login again.");
         return;
       }
 
@@ -141,9 +144,7 @@ export default function LoginPage() {
         }
       }
 
-      toast.warning("Invalid credentials. Please try again.", {
-        position: "top-center",
-      });
+      setError("Invalid credentials. Please try again.");
     } finally {
       setLoginLoading(false);
     }
@@ -165,10 +166,15 @@ export default function LoginPage() {
             Oak Bay Scheduler
           </h1>
 
-          <form className="flex flex-col gap-4 w-full" onSubmit={handleSubmit}>
+          {/* Input Fields*/}
+          <form
+            className="flex flex-col gap-4 w-full"
+            onSubmit={handleSubmit}
+            noValidate
+          >
             <Input
-              className="h-12"
-              type="email"
+              className="h-12 border-foreground"
+              type="text"
               name="username"
               placeholder="Email"
               value={username}
@@ -176,7 +182,7 @@ export default function LoginPage() {
               autoComplete="email"
             />
 
-            <InputGroup className="border-border border h-12">
+            <InputGroup className="border-foreground dark:bg-input/30 bg-background border h-12 ">
               <InputGroupInput
                 className="h-full"
                 type={showPassword ? "text" : "password"}
@@ -201,6 +207,14 @@ export default function LoginPage() {
               </InputGroupAddon>
             </InputGroup>
 
+            {/* Error message */}
+            {error && (
+              <div className="w-full bg-destructive/15 border border-destructive/30 p-3 rounded-md flex items-center gap-2">
+                <AlertCircle className="text-destructive h-4 w-4 shrink-0" />
+                <p className="text-destructive text-xs font-medium">{error}</p>
+              </div>
+            )}
+
             <Button
               className="bg-button-primary h-12"
               type="submit"
@@ -219,7 +233,7 @@ export default function LoginPage() {
               onClick={handleGoogleSignIn}
               type="button"
               disabled={googleLoading}
-              className="w-11 h-11 rounded-full bg-background border border-border flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100"
+              className="w-11 h-11 rounded-full bg-background border border-foreground flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:active:scale-100"
             >
               <Image
                 src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
@@ -233,7 +247,8 @@ export default function LoginPage() {
           <div className="h-[1px] w-full bg-border mt-2"></div>
 
           <p className="text-muted-foreground text-[10px] tracking-widest font-bold text-center">
-            Google login will not work if email isn&apos;t already registered in database.
+            Google login will not work if email isn&apos;t already registered in
+            database.
           </p>
 
           <Link
