@@ -3,14 +3,6 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import NavBarComp from "@/components/NavBarComp";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-} from "@/components/ui/select";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,56 +21,21 @@ export default function AddPatientPage() {
   const [stat, setStat] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [dob, setDob] = useState({
-    year: "",
-    month: "",
-    day: "",
-  });
+  
   const status = [
     { id: 1, name: "Active" },
     { id: 2, name: "Inactive" },
   ];
 
-  function getYearsRange() {
-    const currentYear = new Date().getFullYear();
-    const years = [];
-
-    for (let y = currentYear; y >= 1900; y--) {
-      years.push(y);
-    }
-
-    return years;
-  }
-  function getMonthsRange() {
-    let months = [];
-    for (let i = 1; i <= 12; i++) {
-      months.push(i);
-    }
-    return months;
-  }
-  const getDaysInMonth = (year, month) => {
-    if (!year || !month) return [];
-
-    const days = new Date(year, month, 0).getDate();
-    return Array.from({ length: days }, (_, i) => i + 1);
-  };
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
     email: "",
     phone: "",
     ahcNumber: "",
-    dob: "",
     notes: "",
   });
 
-  function updateDOB(field, value) {
-    setDob((prev) => ({
-      ...prev,
-      [field]: value,
-      ...(field === "month" || field === "year" ? { day: "" } : {}),
-    }));
-  }
   function handleChange(e) {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -87,26 +44,17 @@ export default function AddPatientPage() {
     }));
   }
 
-  const formattedDOB =
-    dob.year && dob.month && dob.day
-      ? `${dob.year}-${String(dob.month).padStart(2, "0")}-${String(
-          dob.day,
-        ).padStart(2, "0")}`
-      : null;
-
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
-    // Validation check
     if (
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
-      !formData.phone.trim() ||
-      !formattedDOB
+      !formData.phone.trim()
     ) {
       setError(
-        "First name, last name, phone number, and date of birth are required.",
+        "First name, last name, and phone number are required.",
       );
       return;
     }
@@ -125,7 +73,7 @@ export default function AddPatientPage() {
           phone: formData.phone.trim(),
           email: formData.email.trim() || null,
           ahcNumber: formData.ahcNumber.trim() || null,
-          dob: formattedDOB, // HTML date input returns "YYYY-MM-DD"
+          dob: null,
           notes: formData.notes.trim() || null,
           reminderOptIn: stat !== "Inactive",
         }),
@@ -229,86 +177,18 @@ export default function AddPatientPage() {
                         onChange={handleChange}
                       />
 
-                      <FieldGroup>
-                        <div className="grid grid-cols-3 gap-2">
-                          <Field>
-                            <FieldLabel>Year</FieldLabel>
-                            <Select
-                              onValueChange={(value) =>
-                                updateDOB("year", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Year" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getYearsRange().map((year) => (
-                                  <SelectItem
-                                    key={year}
-                                    value={year.toString()}
-                                  >
-                                    {year}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </Field>
-                          <Field>
-                            <FieldLabel>Month</FieldLabel>
-                            <Select
-                              onValueChange={(value) =>
-                                updateDOB("month", value)
-                              }
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Month" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getMonthsRange().map((month) => (
-                                  <SelectItem
-                                    key={month}
-                                    value={month.toString()}
-                                  >
-                                    {month}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </Field>
-                          <Field>
-                            <FieldLabel>Day</FieldLabel>
-                            <Select
-                              onValueChange={(value) => updateDOB("day", value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue placeholder="Day" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {getDaysInMonth(dob.year, dob.month).map(
-                                  (day) => (
-                                    <SelectItem
-                                      key={day}
-                                      value={day.toString()}
-                                    >
-                                      {day}
-                                    </SelectItem>
-                                  ),
-                                )}
-                              </SelectContent>
-                            </Select>
-                          </Field>
-                        </div>
-                      </FieldGroup>
+                      <div className="grid grid-cols-1 gap-4">
+                        <FormField
+                          fieldLabel="Status"
+                          displayText={stat}
+                          setItemSearch={setStat}
+                          itemsArray={status}
+                          variant="select"
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        fieldLabel="Status"
-                        displayText={stat}
-                        setItemSearch={setStat}
-                        itemsArray={status}
-                        variant="select"
-                      />
-                    </div>
+
+                    {/* DOB Section completely removed */}
 
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="font-bold">Notes</FieldLabel>
