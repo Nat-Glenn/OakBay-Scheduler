@@ -22,16 +22,19 @@ import {
 } from "@/components/ui/select";
 
 export default function AppointmentButtons({
+  // Props coming into the component
   appointment,
   active,
   setAppointments,
   setActive,
 }) {
+  // Determines which appt to use 
   const selectedAppointment = appointment || active;
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [appointmentTotal, setAppointmentTotal] = useState("");
   const [paymentType, setPaymentType] = useState("");
 
+  // Updates the front end state after the backend succeeds
   const updateAppointmentStatus = (newStatus) => {
     if (!selectedAppointment) return false;
 
@@ -50,6 +53,7 @@ export default function AppointmentButtons({
     return true;
   };
 
+  // Function that runs when the user clicks check in
   const handleCheckIn = async () => {
     if (!selectedAppointment) return false;
 
@@ -61,6 +65,7 @@ export default function AppointmentButtons({
     }
 
     try {
+      // Request to backend
       const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
         method: "PATCH",
         headers: {
@@ -71,6 +76,7 @@ export default function AppointmentButtons({
         }),
       });
 
+      // Header of application / json lets the request process
       const data = await res.json();
 
       if (!res.ok) {

@@ -1,18 +1,22 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
 
+// Runs when a PATCH request is sent
 export async function PATCH(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    // Extracts id and convert to a number
     const { id: idStr } = await context.params;
     const id = Number(idStr);
 
+    // Validates id 
     if (!Number.isInteger(id) || id <= 0) {
       return badRequest("Invalid appointment id", { id: idStr });
     }
 
+    // Reads JSON data from front end
     const body = await req.json();
 
     const status = body.status ? String(body.status).trim().toUpperCase() : undefined;
@@ -24,6 +28,7 @@ export async function PATCH(
     }
 
     // Return 404 instead of 500 if not found
+    // Checks if appointment exists
     const exists = await prisma.appointment.findUnique({
       where: { id },
       select: { id: true },
@@ -39,6 +44,7 @@ export async function PATCH(
       include: { patient: true, provider: true, payment: true },
     });
 
+    // Returns ok if data is valid
     return ok(updated);
   } catch (err) {
     console.error(err);
