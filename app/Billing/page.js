@@ -38,7 +38,10 @@ const roboto = Roboto({
 });
 
 function maskCard(last4) {
-  const digits = String(last4 || "").replace(/\D/g, "").slice(-4) || "••••";
+  const digits =
+    String(last4 || "")
+      .replace(/\D/g, "")
+      .slice(-4) || "••••";
   return `•••• •••• •••• ${digits}`;
 }
 
@@ -112,7 +115,7 @@ export default function Billing() {
       try {
         setLoadingPatients(true);
         const res = await fetch(
-          `/api/patients?search=${encodeURIComponent(patientSearch)}`
+          `/api/patients?search=${encodeURIComponent(patientSearch)}`,
         );
         const data = await res.json();
 
@@ -303,7 +306,7 @@ export default function Billing() {
       <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
         {!small && <h1 className="mb-6 text-3xl font-semibold">Billing</h1>}
 
-        <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
+        <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
           <UiCard>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -362,7 +365,7 @@ export default function Billing() {
             </CardContent>
           </UiCard>
 
-          <div className="space-y-6">
+          <div className="space-y-4">
             <UiCard>
               <CardHeader>
                 <CardTitle>Patient</CardTitle>
@@ -427,7 +430,9 @@ export default function Billing() {
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="Visa">Visa</SelectItem>
-                            <SelectItem value="Mastercard">Mastercard</SelectItem>
+                            <SelectItem value="Mastercard">
+                              Mastercard
+                            </SelectItem>
                             <SelectItem value="Amex">Amex</SelectItem>
                             <SelectItem value="Debit">Debit</SelectItem>
                           </SelectContent>
@@ -461,7 +466,10 @@ export default function Billing() {
                       >
                         Cancel
                       </Button>
-                      <Button onClick={handleAddCard} disabled={!selectedPatient}>
+                      <Button
+                        onClick={handleAddCard}
+                        disabled={!selectedPatient}
+                      >
                         Save card
                       </Button>
                     </DialogFooter>

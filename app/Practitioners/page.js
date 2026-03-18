@@ -250,32 +250,8 @@ export default function Practitioners() {
                       </div>
                     </div>
 
-                    {/* HISTORY */}
-                    <div className="space-y-4 pt-4 border-t border-foreground/30">
-                      <h3 className="text-title text-xs font-black uppercase tracking-widest">
-                        Appointment History
-                      </h3>
-                      <div className="grid gap-4 text-sm">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground font-bold">
-                            Last Visit
-                          </span>
-                          <span className="text-foreground"></span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground font-bold">
-                            Next Appointment
-                          </span>
-                          <span className="text-button-primary font-medium">
-                            {"N/A"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
                     {/* ACTIONS */}
                     <div className="pt-4 space-y-2 mt-auto">
-                      <Button className="w-full">View Full Profile</Button>
                       <Button variant="secondary" className="w-full">
                         Schedule Appointment
                       </Button>

@@ -54,10 +54,9 @@ export default function AppointmentButtons({
     if (!selectedAppointment) return false;
 
     if (selectedAppointment.status !== "scheduled") {
-      toast.warning(
-        "You can only check in appointments that are scheduled.",
-        { position: "top-center" },
-      );
+      toast.warning("You can only check in appointments that are scheduled.", {
+        position: "top-center",
+      });
       return false;
     }
 
@@ -190,16 +189,19 @@ export default function AppointmentButtons({
       </Item>
 
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-          <DialogContent className="sm:max-w-[600px] rounded-3xl">
-            <DialogHeader>
-              <DialogTitle>Checkout</DialogTitle>
-            </DialogHeader>
-
-            <div className="flex flex-col gap-6 py-4">
-              <div className="flex items-center gap-4 rounded-xl border px-4 py-3">
-                <span className="text-sm text-muted-foreground whitespace-nowrap">
-                  Appointment total
-                </span>
+        <DialogContent className="sm:max-w-[600px] rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>Checkout</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-row px-4">
+            <div className="grid grid-rows-2 items-center">
+              <span className="text-sm text-foreground whitespace-nowrap">
+                Appointment total
+              </span>
+              <span className="text-sm text-foreground">Card type</span>
+            </div>
+            <div className="grid grid-rows-2 w-full">
+              <div className="flex items-center gap-4 px-4 py-3 cols-span-2">
                 <Input
                   type="number"
                   min="0"
@@ -207,16 +209,12 @@ export default function AppointmentButtons({
                   value={appointmentTotal}
                   onChange={(e) => setAppointmentTotal(e.target.value)}
                   placeholder="00.00"
-                  className="border-0 shadow-none focus-visible:ring-0 text-right"
+                  className="shadow-none focus-visible:ring-0 text-left"
                 />
               </div>
-
-              <div className="rounded-xl border px-4 py-3">
-                <span className="mb-2 block text-sm text-muted-foreground">
-                  Card type
-                </span>
+              <div className="flex items-center gap-4 px-4 py-3">
                 <Select value={paymentType} onValueChange={setPaymentType}>
-                  <SelectTrigger className="border-0 px-4 shadow-none focus:ring-0">
+                  <SelectTrigger className="shadow-none focus:ring-0 w-full">
                     <SelectValue placeholder="Select payment type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -228,17 +226,18 @@ export default function AppointmentButtons({
                 </Select>
               </div>
             </div>
+          </div>
 
-            <DialogFooter>
-              <Button
-                onClick={handleConfirmCheckout}
-                className="bg-button-primary text-white"
-              >
-                Confirm
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </>
+          <DialogFooter>
+            <Button
+              onClick={handleConfirmCheckout}
+              className="bg-button-primary text-white"
+            >
+              Confirm
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

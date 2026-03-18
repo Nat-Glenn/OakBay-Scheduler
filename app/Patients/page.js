@@ -113,7 +113,7 @@ export default function PatientProfiles() {
           {/* SEARCH & ACTIONS BAR */}
           <div className="flex flex-row justify-end gap-4 w-full">
             <div className="relative flex-1 max-w-md">
-              <InputGroup className="bg-input text-foreground placeholder:text-muted-foreground ">
+              <InputGroup className="bg-input text-foreground placeholder:text-muted-foreground">
                 <InputGroupInput
                   placeholder="Search by name or ID..."
                   className="focus-visible:ring-ring"

@@ -115,17 +115,17 @@ export default function Appointments() {
             slot: 1,
             date: date.toLocaleDateString("en-GB"),
             status:
-            appt.status?.toUpperCase() === "REQUESTED"
-              ? "scheduled"
-              : appt.status?.toUpperCase() === "CONFIRMED"
+              appt.status?.toUpperCase() === "REQUESTED"
                 ? "scheduled"
-                : appt.status?.toUpperCase() === "CHECKED_IN"
-                  ? "checked-in"
-                  : appt.status?.toUpperCase() === "COMPLETED"
-                    ? "checked-out"
-                    : appt.status?.toUpperCase() === "CANCELLED"
-                      ? "cancelled"
-                      : appt.status?.toLowerCase() || "scheduled",
+                : appt.status?.toUpperCase() === "CONFIRMED"
+                  ? "scheduled"
+                  : appt.status?.toUpperCase() === "CHECKED_IN"
+                    ? "checked-in"
+                    : appt.status?.toUpperCase() === "COMPLETED"
+                      ? "checked-out"
+                      : appt.status?.toUpperCase() === "CANCELLED"
+                        ? "cancelled"
+                        : appt.status?.toLowerCase() || "scheduled",
           };
         });
 

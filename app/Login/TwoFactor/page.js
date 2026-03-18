@@ -12,6 +12,7 @@ import { getPendingMfa, clearPendingMfa } from "./mfaStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import Link from "next/link";
 
 export default function TwoFactorPage() {
   const router = useRouter();
@@ -118,7 +119,8 @@ export default function TwoFactorPage() {
     if (!hint && Array.isArray(resolver.hints)) {
       hint =
         resolver.hints.find(
-          (h) => h?.factorId === PhoneMultiFactorGenerator.FACTOR_ID && !!h?.uid,
+          (h) =>
+            h?.factorId === PhoneMultiFactorGenerator.FACTOR_ID && !!h?.uid,
         ) || null;
     }
 
@@ -323,94 +325,81 @@ export default function TwoFactorPage() {
   }, []);
 
   return (
-    <main
-      className="flex flex-col items-center justify-center min-h-screen"
-      style={{ backgroundColor: "#00AEEF" }}
-    >
-      <div
-        className="flex flex-col items-center gap-5"
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderRadius: "20px",
-          width: "420px",
-          padding: "32px",
-        }}
-      >
-        <p
-          style={{
-            textAlign: "center",
-            color: "#000000",
-            fontSize: "24px",
-            fontWeight: "bold",
-          }}
-        >
+    <main className="flex flex-col items-center justify-center min-h-screen bg-sidebar">
+      <div className="flex flex-col items-center gap-4 bg-background rounded-lg p-4 w-1/3">
+        <p className="text-center text-foreground text-2xl font-bold">
           Two-Factor Verification
         </p>
+        {verificationId ? (
+          <div>
+            <p className="text-center text-sm text-foreground p-4">
+              Enter the code sent to {maskedPhone || "your phone"}.
+            </p>
+            <form
+              className="flex flex-col gap-4 w-full"
+              onSubmit={handleVerifyCode}
+            >
+              <Input
+                className="bg-slate-50"
+                type="text"
+                placeholder="6-digit code"
+                inputMode="numeric"
+                maxLength={6}
+                value={verificationCode}
+                onChange={(e) => setVerificationCode(e.target.value)}
+                disabled={!verificationId}
+              />
 
-        <p className="text-center text-sm text-slate-700">
-          {verificationId
-            ? `Enter the code sent to ${maskedPhone || "your phone"}.`
-            : `Complete reCAPTCHA, then click "Send Code" for ${maskedPhone || "your phone"}.`}
-        </p>
+              <Button
+                variant="secondary"
+                type="submit"
+                disabled={isSendingCode || isVerifyingCode || !verificationId}
+              >
+                {isVerifyingCode ? "Verifying..." : "Verify Code"}
+              </Button>
 
-        <div
-          id="mfa-recaptcha-container"
-          className={`w-full justify-center ${showCaptcha ? "flex" : "hidden"}`}
-        />
-
-        <form className="flex flex-col gap-4 w-full" onSubmit={handleVerifyCode}>
-          {!verificationId && (
+              <Button
+                type="button"
+                variant="third"
+                onClick={handleResendCode}
+                disabled={isSendingCode || isVerifyingCode}
+              >
+                {isSendingCode ? "Sending..." : "Resend Code"}
+              </Button>
+            </form>
+          </div>
+        ) : (
+          <div>
+            <p className="text-center text-sm text-foreground p-4">
+              Complete reCAPTCHA, then click &quot;Send Code&quot; for
+              {maskedPhone || "your phone"}.
+            </p>
+            <div
+              id="mfa-recaptcha-container"
+              className={`w-full justify-center rounded-2xl pb-4 ${showCaptcha ? "flex" : "hidden"}`}
+            />
             <Button
+              className="w-full"
               type="button"
-              className="bg-[#01488D] hover:bg-[#7BC043]/80 hover:text-white/60 cursor-pointer"
+              variant="secondary"
               onClick={() => sendCode()}
               disabled={!isRecaptchaReady || isSendingCode}
             >
               {isSendingCode ? "Sending..." : "Send Code"}
             </Button>
-          )}
-
-          <Input
-            className="bg-slate-50"
-            type="text"
-            placeholder="6-digit code"
-            inputMode="numeric"
-            maxLength={6}
-            value={verificationCode}
-            onChange={(e) => setVerificationCode(e.target.value)}
-            disabled={!verificationId}
-          />
-
-          <Button
-            className="bg-[#01488D] hover:bg-[#7BC043]/80 hover:text-white/60 cursor-pointer"
-            type="submit"
-            disabled={isSendingCode || isVerifyingCode || !verificationId}
-          >
-            {isVerifyingCode ? "Verifying..." : "Verify Code"}
-          </Button>
-
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleResendCode}
-            disabled={isSendingCode || isVerifyingCode}
-          >
-            {isSendingCode ? "Sending..." : "Resend Code"}
-          </Button>
-
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleCancel}
-            disabled={isVerifyingCode}
-          >
-            Back to Login
-          </Button>
-        </form>
-
-        <p className="text-xs text-slate-500 text-center">
-          If this page is refreshed, your 2FA session may expire and you may need
-          to log in again.
+          </div>
+        )}
+        <button
+          type="button"
+          className="cursor-pointer"
+          onClick={handleCancel}
+          disabled={isVerifyingCode}
+        >
+          Back to Login
+        </button>
+        <p className="text-xs text-muted-foreground text-center">
+          If this page is refreshed, your 2FA session may expire and you may
+          need to log in again.
         </p>
       </div>
     </main>

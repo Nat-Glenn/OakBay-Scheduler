@@ -31,20 +31,9 @@ export default function ResetPassword() {
   };
 
   return (
-    <main
-      className="flex flex-col items-center justify-center min-h-screen"
-      style={{ backgroundColor: "#00AEEF" }}
-    >
+    <main className="flex flex-col items-center justify-center min-h-screen bg-sidebar">
       {/* alert logic maintained from original */}
-      <div
-        className="flex flex-col items-center gap-6"
-        style={{
-          backgroundColor: "#FFFFFF",
-          borderRadius: "20px",
-          width: "400px",
-          padding: "40px",
-        }}
-      >
+      <div className="flex flex-col items-center gap-4 bg-background rounded-lg w-1/3 p-4">
         <Image
           src="/favicon.png"
           width={100}
@@ -53,14 +42,7 @@ export default function ResetPassword() {
           alt="Oak Bay Scheduler"
         />
 
-        <p
-          style={{
-            textAlign: "center",
-            color: "#000000",
-            fontSize: "12px",
-            fontWeight: "bold",
-          }}
-        >
+        <p className="text-foreground text-sm font-bold">
           You will receive an email momentarily after submission
         </p>
 
@@ -74,12 +56,7 @@ export default function ResetPassword() {
             onChange={(e) => setUsername(e.target.value)}
           />
 
-          <Button
-            className="bg-[#7BC043] hover:bg-[#7BC043]/80 hover:text-white/80 text-white cursor-pointer"
-            type="submit"
-          >
-            Submit
-          </Button>
+          <Button type="submit">Submit</Button>
         </form>
 
         <p
