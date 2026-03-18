@@ -28,50 +28,46 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Practitioners() {
-  const practitioners = [
-    {
-      id: 1,
-      name: "Brad Pritchard",
-      email: "bradpritchard@gmail.com",
-      phone: "5933493018",
-    },
-    {
-      id: 2,
-      name: "Kyle James",
-      email: "kylejames@gmail.com",
-      phone: "5943443618",
-    },
-    {
-      id: 3,
-      name: "Daniel Topala",
-      email: "danieltopala@gmail.com",
-      phone: "5543453678",
-    },
-    {
-      id: 4,
-      name: "Francis Morris",
-      email: "francismorris@gmail.com",
-      phone: "5521690678",
-    },
-    {
-      id: 5,
-      name: "Yui Hirasawa",
-      email: "yuihirasawa@gmail.com",
-      phone: "5523670708",
-    },
-  ];
+  const [practitioners, setPractitioners] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPractitioner, setSelectedPractitioner] = useState(null);
   const small = useMediaQuery("(max-width: 768px)");
+  
+  useEffect(() => {
+    async function loadPractitioners() {
+      try {
+        const res = await fetch("/api/practitioners");
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load practitioners");
+        }
+
+        const mappedPractitioners = data.map((p) => ({
+          id: p.id,
+          name: p.name || "Unnamed Practitioner",
+          email: p.email || "—",
+          phone: p.phone || "—",
+          role: p.role || "—",
+        }));
+
+        setPractitioners(mappedPractitioners);
+      } catch (err) {
+        console.error("Failed to load practitioners:", err);
+        setPractitioners([]);
+      }
+    }
+
+    loadPractitioners();
+  }, []);
 
   const filteredPractitioners = practitioners.filter(
     (p) =>
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.id == searchTerm,
+      String(p.id).includes(searchTerm),
   );
 
   return (
