@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
-import Link from "next/link"; // Added Link for navigation
+import Link from "next/link";
 
 export default function Summary() {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -220,9 +220,9 @@ export default function Summary() {
                     <span className="text-lg font-bold text-foreground">Total Expenses</span>
                     <span className="text-xl font-bold text-destructive">$12,300</span>
                   </div>
-                  <Button className="w-full h-12 text-md bg-button-primary hover:bg-button-primary-foreground text-white font-semibold shadow-md">
+                  {/* <Button className="w-full h-12 text-md bg-button-primary hover:bg-button-primary-foreground text-white font-semibold shadow-md">
                     Download Full Report
-                  </Button>
+                  </Button> */}
                 </div>
               </div>
             </CardContent>

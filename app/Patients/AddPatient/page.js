@@ -90,8 +90,8 @@ export default function AddPatientPage() {
   const formattedDOB =
     dob.year && dob.month && dob.day
       ? `${dob.year}-${String(dob.month).padStart(2, "0")}-${String(
-          dob.day,
-        ).padStart(2, "0")}`
+        dob.day,
+      ).padStart(2, "0")}`
       : null;
 
   async function handleSubmit(e) {
@@ -125,7 +125,7 @@ export default function AddPatientPage() {
           phone: formData.phone.trim(),
           email: formData.email.trim() || null,
           ahcNumber: formData.ahcNumber.trim() || null,
-          dob: formattedDOB, // HTML date input returns "YYYY-MM-DD"
+          dob: formattedDOB,
           notes: formData.notes.trim() || null,
           reminderOptIn: stat !== "Inactive",
         }),
@@ -229,7 +229,17 @@ export default function AddPatientPage() {
                         onChange={handleChange}
                       />
 
-                      <FieldGroup>
+                      <div className="grid grid-cols-1 md:grid-cols- gap-4">
+                        <FormField
+                          fieldLabel="Status"
+                          displayText={stat}
+                          setItemSearch={setStat}
+                          itemsArray={status}
+                          variant="select"
+                        />
+                      </div>
+
+                      {/* <FieldGroup>
                         <div className="grid grid-cols-3 gap-2">
                           <Field>
                             <FieldLabel>Year</FieldLabel>
@@ -298,16 +308,7 @@ export default function AddPatientPage() {
                             </Select>
                           </Field>
                         </div>
-                      </FieldGroup>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        fieldLabel="Status"
-                        displayText={stat}
-                        setItemSearch={setStat}
-                        itemsArray={status}
-                        variant="select"
-                      />
+                      </FieldGroup> */}
                     </div>
 
                     <Field className="flex flex-col gap-2">
