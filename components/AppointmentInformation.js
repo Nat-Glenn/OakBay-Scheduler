@@ -20,6 +20,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -48,6 +49,7 @@ import {
 import DatePicker from "./DatePicker";
 import FormField from "@/components/FormField";
 import { Settings } from "lucide-react";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 export default function AppointmentInformation({
   appointment,
@@ -61,6 +63,7 @@ export default function AppointmentInformation({
   const [editTime, setEditTime] = useState("");
   const [editDate, setEditDate] = useState(null);
   const [search, setSearch] = useState("");
+  const small = useMediaQuery("(max-width: 768px)");
 
   const selectedAppointment = appointment || active;
 
@@ -108,38 +111,38 @@ export default function AppointmentInformation({
   };
 
   const handleDeleteAppointment = async () => {
-  if (!selectedAppointment) return false;
+    if (!selectedAppointment) return false;
 
-  try {
-    const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
-      method: "DELETE",
-    });
+    try {
+      const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+        method: "DELETE",
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to delete appointment");
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete appointment");
+      }
+
+      const filteredArray = appointments.filter(
+        (appt) => appt.id != selectedAppointment.id,
+      );
+
+      setAppointments(filteredArray);
+      setActive(null);
+
+      toast.success("Appointment deleted.", {
+        position: "top-center",
+      });
+
+      return true;
+    } catch (err) {
+      toast.error(err.message || "Failed to delete appointment.", {
+        position: "top-center",
+      });
+      return false;
     }
-
-    const filteredArray = appointments.filter(
-      (appt) => appt.id != selectedAppointment.id,
-    );
-
-    setAppointments(filteredArray);
-    setActive(null);
-
-    toast.success("Appointment deleted.", {
-      position: "top-center",
-    });
-
-    return true;
-  } catch (err) {
-    toast.error(err.message || "Failed to delete appointment.", {
-      position: "top-center",
-    });
-    return false;
-  }
-};
+  };
 
   const handleEditAppointment = () => {
     if (!selectedAppointment) return false;
@@ -310,19 +313,55 @@ export default function AppointmentInformation({
                 </div>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogAction
-                  variant="destructive"
-                  className="mr-auto"
-                  onClick={async (e) => {
-                    const success = await handleDeleteAppointment();
-                    if (!success) {
-                      e.preventDefault();
-                    }
-                  }}
+                <AlertDialogCancel
+                  className={`${small ? "w-full" : "mr-auto"}`}
                 >
-                  Delete
-                </AlertDialogAction>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  Cancel
+                </AlertDialogCancel>
+                <AlertDialog>
+                  <AlertDialogTrigger>
+                    <AlertDialogAction
+                      className={`mr-auto ${small && "w-full"}`}
+                      variant="destructive"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="flex flex-col">
+                    <AlertDialogTitle className="hidden">
+                      &nbsp;
+                    </AlertDialogTitle>
+                    <AlertDialogHeader>
+                      <div className="ml-auto mr-auto text-left gap-4 flex flex-col">
+                        <p className="text-2xl font-bold">
+                          Are you sure you want to delete this appointment?
+                        </p>
+                        <p className="text-base">
+                          This action cannot be undone.
+                        </p>
+                      </div>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <div className="flex w-full gap-2 flex-col justify-center items-center-safe">
+                        <AlertDialogAction
+                          variant="destructive"
+                          className="w-full"
+                          onClick={async (e) => {
+                            const success = await handleDeleteAppointment();
+                            if (!success) {
+                              e.preventDefault();
+                            }
+                          }}
+                        >
+                          Delete
+                        </AlertDialogAction>
+                        <AlertDialogCancel className="w-full">
+                          Cancel
+                        </AlertDialogCancel>
+                      </div>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
                 <AlertDialogAction
                   className="bg-button-primary"
                   onClick={(e) => {

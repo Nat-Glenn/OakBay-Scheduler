@@ -21,7 +21,7 @@ export default function AddPatientPage() {
   const [stat, setStat] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  
+
   const status = [
     { id: 1, name: "Active" },
     { id: 2, name: "Inactive" },
@@ -53,9 +53,7 @@ export default function AddPatientPage() {
       !formData.lastName.trim() ||
       !formData.phone.trim()
     ) {
-      setError(
-        "First name, last name, and phone number are required.",
-      );
+      setError("First name, last name, and phone number are required.");
       return;
     }
 
@@ -135,6 +133,7 @@ export default function AddPatientPage() {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleChange}
+                        maxLength={30}
                       />
                       <FormField
                         fieldLabel="Last Name"
@@ -143,6 +142,7 @@ export default function AddPatientPage() {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleChange}
+                        maxLength={30}
                       />
                     </div>
 
@@ -160,10 +160,10 @@ export default function AddPatientPage() {
                         fieldLabel="Phone Number"
                         placeholder="587-999-9999"
                         variant="add"
-                        mode="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
+                        mask="phone"
                       />
                     </div>
 
@@ -175,6 +175,7 @@ export default function AddPatientPage() {
                         name="ahcNumber"
                         value={formData.ahcNumber}
                         onChange={handleChange}
+                        mask="ahc"
                       />
 
                       <div className="grid grid-cols-1 gap-4">

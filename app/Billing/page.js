@@ -3,12 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import NavBarComp from "@/components/NavBarComp";
 import { Button } from "@/components/ui/button";
-import {
-  Card as UiCard,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CreditCard, PencilLine, Plus, Search, User } from "lucide-react";
@@ -24,18 +19,12 @@ import {
   DialogContent,
   DialogDescription,
   DialogFooter,
-  DialogHeader as DHeader,
-  DialogTitle as DTitle,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import FormField from "@/components/FormField";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
-
-import { Roboto } from "next/font/google";
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
-});
 
 function maskCard(last4) {
   const digits =
@@ -300,14 +289,19 @@ export default function Billing() {
   }
 
   return (
-    <div className={`${roboto.className} min-h-screen bg-background`}>
+    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
       <NavBarComp />
 
-      <div className="mx-auto max-w-7xl px-4 py-6 md:px-6">
-        {!small && <h1 className="mb-6 text-3xl font-semibold">Billing</h1>}
-
+      <div className="flex flex-col min-h-0 px-4 pb-4">
+        <header className="flex flex-row gap-4 items-center py-4">
+          {!small && (
+            <div className="w-full flex flex-col">
+              <h1 className="text-3xl font-bold text-foreground">Billing</h1>
+            </div>
+          )}
+        </header>
         <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
-          <UiCard>
+          <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <User className="h-5 w-5" />
@@ -363,10 +357,10 @@ export default function Billing() {
                 )}
               </div>
             </CardContent>
-          </UiCard>
+          </Card>
 
           <div className="space-y-4">
-            <UiCard>
+            <Card>
               <CardHeader>
                 <CardTitle>Patient</CardTitle>
               </CardHeader>
@@ -389,9 +383,9 @@ export default function Billing() {
                   </p>
                 )}
               </CardContent>
-            </UiCard>
+            </Card>
 
-            <UiCard>
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
@@ -412,14 +406,14 @@ export default function Billing() {
                   </DialogTrigger>
 
                   <DialogContent>
-                    <DHeader>
-                      <DTitle>Add card to patient file</DTitle>
+                    <DialogHeader>
+                      <DialogTitle>Add card to patient file</DialogTitle>
                       <DialogDescription>
                         {selectedPatient
                           ? `Adding a card for ${selectedPatientName}`
                           : "Select a patient first"}
                       </DialogDescription>
-                    </DHeader>
+                    </DialogHeader>
 
                     <div className="space-y-4">
                       <div className="space-y-2">
@@ -440,21 +434,26 @@ export default function Billing() {
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Card Number</Label>
-                        <Input
+                        <FormField
+                          fieldLabel="Card Number"
+                          placeholder="•••• •••• •••• 1234"
+                          variant="add"
                           value={number}
                           onChange={(e) => setNumber(e.target.value)}
-                          inputMode="numeric"
-                          placeholder="•••• •••• •••• 1234"
+                          maxLength={16}
+                          mask="card"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Expiry</Label>
-                        <Input
+                        <FormField
+                          fieldLabel="Expiry"
+                          placeholder="MM/YY"
+                          variant="add"
                           value={exp}
                           onChange={(e) => setExp(e.target.value)}
-                          placeholder="MM/YY"
+                          maxLength={16}
+                          mask="exp"
                         />
                       </div>
                     </div>
@@ -517,19 +516,19 @@ export default function Billing() {
                   ))
                 )}
               </CardContent>
-            </UiCard>
+            </Card>
           </div>
         </div>
       </div>
 
       <Dialog open={isManageOpen} onOpenChange={setIsManageOpen}>
         <DialogContent>
-          <DHeader>
-            <DTitle>Manage Card</DTitle>
+          <DialogHeader>
+            <DialogTitle>Manage Card</DialogTitle>
             <DialogDescription>
               Edit this card or remove it from the patient file.
             </DialogDescription>
-          </DHeader>
+          </DialogHeader>
 
           <div className="space-y-4">
             <div className="space-y-2">
@@ -583,6 +582,6 @@ export default function Billing() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </main>
   );
 }

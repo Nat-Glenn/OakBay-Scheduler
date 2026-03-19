@@ -177,7 +177,7 @@ export default function Settings() {
             <div>&nbsp;</div>
           )}
 
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button variant="third" onClick={handleSave} disabled={isSaving}>
             <Save size={18} />
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>
