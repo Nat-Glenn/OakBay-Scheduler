@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import filter from "leo-profanity"; // Ensure this is installed: npm install leo-profanity
 import NavBarComp from "@/components/NavBarComp";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,12 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
+
+// --- CLINIC SAFETY BLACKLIST ---
+const BLOCKED_WORDS = [
+  "kill", "knife", "murder", "stab", "shoot", "gun", "death", "die", 
+  "hurt", "attack", "suicide", "harm", "hit", "punch", "bomb", "threat"
+];
 
 export default function AddPatientPage() {
   const router = useRouter();
@@ -38,6 +45,24 @@ export default function AddPatientPage() {
 
   function handleChange(e) {
     const { name, value } = e.target;
+
+    // --- START UPDATED NOTES SECTION ---
+    if (name === "notes") {
+      const lowerValue = value.toLowerCase();
+      
+      // Check for Violence/Threats OR Profanity
+      const hasViolence = BLOCKED_WORDS.some(word => lowerValue.includes(word));
+      const hasProfanity = filter.check(lowerValue);
+      
+      if (hasViolence || hasProfanity) {
+        // BLOCK: Do not update state. The text won't appear in the box.
+        setError("Violence and Profanity is prohibited");
+        return; 
+      } else {
+        setError(""); // Clear error if input is safe
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -189,21 +214,23 @@ export default function AddPatientPage() {
                       </div>
                     </div>
 
-                    {/* DOB Section completely removed */}
-
+                    {/* --- UPDATED TEXTAREA SECTION --- */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="font-bold">Notes</FieldLabel>
                       <textarea
-                        className="w-full min-h-24 rounded-md border border-foreground px-3 py-2 text-sm bg-background dark:bg-input/30"
+                        className={`w-full min-h-24 rounded-md border px-3 py-2 text-sm bg-background dark:bg-input/30 transition-all ${
+                          error.includes("Blocked") ? "border-red-500 ring-2 ring-red-500/20" : "border-foreground"
+                        }`}
                         name="notes"
                         value={formData.notes}
                         onChange={handleChange}
                         placeholder="Optional notes"
                       />
                     </Field>
+                    {/* --- END UPDATED TEXTAREA SECTION --- */}
 
                     {error && (
-                      <p className="pt-4 text-sm text-red-500 font-medium">
+                      <p className="pt-4 text-sm text-red-500 font-bold uppercase italic">
                         {error}
                       </p>
                     )}
@@ -220,7 +247,7 @@ export default function AddPatientPage() {
 
                       <Button
                         type="submit"
-                        disabled={submitting}
+                        disabled={submitting || !!error}
                         className="flex-1 bg-button-primary hover:bg-button-primary-foreground text-white font-bold"
                       >
                         {submitting ? "Creating..." : "Create Patient"}
