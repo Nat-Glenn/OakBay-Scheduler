@@ -38,6 +38,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import FormField from "@/components/FormField";
+import { DeletePopUp } from "@/components/DeletePopUp";
 
 export default function Practitioners() {
   const [practitioners, setPractitioners] = useState([]);
@@ -48,6 +49,11 @@ export default function Practitioners() {
   const [newEmail, setNewEmail] = useState("");
   const small = useMediaQuery("(max-width: 768px)");
 
+  function isValidEmail(value) {
+    const email = value.trim();
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
   useEffect(() => {
     async function loadPractitioners() {
       try {
@@ -65,11 +71,11 @@ export default function Practitioners() {
           phone: p.phone || "—",
         }));
 
-        setPractitioners(mappedPractitioners);
+        setPractitioners(data);
       } catch (err) {
         console.error("Failed to load practitioners:", err);
         toast.error("Failed to load practitioners.", {
-          position: "top-center",
+          position: "top-right",
         });
         setPractitioners([]);
       }
@@ -87,8 +93,13 @@ export default function Practitioners() {
   const handleAddPractitioner = async () => {
     if (!newName.trim() || !newEmail.trim()) {
       toast.warning("Please enter both name and email.", {
-        position: "top-center",
+        position: "top-right",
       });
+      return false;
+    }
+
+    if (!isValidEmail(newEmail)) {
+      toast.error("Invalid email format", { position: "top-right" });
       return false;
     }
 
@@ -117,23 +128,21 @@ export default function Practitioners() {
         phone: data.phone || "—",
       };
 
-      setPractitioners((prev) =>
-        [...prev, newPractitioner].sort((a, b) => a.name.localeCompare(b.name)),
-      );
+      setPractitioners((prev) => [...prev, newPractitioner]);
 
       setAddOpen(false);
       setNewName("");
       setNewEmail("");
 
       toast.success("Practitioner added successfully.", {
-        position: "top-center",
+        position: "top-right",
       });
 
       return true;
     } catch (err) {
       console.error("Failed to add practitioner:", err);
       toast.error(err.message || "Failed to add practitioner.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -250,8 +259,11 @@ export default function Practitioners() {
                                 <DropdownMenuItem className="focus:bg-border">
                                   Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-400 focus:bg-red-500/10 focus:text-red-400">
-                                  Delete
+                                <DropdownMenuItem>
+                                  <DeletePopUp
+                                    variant="dropdown"
+                                    object="practitioner"
+                                  />
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -372,7 +384,12 @@ export default function Practitioners() {
 
           <DialogFooter>
             <Button
-              onClick={handleAddPractitioner}
+              onClick={async (e) => {
+                const success = await handleAddPractitioner();
+                if (!success) {
+                  e.preventDefault();
+                }
+              }}
               className="bg-button-primary text-white"
             >
               Create

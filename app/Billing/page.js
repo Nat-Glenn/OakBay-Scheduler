@@ -440,7 +440,6 @@ export default function Billing() {
                           variant="add"
                           value={number}
                           onChange={(e) => setNumber(e.target.value)}
-                          maxLength={16}
                           mask="card"
                         />
                       </div>

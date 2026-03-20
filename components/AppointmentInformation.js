@@ -46,10 +46,11 @@ import {
   PopoverHeader,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import DatePicker from "./DatePicker";
+import { DatePicker } from "./DatePicker";
 import FormField from "@/components/FormField";
 import { Settings } from "lucide-react";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
+import { DeletePopUp } from "@/components/DeletePopUp";
 
 export default function AppointmentInformation({
   appointment,
@@ -132,13 +133,13 @@ export default function AppointmentInformation({
       setActive(null);
 
       toast.success("Appointment deleted.", {
-        position: "top-center",
+        position: "top-right",
       });
 
       return true;
     } catch (err) {
       toast.error(err.message || "Failed to delete appointment.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -148,7 +149,7 @@ export default function AppointmentInformation({
     if (!selectedAppointment) return false;
 
     if (!editType || !editPractitioner || !editTime || !editDate) {
-      toast.warning("Please fill out all fields.", { position: "top-center" });
+      toast.warning("Please fill out all fields.", { position: "top-right" });
       return false;
     }
 
@@ -160,7 +161,7 @@ export default function AppointmentInformation({
 
     if (selected < today) {
       toast.warning("Cannot book appointments for past dates.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -183,7 +184,7 @@ export default function AppointmentInformation({
 
       if (!availableSlot) {
         toast.warning("No available slots for this time.", {
-          position: "top-center",
+          position: "top-right",
         });
         return false;
       }
@@ -209,7 +210,7 @@ export default function AppointmentInformation({
     setActive(updatedAppointment);
 
     toast.success("Appointment updated successfully.", {
-      position: "top-center",
+      position: "top-right",
     });
 
     return true;
@@ -220,7 +221,7 @@ export default function AppointmentInformation({
 
     if (appointment.status === "checked-out") {
       toast.warning("Checked-out appointments cannot be edited.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -318,52 +319,19 @@ export default function AppointmentInformation({
                 >
                   Cancel
                 </AlertDialogCancel>
-                <AlertDialog>
-                  <AlertDialogTrigger>
-                    <AlertDialogAction
-                      className={`mr-auto ${small && "w-full"}`}
-                      variant="destructive"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent className="flex flex-col">
-                    <AlertDialogTitle className="hidden">
-                      &nbsp;
-                    </AlertDialogTitle>
-                    <AlertDialogHeader>
-                      <div className="ml-auto mr-auto text-left gap-4 flex flex-col">
-                        <p className="text-2xl font-bold">
-                          Are you sure you want to delete this appointment?
-                        </p>
-                        <p className="text-base">
-                          This action cannot be undone.
-                        </p>
-                      </div>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <div className="flex w-full gap-2 flex-col justify-center items-center-safe">
-                        <AlertDialogAction
-                          variant="destructive"
-                          className="w-full"
-                          onClick={async (e) => {
-                            const success = await handleDeleteAppointment();
-                            if (!success) {
-                              e.preventDefault();
-                            }
-                          }}
-                        >
-                          Delete
-                        </AlertDialogAction>
-                        <AlertDialogCancel className="w-full">
-                          Cancel
-                        </AlertDialogCancel>
-                      </div>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                <DeletePopUp
+                  handleDelete={handleDeleteAppointment}
+                  object="appointment"
+                />
+                {/*<AlertDialogAction
+                  className={`mr-auto ${small && "w-full"}`}
+                  variant="destructive"
+                >
+                  Delete
+                </AlertDialogAction>*/}
                 <AlertDialogAction
                   className="bg-button-primary"
+                  variant="secondary"
                   onClick={(e) => {
                     const success = handleEditAppointment();
                     if (!success) {

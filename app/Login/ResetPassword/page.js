@@ -21,7 +21,7 @@ export default function ResetPassword() {
     try {
       await sendPasswordResetEmail(auth, username);
       toast.info("Password reset email sent. Check your inbox.", {
-        position: "top-center",
+        position: "top-right",
       });
       setUsername("");
       router.push("/Login");

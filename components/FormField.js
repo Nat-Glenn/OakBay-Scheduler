@@ -16,6 +16,7 @@ import {
 import { Check, ChevronDownIcon, Search, X } from "lucide-react";
 import { Input } from "./ui/input";
 import { useRef } from "react";
+import { toast } from "sonner";
 
 export default function FormField({
   fieldLabel,
@@ -151,7 +152,6 @@ export default function FormField({
             if (mask === "ahc") formatted = formatAHC(rawValue);
             if (mask === "card") formatted = formatCard(rawValue);
             if (mask === "exp") formatted = formatEXP(rawValue);
-
             const diff = formatted.length - rawValue.length;
 
             onChange({
@@ -159,7 +159,7 @@ export default function FormField({
             });
 
             // Restore cursor
-            if (mode !== "email") {
+            if (mask) {
               requestAnimationFrame(() => {
                 const newPos = cursorPos + diff;
                 inputRef.current?.setSelectionRange(newPos, newPos);

@@ -1,12 +1,6 @@
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -18,8 +12,19 @@ import {
 } from "react-day-picker";
 import { Calendar } from "@/components/ui/calendar";
 import { useState } from "react";
+import { cva } from "class-variance-authority";
+import { cn } from "@/lib/utils";
 
-export default function DatePicker({ date, setDate, variant = "default" }) {
+const datePickerVariants = cva("", {
+  variants: {
+    variant: {
+      default: "",
+      icon: "",
+    },
+  },
+});
+
+function DatePicker({ date, setDate, variant = "default" }) {
   const [open, setOpen] = useState(false);
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -75,3 +80,5 @@ export default function DatePicker({ date, setDate, variant = "default" }) {
     </DropdownMenu>
   );
 }
+
+export { DatePicker, datePickerVariants };

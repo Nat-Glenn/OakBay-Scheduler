@@ -51,14 +51,14 @@ export default function AppointmentButtons({
 
     if (selectedAppointment.status !== "scheduled") {
       toast.warning("You can only check in appointments that are scheduled.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
 
     if (selectedAppointment.date !== new Date().toLocaleDateString("en-GB")) {
       toast.warning("You can only check in appointments scheduled for today.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -85,13 +85,13 @@ export default function AppointmentButtons({
       updateAppointmentStatus("checked-in");
 
       toast.success("Appointment checked in.", {
-        position: "top-center",
+        position: "top-right",
       });
 
       return true;
     } catch (err) {
       toast.error(err.message || "Failed to check in appointment.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -103,7 +103,7 @@ export default function AppointmentButtons({
     if (selectedAppointment.status !== "checked-in") {
       toast.warning(
         "You can only check out appointments that are checked-in.",
-        { position: "top-center" },
+        { position: "top-right" },
       );
       return false;
     }
@@ -116,14 +116,14 @@ export default function AppointmentButtons({
 
     if (!appointmentTotal || Number(appointmentTotal) <= 0) {
       toast.warning("Please enter a valid appointment total.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
 
     if (!paymentType) {
       toast.warning("Please select a payment type.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -156,13 +156,13 @@ export default function AppointmentButtons({
       setPaymentType("");
 
       toast.success("Appointment checked out.", {
-        position: "top-center",
+        position: "top-right",
       });
 
       return true;
     } catch (err) {
       toast.error(err.message || "Failed to record payment.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -199,7 +199,6 @@ export default function AppointmentButtons({
                   fieldLabel="Total Cost"
                   placeholder="00.00"
                   variant="add"
-                  mode="number"
                   value={appointmentTotal}
                   onChange={(e) => setAppointmentTotal(e.target.value)}
                   maxLength={4}

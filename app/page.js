@@ -4,7 +4,7 @@ import { renderAppointment } from "@/components/RenderAppointment";
 import React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import DatePicker from "@/components/DatePicker";
+import { DatePicker } from "@/components/DatePicker";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
