@@ -38,6 +38,7 @@ export default function PatientProfiles() {
   const [error, setError] = useState("");
   const small = useMediaQuery("(max-width: 768px)");
 
+  {/* PATIENT DATA FETCHING LOGIC */}
   useEffect(() => {
     async function loadPatients() {
       try {
@@ -57,7 +58,6 @@ export default function PatientProfiles() {
 
         if (selectedPatient) {
           const updatedSelected = data.find((p) => p.id === selectedPatient.id);
-          // If the patient still exists, update the selected state with fresh data
           if (updatedSelected) {
             setSelectedPatient(getDisplayedPatient(updatedSelected));
           }
@@ -72,7 +72,7 @@ export default function PatientProfiles() {
     loadPatients();
   }, [searchTerm]);
 
-  // NEW LOGIC: Calculate age from the "YYYY-MM-DD" string
+  {/* HELPER FUNCTIONS: AGE CALCULATION & DATA FORMATTING */}
   function calculateAge(dobString) {
     if (!dobString || dobString === "—") return "—";
     const birthDate = new Date(dobString);
@@ -90,7 +90,7 @@ export default function PatientProfiles() {
       ...patient,
       name: `${patient.firstName} ${patient.lastName}`,
       status: patient.reminderOptIn ? "Active" : "Inactive",
-      age: calculateAge(patient.dob), // Now dynamically calculated
+      age: calculateAge(patient.dob), 
       dob: patient.dob || "—",
       lastVisit: "—",
       nextAppt: null,
@@ -102,7 +102,8 @@ export default function PatientProfiles() {
       <NavBarComp />
 
       <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden">
-        {/* PAGE HEADER */}
+        
+        {/* PAGE HEADER: TITLE & SEARCH ACTIONS */}
         <header className="flex flex-row py-4">
           {!small && (
             <h1 className="text-3xl w-full font-bold text-foreground">
@@ -110,7 +111,7 @@ export default function PatientProfiles() {
             </h1>
           )}
 
-          {/* SEARCH & ACTIONS BAR */}
+          {/* SEARCH BAR & ADD PATIENT BUTTON */}
           <div className="flex flex-row justify-end gap-4 w-full">
             <div className="relative flex-1 max-w-md">
               <InputGroup className="bg-input text-foreground placeholder:text-muted-foreground">
@@ -141,9 +142,11 @@ export default function PatientProfiles() {
         </header>
 
         <div className="flex flex-col min-h-0">
-          {/* MAIN CONTENT AREA */}
+          
+          {/* MAIN CONTENT AREA: TABLE AND SIDEBAR GRID */}
           <div className="flex flex-col md:flex-row gap-4 min-h-0">
-            {/* PATIENT LIST TABLE */}
+            
+            {/* PATIENT LIST TABLE CONTAINER */}
             <div className="rounded-xl border border-foreground bg-dropdown flex flex-1 flex-col min-h-0">
               <div className="min-h-0 overflow-y-auto scrollbar-rounded rounded-xl">
                 <Table>
@@ -228,12 +231,12 @@ export default function PatientProfiles() {
               </div>
             </div>
 
-            {/* PATIENT DETAIL SIDE-CARD */}
             {selectedPatient && (
               <div
                 className={`flex w-full md:w-1/4 animate-in ${small ? "slide-in-from-bottom-4" : "slide-in-from-right-4"} duration-200`}
               >
                 <Card className="h-full w-full bg-dropdown border-foreground text-foreground relative overflow-hidden flex flex-col">
+                  
                   {/* CLOSE BUTTON */}
                   <Button
                     variant="ghost"
@@ -261,7 +264,8 @@ export default function PatientProfiles() {
                   </CardHeader>
 
                   <CardContent className="space-y-4 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
-                    {/* PERSONAL INFO */}
+                    
+                    {/* PERSONAL INFO SECTION */}
                     <div className="space-y-4">
                       <h3 className="text-title text-xs font-black uppercase tracking-widest text-muted-foreground">
                         Personal Information
@@ -308,7 +312,7 @@ export default function PatientProfiles() {
                       </div>
                     </div>
 
-                    {/* HISTORY */}
+                    {/* VISIT HISTORY SECTION */}
                     <div className="space-y-4 pt-4 border-t border-foreground/30">
                       <h3 className="text-foreground text-xs font-black uppercase tracking-widest">
                         Appointment History
@@ -333,6 +337,7 @@ export default function PatientProfiles() {
                       </div>
                     </div>
 
+                    {/* SIDE-CARD */}
                     <div className="pt-4 space-y-2 mt-auto">
                       <Link href={"/?fromPatient=true"}>
                         <Button

@@ -170,6 +170,7 @@ export default function Settings() {
       <NavBarComp />
 
       <div className="flex flex-col overflow-hidden px-4 pb-4">
+        {/* Page Header & Save Action */}
         <header className="py-4 flex justify-between items-end">
           {!small ? (
             <h1 className="text-3xl font-bold text-foreground">Settings</h1>
@@ -183,7 +184,10 @@ export default function Settings() {
           </Button>
         </header>
 
+        {/* Scrollable Content Container */}
         <div className="flex-1 overflow-y-auto space-y-4 pb-8 scrollbar-rounded min-h-0">
+          
+          {/* Admin Profile Section */}
           <Card className="border-foreground bg-background">
             <CardHeader>
               <div className="flex items-center gap-2 text-foreground">
@@ -193,6 +197,7 @@ export default function Settings() {
             </CardHeader>
 
             <CardContent className="space-y-4">
+              {/* Profile Photo Sub-section */}
               <div className="flex items-center gap-4 pb-2">
                 <div className="h-20 w-20 rounded-full bg-background border-2 flex items-center justify-center">
                   <User size={36} />
@@ -202,6 +207,7 @@ export default function Settings() {
                 </Button>
               </div>
 
+              {/* Profile Details Inputs */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-foreground">
                 <div className="space-y-2">
                   <Label>Full Name</Label>
@@ -215,6 +221,8 @@ export default function Settings() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Security & Access Section */}
           <Card className="bg-background">
             <CardHeader>
               <div className="flex items-center gap-2 text-foreground">
@@ -224,6 +232,8 @@ export default function Settings() {
             </CardHeader>
 
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-10">
+              
+              {/* Password Management Block */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <Lock size={16} className="text-muted-foreground" />
@@ -235,6 +245,7 @@ export default function Settings() {
                   verification.
                 </p>
 
+                {/* Reset Password Modal/Dialog */}
                 <Dialog>
                   <DialogTrigger asChild>
                     <Button variant="destructive">
@@ -271,6 +282,7 @@ export default function Settings() {
                 </Dialog>
               </div>
 
+              {/* Google Integration Block */}
               <div className="space-y-4">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <LinkIcon size={16} className="text-muted-foreground" />
@@ -281,6 +293,7 @@ export default function Settings() {
                   Connect your Google account to sign in faster and securely.
                 </p>
 
+                {/* Conditional Connection Buttons */}
                 {googleConnected ? (
                   <div className="flex flex-col sm:flex-row gap-2">
                     <Button
@@ -313,6 +326,7 @@ export default function Settings() {
                   </Button>
                 )}
               </div>
+              
             </CardContent>
           </Card>
         </div>
