@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import filter from "leo-profanity"; // Ensure this is installed: npm install leo-profanity
+import filter from "leo-profanity";
 import NavBarComp from "@/components/NavBarComp";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,7 @@ export default function AddPatientPage() {
     notes: "",
   });
 
+  {/* FORM HANDLERS: CHANGE & SUBMIT */}
   function handleChange(e) {
     const { name, value } = e.target;
 
@@ -73,6 +74,7 @@ export default function AddPatientPage() {
     e.preventDefault();
     setError("");
 
+    // Basic Validation
     if (
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
@@ -122,6 +124,8 @@ export default function AddPatientPage() {
       <NavBarComp />
 
       <div className="min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
+        
+        {/* HEADER: BACK NAVIGATION & PAGE TITLE */}
         <header className="py-4">
           <div className="flex items-center gap-4">
             <Link
@@ -136,6 +140,8 @@ export default function AddPatientPage() {
         </header>
 
         <div className="flex justify-center">
+          
+          {/* PATIENT REGISTRATION CARD */}
           <Card className="w-full h-full max-w-2xl bg-dropdown border-foreground">
             <CardHeader>
               <CardTitle className="text-xl font-bold">
@@ -150,6 +156,8 @@ export default function AddPatientPage() {
               <form onSubmit={handleSubmit}>
                 <FieldGroup>
                   <FieldSet>
+                    
+                    {/* NAME INPUTS */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         fieldLabel="First Name"
@@ -171,6 +179,7 @@ export default function AddPatientPage() {
                       />
                     </div>
 
+                    {/* CONTACT INFO */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         fieldLabel="Email"
@@ -192,6 +201,7 @@ export default function AddPatientPage() {
                       />
                     </div>
 
+                    {/* HEALTH CARD & STATUS SELECT */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         fieldLabel="AHC Number"
@@ -214,7 +224,6 @@ export default function AddPatientPage() {
                       </div>
                     </div>
 
-                    {/* --- UPDATED TEXTAREA SECTION --- */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="font-bold">Notes</FieldLabel>
                       <textarea
@@ -229,12 +238,14 @@ export default function AddPatientPage() {
                     </Field>
                     {/* --- END UPDATED TEXTAREA SECTION --- */}
 
+                    {/* ERROR MESSAGE DISPLAY */}
                     {error && (
                       <p className="pt-4 text-sm text-red-500 font-bold uppercase italic">
                         {error}
                       </p>
                     )}
 
+                    {/* CANCEL & CREATE */}
                     <div className="flex gap-4 pt-6">
                       <Link href="/Patients" className="flex-1">
                         <Button
@@ -253,6 +264,7 @@ export default function AddPatientPage() {
                         {submitting ? "Creating..." : "Create Patient"}
                       </Button>
                     </div>
+
                   </FieldSet>
                 </FieldGroup>
               </form>

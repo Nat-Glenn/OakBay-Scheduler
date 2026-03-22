@@ -25,7 +25,7 @@ export default function Settings() {
   const [userEmail, setUserEmail] = useState("");
   const [userPhoto, setUserPhoto] = useState(null);
 
-  const fileInputRef = useRef(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const small = useMediaQuery("(max-width: 768px)");
   const router = useRouter();
 
@@ -48,15 +48,16 @@ export default function Settings() {
     return () => unsubscribe();
   }, []);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 1024 * 1024) return toast.error("Image must be under 1MB.");
     
     const reader = new FileReader();
     reader.onloadend = () => {
-      setUserPhoto(reader.result);
-      localStorage.setItem("admin_local_avatar", reader.result);
+      const result = reader.result as string;
+      setUserPhoto(result);
+      localStorage.setItem("admin_local_avatar", result);
       toast.success("Photo updated locally.");
     };
     reader.readAsDataURL(file);
@@ -67,7 +68,7 @@ export default function Settings() {
       setConnectingGoogle(true);
       await connectGoogleAccount();
       toast.success("Google account linked successfully!");
-    } catch (error) {
+    } catch (error: any) {
       if (error?.code === "auth/multi-factor-auth-required") {
         const resolver = getMultiFactorResolver(auth, error);
         const phoneHint = resolver.hints.find(h => h.factorId === PhoneMultiFactorGenerator.FACTOR_ID);
@@ -113,15 +114,13 @@ export default function Settings() {
       <NavBarComp />
       
       <div className="flex flex-col px-4 pb-4 overflow-hidden">
-        {/* PAGE HEADER */}
         <header className="py-4">
           {!small && <h1 className="text-3xl font-bold text-foreground">Settings</h1>}
         </header>
 
-        {/* MAIN CONTENT AREA - Matches Patients Layout */}
         <div className="flex flex-col md:flex-row gap-4 min-h-0 overflow-hidden">
           
-          {/* PROFILE CARD - Acts as the "Sidebar" (md:w-1/4) */}
+          {/* PROFILE SIDEBAR */}
           <div className="flex w-full md:w-1/4">
             <Card className="flex flex-col w-full border-foreground bg-background text-foreground overflow-hidden">
               <CardHeader className="border-b border-foreground/30 pb-6">
@@ -129,7 +128,7 @@ export default function Settings() {
                   <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
                   <div className="h-14 w-14 rounded-2xl bg-ring/20 flex items-center justify-center border border-ring/30 overflow-hidden">
                     {userPhoto ? (
-                      <img src={userPhoto} className="h-full w-full object-cover" />
+                      <img src={userPhoto} className="h-full w-full object-cover" alt="Profile" />
                     ) : (
                       <User className="text-ring" size={28} />
                     )}
@@ -147,7 +146,6 @@ export default function Settings() {
 
               <CardContent className="space-y-6 pt-6 flex-1 overflow-y-auto scrollbar-rounded">
                 <div className="space-y-4">
-                  
                   <div className="grid gap-4 text-sm">
                     <div className="flex justify-between flex-col">
                       <span className="text-muted-foreground font-bold">Email</span>
@@ -178,6 +176,7 @@ export default function Settings() {
             </Card>
           </div>
 
+          {/* SECURITY MAIN CONTENT */}
           <div className="flex flex-1 min-h-0">
             <Card className="flex flex-col w-full border-foreground bg-background text-foreground">
               <CardHeader className=" border-b border-foreground">
@@ -189,8 +188,6 @@ export default function Settings() {
 
               <CardContent className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  
-                  {/* Password Section */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-sm font-semibold">
                       <Lock size={16} className="text-button-primary" />
@@ -202,7 +199,12 @@ export default function Settings() {
                         <Button variant="destructive" className="w-full md:w-auto px-8">Reset Password</Button>
                       </DialogTrigger>
                       <DialogContent>
-                        <DialogHeader><DialogTitle>Confirm Reset</DialogTitle></DialogHeader>
+                        <DialogHeader>
+                          <DialogTitle>Confirm Reset</DialogTitle>
+                          <DialogDescription>
+                            Are you sure? This will send a reset email to {userEmail}.
+                          </DialogDescription>
+                        </DialogHeader>
                         <DialogFooter>
                           <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                           <Button variant="destructive" onClick={handleResetConfirm} disabled={resettingPassword}>
@@ -213,7 +215,6 @@ export default function Settings() {
                     </Dialog>
                   </div>
 
-                  {/* Google Section */}
                   <div className="space-y-4">
                     <div className="flex items-center gap-2 text-sm font-semibold">
                       <LinkIcon size={16} className="text-button-primary" />
@@ -249,12 +250,10 @@ export default function Settings() {
                       )}
                     </div>
                   </div>
-
                 </div>
               </CardContent>
             </Card>
           </div>
-
         </div>
       </div>
     </main>
