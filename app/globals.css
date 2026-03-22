@@ -124,10 +124,10 @@ html, body {
 }
 
 .dark {
-  --background: oklch(12.71% 0.009 253.66);
-  --foreground: oklch(1 0 0);
-  --card: oklch(0.18 0 0);
-  --card-foreground: oklch(0.985 0 0);
+  --background: oklch(18% 0.04 277.1);
+  --foreground: oklch(95% 0.02 109.5);
+  --card: oklch(22% 0.04 277.1);
+  --card-foreground: oklch(95% 0.02 109.5);
   --popover: oklch(0.18 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
@@ -140,7 +140,7 @@ html, body {
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(43.7% 0.237 25.331);
   --destructive-foreground: oklch(0.985 0 0);
-  --border: oklch(27.9% 0.041 260.031);
+  --border: oklch(35% 0.05 277.1);
   --input: oklch(19.927% 0.01111 260.69);
   --ring: oklch(70.80% 0.149 234.36);
   --button-primary: oklch(79.60% 0.142 128.91);
