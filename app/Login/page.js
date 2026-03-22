@@ -105,7 +105,7 @@ export default function LoginPage() {
       return;
     }
     if (!emailRegex.test(username)) {
-      setError("Please enter a valid email address (e.g., name@gmail.com).");
+      setError("Please enter a valid email address");
       return;
     }
     if (!password) {

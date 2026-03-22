@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import filter from "leo-profanity"; // Ensure this is installed: npm install leo-profanity
+import filter from "leo-profanity";
 import NavBarComp from "@/components/NavBarComp";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
