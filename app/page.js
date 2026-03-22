@@ -4,7 +4,7 @@ import { renderAppointment } from "@/components/RenderAppointment";
 import React from "react";
 import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import DatePicker from "@/components/DatePicker";
+import { DatePicker } from "@/components/DatePicker";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -113,7 +113,7 @@ export default function Appointments() {
             practitioner: appt.provider?.name || "Unassigned",
             time: displayHour,
             slot: 1,
-            date: date.toLocaleDateString("en-GB"),
+            date: date.toLocaleDateString("en-GB"), //DD/MM/YYYY format
             status:
               appt.status?.toUpperCase() === "REQUESTED"
                 ? "scheduled"

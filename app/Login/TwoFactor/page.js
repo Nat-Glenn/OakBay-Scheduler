@@ -82,7 +82,7 @@ export default function TwoFactorPage() {
         },
         "expired-callback": () => {
           toast.info("reCAPTCHA expired. Please check the box again.", {
-            position: "top-center",
+            position: "top-right",
           });
         },
       });
@@ -134,7 +134,7 @@ export default function TwoFactorPage() {
 
     if (!ctx) {
       toast.warning("Your 2FA session expired. Please log in again.", {
-        position: "top-center",
+        position: "top-right",
       });
       clearPendingMfa();
       router.replace("/Login");
@@ -152,7 +152,7 @@ export default function TwoFactorPage() {
 
       if (!verifier) {
         toast.warning("reCAPTCHA is still loading. Please try again.", {
-          position: "top-center",
+          position: "top-right",
         });
         return;
       }
@@ -177,7 +177,7 @@ export default function TwoFactorPage() {
       setShowCaptcha(false);
 
       toast.success("Verification code sent by text message.", {
-        position: "top-center",
+        position: "top-right",
       });
     } catch (err) {
       console.error("MFA sendCode error:", err);
@@ -189,7 +189,7 @@ export default function TwoFactorPage() {
 
       if (err?.code === "auth/invalid-multi-factor-session") {
         toast.warning("2FA session expired. Please log in again.", {
-          position: "top-center",
+          position: "top-right",
         });
         clearPendingMfa();
         router.replace("/Login");
@@ -199,7 +199,7 @@ export default function TwoFactorPage() {
       if (err?.code === "auth/captcha-check-failed") {
         toast.warning(
           "reCAPTCHA validation failed. Please check the box again and click Send Code right away.",
-          { position: "top-center" },
+          { position: "top-right" },
         );
         return;
       }
@@ -207,7 +207,7 @@ export default function TwoFactorPage() {
       if (err?.code === "auth/invalid-app-credential") {
         toast.warning(
           "The reCAPTCHA token was invalid or expired. Please check the box again, then click Send Code.",
-          { position: "top-center" },
+          { position: "top-right" },
         );
         return;
       }
@@ -215,14 +215,14 @@ export default function TwoFactorPage() {
       if (err?.code === "auth/network-request-failed") {
         toast.warning(
           "Network request failed. Turn off ad blockers or VPN and try again.",
-          { position: "top-center" },
+          { position: "top-right" },
         );
         return;
       }
 
       toast.warning(
         `Could not send 2FA code (${err?.code || "unknown"}). Please try again.`,
-        { position: "top-center" },
+        { position: "top-right" },
       );
     } finally {
       if (mountedRef.current) {
@@ -238,7 +238,7 @@ export default function TwoFactorPage() {
 
     if (!ctx || !verificationId) {
       toast.warning("Your 2FA session expired. Please log in again.", {
-        position: "top-center",
+        position: "top-right",
       });
       clearPendingMfa();
       router.replace("/Login");
@@ -247,7 +247,7 @@ export default function TwoFactorPage() {
 
     if (!verificationCode.trim()) {
       toast.warning("Enter the 6-digit code from your text message.", {
-        position: "top-center",
+        position: "top-right",
       });
       return;
     }
@@ -269,12 +269,12 @@ export default function TwoFactorPage() {
       clearPendingMfa();
       clearRecaptcha();
 
-      toast.success("2FA verified. Welcome!", { position: "top-center" });
+      toast.success("2FA verified. Welcome!", { position: "top-right" });
       router.push(redirectTo);
     } catch (err) {
       console.error("MFA verify error:", err);
       toast.warning("Invalid or expired code. Please try again.", {
-        position: "top-center",
+        position: "top-right",
       });
     } finally {
       if (mountedRef.current) {
@@ -300,7 +300,7 @@ export default function TwoFactorPage() {
     const ctx = getMfaContext();
     if (!ctx) {
       toast.warning("Your 2FA session expired. Please log in again.", {
-        position: "top-center",
+        position: "top-right",
       });
       router.replace("/Login");
 
@@ -314,7 +314,7 @@ export default function TwoFactorPage() {
     ensureRecaptcha().catch((err) => {
       console.error("reCAPTCHA init error:", err);
       toast.warning("Could not load reCAPTCHA. Refresh and try again.", {
-        position: "top-center",
+        position: "top-right",
       });
     });
 

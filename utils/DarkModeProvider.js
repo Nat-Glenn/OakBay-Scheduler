@@ -34,7 +34,7 @@ export const DarkModeProvider = ({ children }) => {
     return () => media.removeEventListener("change", sync);
   }, []);
 
-  if (!mounted) return null; // 🔑 prevents hydration mismatch
+  if (!mounted) return null; //prevents hydration mismatch
 
   return (
     <DarkModeContext.Provider value={{ boolDark, handleBool }}>

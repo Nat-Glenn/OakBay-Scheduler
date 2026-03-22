@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import filter from "leo-profanity"; // Ensure this is installed: npm install leo-profanity
 import NavBarComp from "@/components/NavBarComp";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,13 +16,19 @@ import {
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
 
+// --- CLINIC SAFETY BLACKLIST ---
+const BLOCKED_WORDS = [
+  "kill", "knife", "murder", "stab", "shoot", "gun", "death", "die", 
+  "hurt", "attack", "suicide", "harm", "hit", "punch", "bomb", "threat"
+];
+
 export default function AddPatientPage() {
   const router = useRouter();
 
   const [stat, setStat] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  
+
   const status = [
     { id: 1, name: "Active" },
     { id: 2, name: "Inactive" },
@@ -39,6 +46,24 @@ export default function AddPatientPage() {
   {/* FORM HANDLERS: CHANGE & SUBMIT */}
   function handleChange(e) {
     const { name, value } = e.target;
+
+    // --- START UPDATED NOTES SECTION ---
+    if (name === "notes") {
+      const lowerValue = value.toLowerCase();
+      
+      // Check for Violence/Threats OR Profanity
+      const hasViolence = BLOCKED_WORDS.some(word => lowerValue.includes(word));
+      const hasProfanity = filter.check(lowerValue);
+      
+      if (hasViolence || hasProfanity) {
+        // BLOCK: Do not update state. The text won't appear in the box.
+        setError("Violence and Profanity is prohibited");
+        return; 
+      } else {
+        setError(""); // Clear error if input is safe
+      }
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
@@ -55,9 +80,7 @@ export default function AddPatientPage() {
       !formData.lastName.trim() ||
       !formData.phone.trim()
     ) {
-      setError(
-        "First name, last name, and phone number are required.",
-      );
+      setError("First name, last name, and phone number are required.");
       return;
     }
 
@@ -143,6 +166,7 @@ export default function AddPatientPage() {
                         name="firstName"
                         value={formData.firstName}
                         onChange={handleChange}
+                        maxLength={30}
                       />
                       <FormField
                         fieldLabel="Last Name"
@@ -151,6 +175,7 @@ export default function AddPatientPage() {
                         name="lastName"
                         value={formData.lastName}
                         onChange={handleChange}
+                        maxLength={30}
                       />
                     </div>
 
@@ -169,10 +194,10 @@ export default function AddPatientPage() {
                         fieldLabel="Phone Number"
                         placeholder="587-999-9999"
                         variant="add"
-                        mode="tel"
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
+                        mask="phone"
                       />
                     </div>
 
@@ -185,6 +210,7 @@ export default function AddPatientPage() {
                         name="ahcNumber"
                         value={formData.ahcNumber}
                         onChange={handleChange}
+                        mask="ahc"
                       />
 
                       <div className="grid grid-cols-1 gap-4">
@@ -198,21 +224,23 @@ export default function AddPatientPage() {
                       </div>
                     </div>
 
-                    {/* ADDITIONAL NOTES TEXTAREA */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="font-bold">Notes</FieldLabel>
                       <textarea
-                        className="w-full min-h-24 rounded-md border border-foreground px-3 py-2 text-sm bg-background dark:bg-input/30"
+                        className={`w-full min-h-24 rounded-md border px-3 py-2 text-sm bg-background dark:bg-input/30 transition-all ${
+                          error.includes("Blocked") ? "border-red-500 ring-2 ring-red-500/20" : "border-foreground"
+                        }`}
                         name="notes"
                         value={formData.notes}
                         onChange={handleChange}
                         placeholder="Optional notes"
                       />
                     </Field>
+                    {/* --- END UPDATED TEXTAREA SECTION --- */}
 
                     {/* ERROR MESSAGE DISPLAY */}
                     {error && (
-                      <p className="pt-4 text-sm text-red-500 font-medium">
+                      <p className="pt-4 text-sm text-red-500 font-bold uppercase italic">
                         {error}
                       </p>
                     )}
@@ -230,7 +258,7 @@ export default function AddPatientPage() {
 
                       <Button
                         type="submit"
-                        disabled={submitting}
+                        disabled={submitting || !!error}
                         className="flex-1 bg-button-primary hover:bg-button-primary-foreground text-white font-bold"
                       >
                         {submitting ? "Creating..." : "Create Patient"}

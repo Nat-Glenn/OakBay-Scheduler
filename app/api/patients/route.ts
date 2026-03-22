@@ -65,7 +65,7 @@ export async function GET(req: Request) {
             ],
           }
         : undefined, 
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+      orderBy: [{id: "asc"}],
       take: 25,
     });
 

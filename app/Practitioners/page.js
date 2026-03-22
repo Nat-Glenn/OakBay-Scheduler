@@ -37,6 +37,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import FormField from "@/components/FormField";
+import { DeletePopUp } from "@/components/DeletePopUp";
 
 export default function Practitioners() {
   const [practitioners, setPractitioners] = useState([]);
@@ -46,7 +48,12 @@ export default function Practitioners() {
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const small = useMediaQuery("(max-width: 768px)");
-  
+
+  function isValidEmail(value) {
+    const email = value.trim();
+
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  }
   useEffect(() => {
     async function loadPractitioners() {
       try {
@@ -64,11 +71,11 @@ export default function Practitioners() {
           phone: p.phone || "—",
         }));
 
-        setPractitioners(mappedPractitioners);
+        setPractitioners(data);
       } catch (err) {
         console.error("Failed to load practitioners:", err);
         toast.error("Failed to load practitioners.", {
-          position: "top-center",
+          position: "top-right",
         });
         setPractitioners([]);
       }
@@ -82,12 +89,17 @@ export default function Practitioners() {
       p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       String(p.id).includes(searchTerm),
   );
-  
+
   const handleAddPractitioner = async () => {
     if (!newName.trim() || !newEmail.trim()) {
       toast.warning("Please enter both name and email.", {
-        position: "top-center",
+        position: "top-right",
       });
+      return false;
+    }
+
+    if (!isValidEmail(newEmail)) {
+      toast.error("Invalid email format", { position: "top-right" });
       return false;
     }
 
@@ -116,25 +128,21 @@ export default function Practitioners() {
         phone: data.phone || "—",
       };
 
-      setPractitioners((prev) =>
-        [...prev, newPractitioner].sort((a, b) =>
-          a.name.localeCompare(b.name),
-        ),
-      );
+      setPractitioners((prev) => [...prev, newPractitioner]);
 
       setAddOpen(false);
       setNewName("");
       setNewEmail("");
 
       toast.success("Practitioner added successfully.", {
-        position: "top-center",
+        position: "top-right",
       });
 
       return true;
     } catch (err) {
       console.error("Failed to add practitioner:", err);
       toast.error(err.message || "Failed to add practitioner.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -175,7 +183,10 @@ export default function Practitioners() {
                 </InputGroup>
               </div>
 
-              <Button onClick={() => setAddOpen(true)} className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2 shadow-lg shadow-[#A0CE66]/10">
+              <Button
+                onClick={() => setAddOpen(true)}
+                className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2 shadow-lg shadow-[#A0CE66]/10"
+              >
                 <Plus size={18} />
                 {small ? "" : "Add Practitioner"}
               </Button>
@@ -248,8 +259,11 @@ export default function Practitioners() {
                                 <DropdownMenuItem className="focus:bg-border">
                                   Edit
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-400 focus:bg-red-500/10 focus:text-red-400">
-                                  Delete
+                                <DropdownMenuItem>
+                                  <DeletePopUp
+                                    variant="dropdown"
+                                    object="practitioner"
+                                  />
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
@@ -258,15 +272,15 @@ export default function Practitioners() {
                       ))}
 
                       {filteredPractitioners.length === 0 && (
-                          <TableRow>
-                            <TableCell
-                              colSpan={5}
-                              className="text-center text-muted-foreground py-8"
-                            >
-                              No practitioners found.
-                            </TableCell>
-                          </TableRow>
-                        )}
+                        <TableRow>
+                          <TableCell
+                            colSpan={5}
+                            className="text-center text-muted-foreground py-8"
+                          >
+                            No practitioners found.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -328,12 +342,12 @@ export default function Practitioners() {
                         </div>
                       </div>
 
-                      {/* ACTIONS */}
+                      {/* ACTIONS 
                       <div className="pt-4 space-y-2 mt-auto">
                         <Button variant="secondary" className="w-full">
                           Schedule Appointment
                         </Button>
-                      </div>
+                      </div>*/}
                     </CardContent>
                   </Card>
                 </div>
@@ -344,19 +358,25 @@ export default function Practitioners() {
       </main>
 
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Practitioner</DialogTitle>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
-            <Input
-              placeholder="Full Name"
+            <FormField
+              fieldLabel="Full Name"
+              placeholder="Brad Pritchard"
+              variant="add"
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
+              maxLength={35}
             />
-            <Input
-              placeholder="Email"
+            <FormField
+              fieldLabel="Email"
+              placeholder="email@example.com"
+              variant="add"
+              mode="email"
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
             />
@@ -364,7 +384,12 @@ export default function Practitioners() {
 
           <DialogFooter>
             <Button
-              onClick={handleAddPractitioner}
+              onClick={async (e) => {
+                const success = await handleAddPractitioner();
+                if (!success) {
+                  e.preventDefault();
+                }
+              }}
               className="bg-button-primary text-white"
             >
               Create

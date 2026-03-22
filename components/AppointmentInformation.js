@@ -20,6 +20,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -45,9 +46,11 @@ import {
   PopoverHeader,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import DatePicker from "./DatePicker";
+import { DatePicker } from "./DatePicker";
 import FormField from "@/components/FormField";
 import { Settings } from "lucide-react";
+import { useMediaQuery } from "@/utils/UseMediaQuery";
+import { DeletePopUp } from "@/components/DeletePopUp";
 
 export default function AppointmentInformation({
   appointment,
@@ -61,6 +64,7 @@ export default function AppointmentInformation({
   const [editTime, setEditTime] = useState("");
   const [editDate, setEditDate] = useState(null);
   const [search, setSearch] = useState("");
+  const small = useMediaQuery("(max-width: 768px)");
 
   const selectedAppointment = appointment || active;
 
@@ -108,44 +112,44 @@ export default function AppointmentInformation({
   };
 
   const handleDeleteAppointment = async () => {
-  if (!selectedAppointment) return false;
+    if (!selectedAppointment) return false;
 
-  try {
-    const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
-      method: "DELETE",
-    });
+    try {
+      const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+        method: "DELETE",
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to delete appointment");
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to delete appointment");
+      }
+
+      const filteredArray = appointments.filter(
+        (appt) => appt.id != selectedAppointment.id,
+      );
+
+      setAppointments(filteredArray);
+      setActive(null);
+
+      toast.success("Appointment deleted.", {
+        position: "top-right",
+      });
+
+      return true;
+    } catch (err) {
+      toast.error(err.message || "Failed to delete appointment.", {
+        position: "top-right",
+      });
+      return false;
     }
-
-    const filteredArray = appointments.filter(
-      (appt) => appt.id != selectedAppointment.id,
-    );
-
-    setAppointments(filteredArray);
-    setActive(null);
-
-    toast.success("Appointment deleted.", {
-      position: "top-center",
-    });
-
-    return true;
-  } catch (err) {
-    toast.error(err.message || "Failed to delete appointment.", {
-      position: "top-center",
-    });
-    return false;
-  }
-};
+  };
 
   const handleEditAppointment = () => {
     if (!selectedAppointment) return false;
 
     if (!editType || !editPractitioner || !editTime || !editDate) {
-      toast.warning("Please fill out all fields.", { position: "top-center" });
+      toast.warning("Please fill out all fields.", { position: "top-right" });
       return false;
     }
 
@@ -157,7 +161,7 @@ export default function AppointmentInformation({
 
     if (selected < today) {
       toast.warning("Cannot book appointments for past dates.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -180,7 +184,7 @@ export default function AppointmentInformation({
 
       if (!availableSlot) {
         toast.warning("No available slots for this time.", {
-          position: "top-center",
+          position: "top-right",
         });
         return false;
       }
@@ -206,7 +210,7 @@ export default function AppointmentInformation({
     setActive(updatedAppointment);
 
     toast.success("Appointment updated successfully.", {
-      position: "top-center",
+      position: "top-right",
     });
 
     return true;
@@ -217,7 +221,7 @@ export default function AppointmentInformation({
 
     if (appointment.status === "checked-out") {
       toast.warning("Checked-out appointments cannot be edited.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -310,21 +314,24 @@ export default function AppointmentInformation({
                 </div>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogAction
+                <AlertDialogCancel
+                  className={`${small ? "w-full" : "mr-auto"}`}
+                >
+                  Cancel
+                </AlertDialogCancel>
+                <DeletePopUp
+                  handleDelete={handleDeleteAppointment}
+                  object="appointment"
+                />
+                {/*<AlertDialogAction
+                  className={`mr-auto ${small && "w-full"}`}
                   variant="destructive"
-                  className="mr-auto"
-                  onClick={async (e) => {
-                    const success = await handleDeleteAppointment();
-                    if (!success) {
-                      e.preventDefault();
-                    }
-                  }}
                 >
                   Delete
-                </AlertDialogAction>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                </AlertDialogAction>*/}
                 <AlertDialogAction
                   className="bg-button-primary"
+                  variant="secondary"
                   onClick={(e) => {
                     const success = handleEditAppointment();
                     if (!success) {

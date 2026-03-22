@@ -15,6 +15,8 @@ import {
 } from "./ui/input-group";
 import { Check, ChevronDownIcon, Search, X } from "lucide-react";
 import { Input } from "./ui/input";
+import { useRef } from "react";
+import { toast } from "sonner";
 
 export default function FormField({
   fieldLabel,
@@ -25,12 +27,45 @@ export default function FormField({
   emptyText,
   setItemSearch,
   placeholder,
-  mode,
   variant = "default",
   value,
   onChange,
+  mode,
   name,
+  mask,
+  maxLength,
 }) {
+  const inputRef = useRef(null);
+  function formatPhone(value) {
+    const digits = value.replace(/\D/g, "").slice(0, 10);
+
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+
+    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+  }
+
+  function formatCard(value) {
+    const digits = value.replace(/\D/g, "").slice(0, 16);
+
+    if (digits.length <= 4) return digits;
+    if (digits.length <= 8) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+
+    return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8, 12)} ${digits.slice(12, 16)}`;
+  }
+
+  function formatEXP(value) {
+    const digits = value.replace(/\D/g, "").slice(0, 4);
+
+    if (digits.length <= 2) return digits;
+
+    return `${digits.slice(0, 2)}/${digits.slice(2, 4)}`;
+  }
+
+  function formatAHC(value) {
+    return value.replace(/\D/g, "").slice(0, 9);
+  }
+
   return (
     <Field>
       <FieldLabel className="font-bold">{fieldLabel}</FieldLabel>
@@ -97,15 +132,41 @@ export default function FormField({
 
       {variant === "add" && (
         <Input
+          ref={inputRef}
           className="border-foreground shadow-xs outline-none"
           placeholder={placeholder}
-          type={mode || "text"}
-          min={mode === "number" ? 0 : undefined}
-          max={mode === "number" ? 110 : undefined}
+          type={mode ? mode : "text"}
+          inputMode={mask ? "numeric" : undefined}
           value={value ?? ""}
-          onChange={onChange}
           name={name}
-        ></Input>
+          maxLength={maxLength}
+          onChange={(e) => {
+            const input = e.target;
+            const rawValue = input.value;
+            const cursorPos = input.selectionStart;
+
+            let formatted = rawValue;
+
+            // Apply mask
+            if (mask === "phone") formatted = formatPhone(rawValue);
+            if (mask === "ahc") formatted = formatAHC(rawValue);
+            if (mask === "card") formatted = formatCard(rawValue);
+            if (mask === "exp") formatted = formatEXP(rawValue);
+            const diff = formatted.length - rawValue.length;
+
+            onChange({
+              target: { name, value: formatted },
+            });
+
+            // Restore cursor
+            if (mask) {
+              requestAnimationFrame(() => {
+                const newPos = cursorPos + diff;
+                inputRef.current?.setSelectionRange(newPos, newPos);
+              });
+            }
+          }}
+        />
       )}
 
       {variant === "select" && (

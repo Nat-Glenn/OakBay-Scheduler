@@ -24,7 +24,7 @@ import {
   formatDateDMY,
   getAvailableSlot,
 } from "@/components/RenderAppointment";
-import DatePicker from "./DatePicker";
+import { DatePicker } from "./DatePicker";
 import FormField from "@/components/FormField";
 import { Plus } from "lucide-react";
 
@@ -91,7 +91,7 @@ export default function AddAppointment({
       } catch (err) {
         console.error(err);
         toast.error("Failed to load selected patient.", {
-          position: "top-center",
+          position: "top-right",
         });
       }
     }
@@ -115,7 +115,7 @@ export default function AddAppointment({
       } catch (err) {
         console.error(err);
         toast.error("Failed to load patients.", {
-          position: "top-center",
+          position: "top-right",
         });
       }
     }
@@ -137,7 +137,7 @@ export default function AddAppointment({
       } catch (err) {
         console.error(err);
         toast.error("Failed to load practitioners.", {
-          position: "top-center",
+          position: "top-right",
         });
       }
     }
@@ -186,14 +186,14 @@ export default function AddAppointment({
 
     if (!finalPatientId) {
       toast.warning("Please select a patient.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
 
     if (!formType || !formPractitioner || !formTime || !date) {
       toast.warning("Please fill out all of the fields.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -206,7 +206,7 @@ export default function AddAppointment({
 
     if (selected < today) {
       toast.warning("Cannot book appointments for past dates.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -222,7 +222,7 @@ export default function AddAppointment({
 
     if (!availableSlot) {
       toast.warning("All slots for this hour have been booked.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -283,21 +283,19 @@ export default function AddAppointment({
         date: formattedDate,
         status: data.status,
       };
-
+      router.refresh();
       setAppointments((prev) => [...prev, newAppointment]);
-
       toast.success(
         `Appointment created on ${newAppointment.date} at ${newAppointment.time} for ${newAppointment.name}.`,
         {
-          position: "top-center",
+          position: "top-right",
         },
       );
 
-      router.refresh();
       return true;
     } catch (err) {
       toast.error(err.message || "Failed to create appointment.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     } finally {

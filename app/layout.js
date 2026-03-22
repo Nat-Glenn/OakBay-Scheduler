@@ -3,6 +3,18 @@ import "./globals.css";
 import { DarkModeProvider } from "@/utils/DarkModeProvider";
 import { NavBarProvider } from "@/utils/NavBarProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { Roboto } from "next/font/google";
+import { Montserrat } from "next/font/google";
+
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "700"],
+});
+
+const montserrat = Montserrat({
+  subsets: ["latin"],
+  weight: ["200", "300", "400", "500", "600", "700"],
+});
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,9 +49,7 @@ export default function RootLayout({ children }) {
           }}
         />
       </head>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${montserrat.className} antialiased`}>
         <NavBarProvider>
           <DarkModeProvider>
             <Toaster />

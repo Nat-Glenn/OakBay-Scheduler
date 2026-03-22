@@ -141,7 +141,7 @@ export default function Settings() {
 
       if (!email) {
         toast.error("No authenticated email found.", {
-          position: "top-center",
+          position: "top-right",
         });
         return;
       }
@@ -151,14 +151,14 @@ export default function Settings() {
       await sendAdminPasswordReset(email);
 
       toast.info("Password reset email sent. Check your inbox.", {
-        position: "top-center",
+        position: "top-right",
       });
 
       router.push("/Login");
     } catch (err) {
       console.error(err);
       toast.error("Could not send password reset email.", {
-        position: "top-center",
+        position: "top-right",
       });
     } finally {
       setResettingPassword(false);
@@ -178,7 +178,7 @@ export default function Settings() {
             <div>&nbsp;</div>
           )}
 
-          <Button onClick={handleSave} disabled={isSaving}>
+          <Button variant="third" onClick={handleSave} disabled={isSaving}>
             <Save size={18} />
             {isSaving ? "Saving..." : "Save Changes"}
           </Button>

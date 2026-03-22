@@ -3,35 +3,30 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Item, ItemContent } from "@/components/ui/item";
 import { Button } from "@/components/ui/button";
-import { isSameDay } from "date-fns";
-import { parseDMYToDate } from "@/components/RenderAppointment";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import FormField from "./FormField";
 
 export default function AppointmentButtons({
+  // Props coming into the component
   appointment,
   active,
   setAppointments,
   setActive,
 }) {
+  // Determines which appt to use
   const selectedAppointment = appointment || active;
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [appointmentTotal, setAppointmentTotal] = useState("");
   const [paymentType, setPaymentType] = useState("");
 
+  // Updates the front end state after the backend succeeds
   const updateAppointmentStatus = (newStatus) => {
     if (!selectedAppointment) return false;
 
@@ -50,17 +45,26 @@ export default function AppointmentButtons({
     return true;
   };
 
+  // Function that runs when the user clicks check in
   const handleCheckIn = async () => {
     if (!selectedAppointment) return false;
 
     if (selectedAppointment.status !== "scheduled") {
       toast.warning("You can only check in appointments that are scheduled.", {
-        position: "top-center",
+        position: "top-right",
+      });
+      return false;
+    }
+
+    if (selectedAppointment.date !== new Date().toLocaleDateString("en-GB")) {
+      toast.warning("You can only check in appointments scheduled for today.", {
+        position: "top-right",
       });
       return false;
     }
 
     try {
+      // Request to backend
       const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
         method: "PATCH",
         headers: {
@@ -71,6 +75,7 @@ export default function AppointmentButtons({
         }),
       });
 
+      // Header of application / json lets the request process
       const data = await res.json();
 
       if (!res.ok) {
@@ -80,13 +85,13 @@ export default function AppointmentButtons({
       updateAppointmentStatus("checked-in");
 
       toast.success("Appointment checked in.", {
-        position: "top-center",
+        position: "top-right",
       });
 
       return true;
     } catch (err) {
       toast.error(err.message || "Failed to check in appointment.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -98,12 +103,11 @@ export default function AppointmentButtons({
     if (selectedAppointment.status !== "checked-in") {
       toast.warning(
         "You can only check out appointments that are checked-in.",
-        { position: "top-center" },
+        { position: "top-right" },
       );
       return false;
     }
 
-    setCheckoutOpen(true);
     return true;
   };
 
@@ -112,14 +116,14 @@ export default function AppointmentButtons({
 
     if (!appointmentTotal || Number(appointmentTotal) <= 0) {
       toast.warning("Please enter a valid appointment total.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
 
     if (!paymentType) {
       toast.warning("Please select a payment type.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
@@ -148,96 +152,78 @@ export default function AppointmentButtons({
         paymentType,
       });
 
-      setCheckoutOpen(false);
       setAppointmentTotal("");
       setPaymentType("");
 
       toast.success("Appointment checked out.", {
-        position: "top-center",
+        position: "top-right",
       });
 
       return true;
     } catch (err) {
       toast.error(err.message || "Failed to record payment.", {
-        position: "top-center",
+        position: "top-right",
       });
       return false;
     }
   };
 
   return (
-    <>
-      <Item>
-        <ItemContent>
-          {selectedAppointment.status == "scheduled" && (
-            <Button
-              onClick={handleCheckIn}
-              className="w-full bg-button-primary hover:bg-button-primary-foreground text-center font-semibold text-white"
-            >
-              Check In
-            </Button>
-          )}
-          {selectedAppointment.status == "checked-in" && (
-            <Button
-              onClick={handleCheckOut}
-              className="w-full bg-destructive hover:bg-destructive/60 text-center font-semibold text-white"
-            >
-              Check Out
-            </Button>
-          )}
-        </ItemContent>
-      </Item>
-
-      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
-        <DialogContent className="sm:max-w-[600px] rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>Checkout</DialogTitle>
-          </DialogHeader>
-          <div className="flex flex-row px-4">
-            <div className="grid grid-rows-2 items-center">
-              <span className="text-sm text-foreground whitespace-nowrap">
-                Appointment total
-              </span>
-              <span className="text-sm text-foreground">Card type</span>
-            </div>
-            <div className="grid grid-rows-2 w-full">
-              <div className="flex items-center gap-4 px-4 py-3 cols-span-2">
-                <Input
-                  type="number"
-                  min="0"
-                  step="0.01"
+    <Item>
+      <ItemContent>
+        {selectedAppointment.status == "scheduled" && (
+          <Button
+            onClick={handleCheckIn}
+            className="w-full bg-button-primary hover:bg-button-primary-foreground text-center font-semibold text-white"
+          >
+            Check In
+          </Button>
+        )}
+        {selectedAppointment.status == "checked-in" && (
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                onClick={handleCheckOut}
+                className="w-full bg-destructive hover:bg-destructive/60 text-center font-semibold text-white"
+              >
+                Check Out
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogTitle>Checkout</DialogTitle>
+              <DialogDescription>
+                Enter Appointment&apos;s Cost
+              </DialogDescription>
+              <div className="flex flex-row gap-4">
+                <FormField
+                  fieldLabel="Total Cost"
+                  placeholder="00.00"
+                  variant="add"
                   value={appointmentTotal}
                   onChange={(e) => setAppointmentTotal(e.target.value)}
-                  placeholder="00.00"
-                  className="shadow-none focus-visible:ring-0 text-left"
+                  maxLength={4}
+                />
+                <FormField
+                  fieldLabel="Card Type"
+                  placeholder="Visa"
+                  variant="select"
+                  itemsArray={[
+                    { id: 1, name: "Visa" },
+                    { id: 2, name: "Mastercard" },
+                    { id: 3, name: "Debit" },
+                    { id: 4, name: "Cash" },
+                  ]}
+                  displayText={paymentType}
+                  setItemSearch={setPaymentType}
                 />
               </div>
-              <div className="flex items-center gap-4 px-4 py-3">
-                <Select value={paymentType} onValueChange={setPaymentType}>
-                  <SelectTrigger className="shadow-none focus:ring-0 w-full">
-                    <SelectValue placeholder="Select payment type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Mastercard">Mastercard</SelectItem>
-                    <SelectItem value="Visa">Visa</SelectItem>
-                    <SelectItem value="Debit">Debit</SelectItem>
-                    <SelectItem value="Cash">Cash</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              onClick={handleConfirmCheckout}
-              className="bg-button-primary text-white"
-            >
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </>
+              <DialogFooter>
+                <Button onClick={handleConfirmCheckout}>Confirm</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        )}
+      </ItemContent>
+    </Item>
   );
 }

@@ -42,7 +42,7 @@ export default function LoginPage() {
       await signInWithGoogle();
 
       toast.success("Successfully signed in with Google!", {
-        position: "top-center",
+        position: "top-right",
       });
 
       router.push("/Home");
