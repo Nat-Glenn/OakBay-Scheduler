@@ -36,6 +36,7 @@ export default function FormField({
   maxLength,
 }) {
   const inputRef = useRef(null);
+  
   function formatPhone(value) {
     const digits = value.replace(/\D/g, "").slice(0, 10);
 

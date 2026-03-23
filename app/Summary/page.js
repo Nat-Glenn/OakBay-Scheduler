@@ -154,6 +154,7 @@ export default function Summary() {
                     <TableHead className="py-4 text-primary/50">Status</TableHead>
                   </TableRow>
                 </TableHeader>
+                {/* Badges */}
                 <TableBody>
                   {recentVisits.map((visit) => (
                     <TableRow key={visit.id} className="border-b last:border-0">
@@ -233,9 +234,9 @@ export default function Summary() {
       {/* Floating Assistant Section */}
       <div className="fixed bottom-8 right-8 flex flex-col items-end z-1">
         {isChatOpen && (
-          <Card className="w-75 lg:w-96 mb-2 shadow-2xl border-none overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300">
+          <Card className="w-75 lg:w-96 mb-2 shadow-2xl overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300 gap-0 flex flex-col bg-background">
             {/* Chat Header */}
-            <CardHeader className="bg-[#002D58] text-white p-5 flex flex-row items-center justify-between space-y-0">
+            <CardHeader className="bg-sidebar text-white font-bold p-5 flex flex-row items-center justify-between space-y-0">
               <div className="flex flex-col">
                 <CardTitle className="text-md font-bold text-white">Practice Assistant</CardTitle>
                 <p className="text-xs text-blue-200 mt-1">How can I help you today?</p>
@@ -246,7 +247,7 @@ export default function Summary() {
             </CardHeader>
 
             {/* Message History */}
-            <CardContent className="p-4 h-80 overflow-y-auto bg-white flex flex-col gap-3">
+            <CardContent className="h-80 p-4 bg-primary/10 overflow-y-auto flex flex-col gap-3">
               {messages.map((message, index) => (
                 <div key={index} className={`p-4 rounded-2xl text-base shadow-sm max-w-[85%] ${
                     message.role === "user" ? "bg-[#A0CE66] text-white self-end rounded-br-none" : "bg-slate-100 text-slate-700 self-start rounded-bl-none"
@@ -260,7 +261,7 @@ export default function Summary() {
             </CardContent>
 
             {/* Chat Input */}
-            <div className="p-4 border-t bg-white">
+            <div className="p-4 bg-white">
               <form className="flex gap-4 items-center" onSubmit={handleSend}>
                 <Input
                   placeholder="Type your message..."
