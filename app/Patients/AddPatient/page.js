@@ -16,10 +16,39 @@ import {
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
 
+// Words that should be blocked in any field — violence/threats
 const BLOCKED_WORDS = [
-  "kill", "knife", "murder", "stab", "shoot", "gun", "death", "die", 
-  "hurt", "attack", "suicide", "harm", "hit", "punch", "bomb", "threat"
+  "kill", "knife", "murder", "stab", "shoot", "gun",
+  "suicide", "attack", "punch", "bomb", "threat"
 ];
+
+// Broader list for notes only — "hurt","hit","harm","die","death" kept here
+// so "back is hurting" stays as-is but "going to hurt you" gets cleaned
+const CLEAN_WORDS = [
+  ...BLOCKED_WORDS,
+  "hurt", "hit", "harm", "die", "death"
+];
+
+// Checks if a value contains profanity or violent language
+function containsBlockedContent(value) {
+  const lower = value.toLowerCase();
+  const hasViolence = BLOCKED_WORDS.some((word) => lower.includes(word));
+  const hasProfanity = filter.check(lower);
+  return hasViolence || hasProfanity;
+}
+
+// Replaces violent/profane words in notes with **** only in threatening context
+function cleanNotes(value) {
+  let cleaned = filter.clean(value);
+  for (const word of CLEAN_WORDS) {
+    const pattern = new RegExp(
+      `\\b${word}\\b(?=\\s+(you|them|him|her|us|me))|(?<=\\b(i|im|ill|going to|want to|will)\\s+)\\b${word}\\b`,
+      "gi"
+    );
+    cleaned = cleaned.replace(pattern, "****");
+  }
+  return cleaned;
+}
 
 export default function AddPatientPage() {
   const router = useRouter();
@@ -46,21 +75,25 @@ export default function AddPatientPage() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    // START UPDATED NOTES SECTION 
-    if (name === "notes") {
-      const lowerValue = value.toLowerCase();
-      
-      // Check for Violence/Threats OR Profanity
-      const hasViolence = BLOCKED_WORDS.some(word => lowerValue.includes(word));
-      const hasProfanity = filter.check(lowerValue);
-      
-      if (hasViolence || hasProfanity) {
-        // BLOCK: Do not update state. The text won't appear in the box.
+    // For name fields — block entirely if profanity or violence detected
+    if (name === "firstName" || name === "lastName") {
+      if (containsBlockedContent(value)) {
+        // Block the input — don't update state, show error
         setError("Violence and Profanity is prohibited");
-        return; 
+        return;
       } else {
-        setError(""); 
+        setError("");
       }
+    }
+
+    // Check notes field for profanity and violent language while typing
+    if (name === "notes") {
+      setError("");
+      setFormData((prev) => ({
+        ...prev,
+        [name]: cleanNotes(value),
+      }));
+      return;
     }
 
     setFormData((prev) => ({
@@ -80,6 +113,23 @@ export default function AddPatientPage() {
       !formData.phone.trim()
     ) {
       setError("First name, last name, and phone number are required.");
+      return;
+    }
+
+    // Check firstName and lastName for profanity/violent language on submit
+    if (containsBlockedContent(formData.firstName)) {
+      setError("First name contains inappropriate language.");
+      return;
+    }
+
+    if (containsBlockedContent(formData.lastName)) {
+      setError("Last name contains inappropriate language.");
+      return;
+    }
+
+    // Double-check notes on submit in case anything slipped through
+    if (formData.notes && containsBlockedContent(formData.notes)) {
+      setError("Notes contain inappropriate language.");
       return;
     }
 
