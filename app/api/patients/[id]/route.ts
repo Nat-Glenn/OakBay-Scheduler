@@ -1,5 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { hasProfanity, cleanField } from "@/lib/profanity"; // Profanity helper
+import { encryptField, decryptField } from "@/lib/encrypt";
+import { cleanField, hasProfanity } from "@/lib/profanity";
+
+// ahcNumber (Alberta Health Care number) is encrypted at rest using AES-256-GCM.
+// phone and email are stored in plaintext to support search — see COMPLIANCE.md
+// for the tradeoff rationale and recommended future improvements.
+
+function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
+  return {
+    ...patient,
+    ahcNumber: decryptField(patient.ahcNumber),
+  };
+}
 
 export async function POST(req: Request) {
   try {
@@ -8,53 +20,31 @@ export async function POST(req: Request) {
     const firstName = String(body.firstName ?? "").trim();
     const lastName = String(body.lastName ?? "").trim();
     const phone = String(body.phone ?? "").trim();
-
     const email =
       body.email !== undefined && body.email !== null
         ? String(body.email).trim()
         : null;
-
     const ahcNumber =
       body.ahcNumber !== undefined && body.ahcNumber !== null
         ? String(body.ahcNumber).trim()
         : null;
+    const notes =
+      body.notes !== undefined && body.notes !== null
+        ? String(body.notes).trim()
+        : null;
 
-    // Clean notes instead of rejecting, bad words are replaced with ***)
-    const notes = cleanField(body.notes);
-    if (hasProfanity(firstName)) {
-      return Response.json(
-        { error: "First name cannot contain inappropriate language" },
-        { status: 400 },
-      );
-    }
-
-    if (hasProfanity(lastName)) {
-      return Response.json(
-        { error: "Last name cannot contain inappropriate language" },
-        { status: 400 },
-      );
-    }
-
-    // Required fields validation
     if (!firstName || !lastName || !phone) {
       return Response.json(
         { error: "First name, last name, and phone are required" },
-        { status: 400 },
+        { status: 400 }
       );
     }
 
-    // Profanity in names is rejected
-    if (hasProfanity(firstName)) {
+    // Reject profane patient names — names are displayed throughout the UI
+    if (hasProfanity(firstName) || hasProfanity(lastName)) {
       return Response.json(
-        { error: "First name cannot contain inappropriate language" },
-        { status: 400 },
-      );
-    }
-
-    if (hasProfanity(lastName)) {
-      return Response.json(
-        { error: "Last name cannot contain inappropriate language" },
-        { status: 400 },
+        { error: "Patient name contains inappropriate language" },
+        { status: 400 }
       );
     }
 
@@ -64,18 +54,21 @@ export async function POST(req: Request) {
         lastName,
         phone,
         email: email || null,
-        ahcNumber: ahcNumber || null,
+        // Encrypt AHC number before storing — government health identifier (HIA requirement)
+        ahcNumber: encryptField(ahcNumber),
         reminderOptIn: body.reminderOptIn ?? true,
-        notes, 
+        // Clean notes — replace profanity rather than rejecting the record
+        notes: cleanField(notes),
       },
     });
 
-    return Response.json(patient, { status: 201 });
+    // Decrypt before returning to the frontend
+    return Response.json(decryptPatient(patient), { status: 201 });
   } catch (err) {
     console.error(err);
     return Response.json(
       { error: "Failed to create patient" },
-      { status: 500 },
+      { status: 500 }
     );
   }
 }
@@ -85,7 +78,8 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const search = (searchParams.get("search") ?? "").trim();
 
-    // Simple search: first name OR last name OR phone
+    // Search on firstName, lastName, phone only.
+    // ahcNumber is encrypted so it cannot be searched via DB query.
     const patients = await prisma.patient.findMany({
       where: search
         ? {
@@ -100,12 +94,10 @@ export async function GET(req: Request) {
       take: 25,
     });
 
-    return Response.json(patients);
+    // Decrypt ahcNumber on every record before returning
+    return Response.json(patients.map(decryptPatient));
   } catch (err) {
     console.error(err);
-    return Response.json(
-      { error: "Failed to fetch patients" },
-      { status: 500 },
-    );
+    return Response.json({ error: "Failed to fetch patients" }, { status: 500 });
   }
 }

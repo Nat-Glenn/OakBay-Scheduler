@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
+import { cleanField } from "@/lib/profanity";
 
 // Runs when a PATCH request is sent
 export async function PATCH(
@@ -20,7 +21,10 @@ export async function PATCH(
     const body = await req.json();
 
     const status = body.status ? String(body.status).trim().toUpperCase() : undefined;
-    const adminNotes = body.adminNotes !== undefined ? String(body.adminNotes) : undefined;
+
+    const adminNotes = body.adminNotes !== undefined //Clean adminNotes before storing, removes profanity while preserving content
+      ? cleanField(String(body.adminNotes))
+      : undefined;
 
     const allowedStatuses = ["REQUESTED", "CONFIRMED", "CHECKED_IN", "COMPLETED", "CANCELLED"];
     if (status && !allowedStatuses.includes(status)) {

@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
+import { hashPassword } from "@/lib/hash";
 
 export async function GET() {
   try {
     const practitioners = await prisma.user.findMany({
       where: {
-        role: "provider",
+        role: { in: ["Chiropractor", "provider"] },
       },
       select: {
         id: true,
@@ -57,13 +58,16 @@ export async function POST(req: Request) {
         { status: 409 }
       );
     }
+    
+    //hash the password before storing
+    const hashedPassword = await hashPassword("temp123");
 
     const practitioner = await prisma.user.create({
       data: {
         name,
         email,
         role: "provider",
-        password: "temp123",
+        password: hashedPassword,
       },
       select: {
         id: true,

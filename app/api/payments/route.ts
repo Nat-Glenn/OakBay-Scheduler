@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { parseIntStrict, parseNonEmptyString } from "@/lib/validate";
+import { parseNonEmptyString } from "@/lib/validate";
 import { ok, created, badRequest, notFound, conflict, serverError } from "@/lib/api";
-
 
 export async function GET(req: Request) {
     try {
@@ -17,7 +16,14 @@ export async function GET(req: Request) {
                 appointment: {
                     include: {
                         patient: true,
-                        provider: true,
+                        provider: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                role: true,
+                            },
+                        },
                     },
                 },
             },
@@ -31,6 +37,7 @@ export async function GET(req: Request) {
         return serverError("Failed to fetch payments");
     }
 }
+
 // POST /api/payments
 //records a new payment and marks the appointment as COMPLETED.
 export async function POST(req: Request) {
@@ -49,24 +56,26 @@ export async function POST(req: Request) {
         }
         if (!paymentType || !allowedPaymentTypes.includes(paymentType)) {
             return badRequest("Missing or invalid paymentType", {
-                accepted: ["cash", "credit_card", "insurance"],
+                accepted: ["mastercard", "visa", "debit", "cash"],
             });
         }
         // Validate amount is a positive number. No negative or zero.
         if (!Number.isFinite(amount) || amount <= 0) {
             return badRequest("amount is required and must be a positive number");
         }
+
         // Verify the appointment exists and check for existing payment
         const appointment = await prisma.appointment.findUnique({
             where: { id: appointmentId },
-            include: {payment: true },
+            include: { payment: true },
         });
 
         if (!appointment) {
             return notFound("Appointment not found");
         }
+
         // Cancelled appointment wont be checked out.
-        if (appointment.status === "cancelled") {
+        if (appointment.status === "CANCELLED") {
             return badRequest("Cannot record payment for a cancelled appointment");
         }
 
@@ -74,6 +83,7 @@ export async function POST(req: Request) {
         if (appointment.payment) {
             return conflict("Payment already exists for this appointment");
         }
+
         // Use a transaction to ensure both operations succeed or fail together
         const [payment] = await prisma.$transaction([
             prisma.payment.create({
@@ -87,7 +97,14 @@ export async function POST(req: Request) {
                     appointment: {
                         include: {
                             patient: true,
-                            provider: true,
+                            provider: {
+                                select: {
+                                    id: true,
+                                    name: true,
+                                    email: true,
+                                    role: true,
+                                },
+                            },
                         },
                     },
                 },
@@ -95,7 +112,7 @@ export async function POST(req: Request) {
             //Marks the appointment as completed once payment is recorded
             prisma.appointment.update({
                 where: { id: appointmentId },
-                data: { status: "completed" },
+                data: { status: "COMPLETED" },
             }),
         ]);
 

@@ -1,7 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { created, badRequest, conflict, notFound, serverError } from "@/lib/api";
-import { parseIntStrict, parseNonEmptyString, parseDate } from "@/lib/validate";
-import { findPatientOverlap, findProviderOverlap } from "@/lib/appointments";
+import { cleanField, hasUnsafeLanguage } from "@/lib/profanity"; //safety + profanity tools
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
@@ -37,7 +35,17 @@ export async function GET(req: Request) {
       },
       include: {
         patient: true,
-        provider: true,
+
+        // Prevent exposing password, only the needed info is returned
+        provider: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+
         payment: true,
       },
       orderBy: { startTime: "asc" },
@@ -53,88 +61,107 @@ export async function GET(req: Request) {
   }
 }
 
-
-//Create Appointment API (POST)
+function isValidDate(d: Date) {
+  return !Number.isNaN(d.getTime());
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    const patientId = parseIntStrict(body.patientId);
-    const type = parseNonEmptyString(body.type);
-    const startTime = parseDate(body.startTime);
-    const endTime = parseDate(body.endTime);
+    // Required fields
+    const patientId = Number(body.patientId);
+    const type = String(body.type ?? "").trim();
+    const startTime = new Date(body.startTime);
+    const endTime = new Date(body.endTime);
 
-    if (!patientId || !type || !startTime || !endTime) {
-      return badRequest("Missing or invalid fields", {
-        required: ["patientId", "type", "startTime", "endTime"],
-      });
+    if (!patientId || !type || !isValidDate(startTime) || !isValidDate(endTime)) {
+      return Response.json(
+        { error: "Missing or invalid fields (patientId, type, startTime, endTime)" },
+        { status: 400 }
+      );
     }
 
     if (endTime <= startTime) {
-      return badRequest("endTime must be after startTime");
+      return Response.json({ error: "endTime must be after startTime" }, { status: 400 });
     }
 
-    // Ensure patient exists (prevents FK 500s)
-    const patient = await prisma.patient.findUnique({
-      where: { id: patientId },
-      select: { id: true },
-    });
+    // Optional fields
+    const providerId = body.providerId ? Number(body.providerId) : null;
+    const createdByUserId = body.createdByUserId ? Number(body.createdByUserId) : null;
 
-    if (!patient) return notFound("Patient not found");
+    // Clean user input text instead of rejecting.
+    const requestMessage = cleanField(body.requestMessage);
+    const adminNotes = cleanField(body.adminNotes);
 
-    const providerId = body.providerId ? parseIntStrict(body.providerId) : null;
+    // Blocks unsafe or harmful language BEFORE saving to database
+    if (
+      hasUnsafeLanguage(body.requestMessage) ||
+      hasUnsafeLanguage(body.adminNotes)
+    ) {
+      return Response.json(
+        { error: "Unsafe or threatening language is not allowed" },
+        { status: 400 }
+      );
+    }
 
-    //Validate provider exists
+    // Basic overlap check for the same provider (if providerId is assigned)
     if (providerId) {
-      const provider = await prisma.user.findUnique({
-        where: { id: providerId },
-        select: { id: true },
-      });
-
-      if (!provider) {
-        return notFound("Provider not found");
-      }
-
-      const overlap = await findProviderOverlap({
-        providerId,
-        startTime,
-        endTime,
+      const overlap = await prisma.appointment.findFirst({
+        where: {
+          providerId,
+          AND: [
+            { startTime: { lt: endTime } }, // existing starts before new ends
+            { endTime: { gt: startTime } }, // existing ends after new starts
+          ],
+        },
       });
 
       if (overlap) {
-        return conflict("Time conflict for provider", { overlap });
+        return Response.json(
+          { error: "Time conflict: provider already has an appointment in that time range." },
+          { status: 409 }
+        );
       }
     }
 
-    // Prevent patient double-booking (even if providerId is null)
-    const patientOverlap = await findPatientOverlap({ patientId, startTime, endTime });
-    
-    if (patientOverlap) {
-      return conflict(
-        "Time conflict: patient already has an appointment in that time range",
-        { overlap: patientOverlap }
-      );
+    const patient = await prisma.patient.findUnique({ where: { id: patientId } });
+    if (!patient) {
+      return Response.json({ error: "Patient not found" }, { status: 400 });
     }
 
     const appointment = await prisma.appointment.create({
       data: {
         patientId,
         type,
-        status: "requested",
+        status: "REQUESTED", // default
         startTime,
         endTime,
         providerId,
-        createdByUserId: body.createdByUserId ? parseIntStrict(body.createdByUserId) : null,
-        requestMessage: body.requestMessage ? String(body.requestMessage) : null,
-        adminNotes: body.adminNotes ? String(body.adminNotes) : null,
+        createdByUserId,
+        requestMessage, 
+        adminNotes,     
       },
-      include: { patient: true, provider: true, payment: true },
+      include: {
+        patient: true,
+
+        // Return safe provider info only (no password)
+        provider: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
+
+        payment: true,
+      },
     });
 
-    return created(appointment);
+    return Response.json(appointment, { status: 201 });
   } catch (err) {
     console.error(err);
-    return serverError("Failed to create appointment");
+    return Response.json({ error: "Failed to create appointment" }, { status: 500 });
   }
 }

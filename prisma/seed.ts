@@ -1,4 +1,6 @@
 import { PrismaClient } from "@prisma/client";
+import { hashPassword } from "../lib/hash";
+import { encryptField } from "../lib/encrypt";
 
 
 const prisma = new PrismaClient();
@@ -12,13 +14,15 @@ async function main() {
     await prisma.user.deleteMany();
     console.log("Done." );
 
+    const hashedPassword = await hashPassword("password");//Hash all the passwords before storing
+
 
         /////////STAFF/////////
     const doctor = await prisma.user.create({
         data: {
             name: "Dr. Brad Pritchard",
             email: "brad.pritchard@example.com",
-            password: "password",
+            password: hashedPassword,
             role: "Chiropractor",
         },
     });
@@ -27,14 +31,14 @@ async function main() {
         data: {
             name: "John Doe",
             email: "johndoe@email.com",
-            password: "password",
+            password: hashedPassword,
             role: "Receptionist",
         },
     });
         /////////STAFF/////////
 
 
-        /////////PATIENTS/////////
+        /////////PATIENTS(hardcoded)/////////
     const patient0 = await prisma.patient.create({
         data: {
             firstName:"Prince",
@@ -42,7 +46,7 @@ async function main() {
             phone: "123-456-7890",
             email:"prince.pande@example.com",
             notes: "Patient has a history of back pain",
-            ahcNumber: "AHC012345678",
+            ahcNumber: encryptField("AHC0123456789"), //Encrypt AHC number before storing
         }
     });
 
@@ -53,7 +57,7 @@ async function main() {
             phone: "123-456-7890",
             email:"estefano.campana@example.com",
             notes: "Patient has a history of neck pain",
-            ahcNumber: "AHC1123456789",
+            ahcNumber: encryptField("AHC1123456789"), //Encrypt AHC number before storing
         }
     });
 
@@ -64,7 +68,7 @@ async function main() {
             phone: "123-456-7890",
             email:"ashton.pritchard@example.com",
             notes: "Patient has a history of neck pain",
-            ahcNumber: "AHC2123456789",
+            ahcNumber: encryptField("AHC2123456789"), //Encrypt AHC number before storing
         }
     });
 
@@ -75,7 +79,7 @@ async function main() {
             phone: "123-456-7890",
             email:"riley.yonda@example.com",
             notes: "Patient has a history of back pain",
-            ahcNumber: "AHC3123456789",
+            ahcNumber: encryptField("AHC3123456789"), //Encrypt AHC number before storing
         }
     });
 
@@ -86,7 +90,7 @@ async function main() {
             phone: "123-456-7890",
             email:"nat-glenn.atanga@example.com",
             notes: "None",
-            ahcNumber: "AHC4123456789",
+            ahcNumber: encryptField("AHC4123456789"), //Encrypt AHC number before storing
         }
     });
 
@@ -97,7 +101,7 @@ async function main() {
             phone: "123-456-7890",
             email:"vincent.manimtim@example.com",
             notes: "None",
-            ahcNumber: "AHC5123456789",
+            ahcNumber: encryptField("AHC5123456789"), //Encrypt AHC number before storing
         }
     });
     console.log("Patient Created." );

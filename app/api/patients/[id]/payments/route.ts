@@ -34,7 +34,14 @@ export async function GET(
             include: {
                 appointment: {
                     include: {
-                        provider: true,
+                        provider: {
+                            select: {
+                                id: true,
+                                name: true,
+                                email: true,
+                                role: true,
+                            },
+                        }
                         //provider info is needed to display the provider name in the payment history.
                     },
                 },

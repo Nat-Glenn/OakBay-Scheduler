@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { cleanField, hasUnsafeLanguage } from "@/lib/profanity";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     if (!dateStr) {
       return Response.json(
         { error: "Missing ?date=YYYY-MM-DD" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -34,7 +35,14 @@ export async function GET(req: Request) {
       },
       include: {
         patient: true,
-        provider: true,
+        provider: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
         payment: true,
       },
       orderBy: { startTime: "asc" },
@@ -45,11 +53,10 @@ export async function GET(req: Request) {
     console.error(err);
     return Response.json(
       { error: "Failed to fetch appointments" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
-
 
 function isValidDate(d: Date) {
   return !Number.isNaN(d.getTime());
@@ -65,22 +72,47 @@ export async function POST(req: Request) {
     const startTime = new Date(body.startTime);
     const endTime = new Date(body.endTime);
 
-    if (!patientId || !type || !isValidDate(startTime) || !isValidDate(endTime)) {
+    if (
+      !patientId ||
+      !type ||
+      !isValidDate(startTime) ||
+      !isValidDate(endTime)
+    ) {
       return Response.json(
-        { error: "Missing or invalid fields (patientId, type, startTime, endTime)" },
-        { status: 400 }
+        {
+          error:
+            "Missing or invalid fields (patientId, type, startTime, endTime)",
+        },
+        { status: 400 },
       );
     }
 
     if (endTime <= startTime) {
-      return Response.json({ error: "endTime must be after startTime" }, { status: 400 });
+      return Response.json(
+        { error: "endTime must be after startTime" },
+        { status: 400 },
+      );
     }
 
     // Optional fields
     const providerId = body.providerId ? Number(body.providerId) : null;
-    const createdByUserId = body.createdByUserId ? Number(body.createdByUserId) : null;
-    const requestMessage = body.requestMessage ? String(body.requestMessage) : null;
-    const adminNotes = body.adminNotes ? String(body.adminNotes) : null;
+    const createdByUserId = body.createdByUserId
+      ? Number(body.createdByUserId)
+      : null;
+
+    // Clean free-text fields before saving
+    const requestMessage = cleanField(body.requestMessage);
+    const adminNotes = cleanField(body.adminNotes);
+    // Reject unsafe language like threats or violence
+    if (
+      hasUnsafeLanguage(body.requestMessage) ||
+      hasUnsafeLanguage(body.adminNotes)
+    ) {
+      return Response.json(
+        { error: "Unsafe or threatening language is not allowed" },
+        { status: 400 },
+      );
+    }
 
     // Basic overlap check for the same provider (if providerId is assigned)
     if (providerId) {
@@ -96,22 +128,27 @@ export async function POST(req: Request) {
 
       if (overlap) {
         return Response.json(
-          { error: "Time conflict: provider already has an appointment in that time range." },
-          { status: 409 }
+          {
+            error:
+              "Time conflict: provider already has an appointment in that time range.",
+          },
+          { status: 409 },
         );
       }
     }
 
-    const patient = await prisma.patient.findUnique({ where: { id: patientId } });
-if (!patient) {
-  return Response.json({ error: "Patient not found" }, { status: 400 });
-}
+    const patient = await prisma.patient.findUnique({
+      where: { id: patientId },
+    });
+    if (!patient) {
+      return Response.json({ error: "Patient not found" }, { status: 400 });
+    }
 
     const appointment = await prisma.appointment.create({
       data: {
         patientId,
         type,
-        status: "requested", // default
+        status: "REQUESTED", // default
         startTime,
         endTime,
         providerId,
@@ -121,7 +158,14 @@ if (!patient) {
       },
       include: {
         patient: true,
-        provider: true,
+        provider: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+          },
+        },
         payment: true,
       },
     });
@@ -129,6 +173,9 @@ if (!patient) {
     return Response.json(appointment, { status: 201 });
   } catch (err) {
     console.error(err);
-    return Response.json({ error: "Failed to create appointment" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to create appointment" },
+      { status: 500 },
+    );
   }
 }
