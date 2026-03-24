@@ -25,7 +25,8 @@ export default function Settings() {
   const [userEmail, setUserEmail] = useState("");
   const [userPhoto, setUserPhoto] = useState(null);
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // FIXED: Removed <HTMLInputElement>
+  const fileInputRef = useRef(null); 
   const small = useMediaQuery("(max-width: 768px)");
   const router = useRouter();
 
@@ -48,14 +49,16 @@ export default function Settings() {
     return () => unsubscribe();
   }, []);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // FIXED: Removed React.ChangeEvent type
+  const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 1024 * 1024) return toast.error("Image must be under 1MB.");
     
     const reader = new FileReader();
     reader.onloadend = () => {
-      const result = reader.result as string;
+      // FIXED: Removed "as string" type assertion
+      const result = reader.result; 
       setUserPhoto(result);
       localStorage.setItem("admin_local_avatar", result);
       toast.success("Photo updated locally.");
@@ -68,7 +71,8 @@ export default function Settings() {
       setConnectingGoogle(true);
       await connectGoogleAccount();
       toast.success("Google account linked successfully!");
-    } catch (error: any) {
+    } catch (error) { 
+      // FIXED: Removed ": any"
       if (error?.code === "auth/multi-factor-auth-required") {
         const resolver = getMultiFactorResolver(auth, error);
         const phoneHint = resolver.hints.find(h => h.factorId === PhoneMultiFactorGenerator.FACTOR_ID);

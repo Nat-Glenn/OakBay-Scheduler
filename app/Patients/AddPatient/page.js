@@ -16,7 +16,6 @@ import {
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
 
-// --- CLINIC SAFETY BLACKLIST ---
 const BLOCKED_WORDS = [
   "kill", "knife", "murder", "stab", "shoot", "gun", "death", "die", 
   "hurt", "attack", "suicide", "harm", "hit", "punch", "bomb", "threat"
@@ -47,7 +46,7 @@ export default function AddPatientPage() {
   function handleChange(e) {
     const { name, value } = e.target;
 
-    // --- START UPDATED NOTES SECTION ---
+    // START UPDATED NOTES SECTION 
     if (name === "notes") {
       const lowerValue = value.toLowerCase();
       
@@ -60,7 +59,7 @@ export default function AddPatientPage() {
         setError("Violence and Profanity is prohibited");
         return; 
       } else {
-        setError(""); // Clear error if input is safe
+        setError(""); 
       }
     }
 
@@ -189,6 +188,7 @@ export default function AddPatientPage() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
+                        maxLength={254}
                       />
                       <FormField
                         fieldLabel="Phone Number"
@@ -236,7 +236,6 @@ export default function AddPatientPage() {
                         placeholder="Optional notes"
                       />
                     </Field>
-                    {/* --- END UPDATED TEXTAREA SECTION --- */}
 
                     {/* ERROR MESSAGE DISPLAY */}
                     {error && (

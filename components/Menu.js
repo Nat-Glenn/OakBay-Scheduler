@@ -95,21 +95,21 @@ export default function MenuComp() {
         </Link>
 
         <Link
-          onClick={handleClose}
-          href="/Summary"
-          className={CurrentPage("/Summary")}
-        >
-          <GrTask />
-          Summary
-        </Link>
-
-        <Link
           href="/Patients"
           onClick={handleClose}
           className={CurrentPage("/Patients")}
         >
           <GrUser />
           Patients
+        </Link>
+
+            <Link
+          onClick={handleClose}
+          href="/Summary"
+          className={CurrentPage("/Summary")}
+        >
+          <GrTask />
+          Summary
         </Link>
 
         <Link
