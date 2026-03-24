@@ -1,5 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { hasProfanity, cleanField } from "@/lib/profanity"; // Profanity helper
+import { encryptField, decryptField } from "@/lib/encrypt"; // Encryption helper
+
+function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
+  return {
+    ...patient,
+    ahcNumber: decryptField(patient.ahcNumber),
+  };
+}
 
 export async function POST(req: Request) {
   try {
@@ -64,13 +72,13 @@ export async function POST(req: Request) {
         lastName,
         phone,
         email: email || null,
-        ahcNumber: ahcNumber || null,
+        ahcNumber: ahcNumber ? encryptField(ahcNumber) : null,
         reminderOptIn: body.reminderOptIn ?? true,
         notes, 
       },
     });
 
-    return Response.json(patient, { status: 201 });
+    return Response.json(decryptPatient(patient), { status: 201 });
   } catch (err) {
     console.error(err);
     return Response.json(
@@ -100,7 +108,7 @@ export async function GET(req: Request) {
       take: 25,
     });
 
-    return Response.json(patients);
+    return Response.json(patients.map(decryptPatient));
   } catch (err) {
     console.error(err);
     return Response.json(

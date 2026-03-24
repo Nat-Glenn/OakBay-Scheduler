@@ -55,7 +55,7 @@ export async function POST(req: Request) {
         phone,
         email: email || null,
         // Encrypt AHC number before storing — government health identifier (HIA requirement)
-        ahcNumber: encryptField(ahcNumber),
+        ahcNumber:encryptField(ahcNumber),
         reminderOptIn: body.reminderOptIn ?? true,
         // Clean notes — replace profanity rather than rejecting the record
         notes: cleanField(notes),
