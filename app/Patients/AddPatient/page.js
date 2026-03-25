@@ -16,20 +16,16 @@ import {
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
 
-// Words that should be blocked in any field — violence/threats
+/**
+ * VALIDATION CONSTANTS
+ * ---------------------------------------------------------
+ */
 const BLOCKED_WORDS = [
   "kill", "knife", "murder", "stab", "shoot", "gun",
   "suicide", "attack", "punch", "bomb", "threat"
 ];
 
-// Broader list for notes only — "hurt","hit","harm","die","death" kept here
-// so "back is hurting" stays as-is but "going to hurt you" gets cleaned
-const CLEAN_WORDS = [
-  ...BLOCKED_WORDS,
-  "hurt", "hit", "harm", "die", "death"
-];
-
-// Checks if a value contains profanity or violent language
+// Helper to check for profanity or violent keywords
 function containsBlockedContent(value) {
   const lower = value.toLowerCase();
   const hasViolence = BLOCKED_WORDS.some((word) => lower.includes(word));
@@ -37,30 +33,16 @@ function containsBlockedContent(value) {
   return hasViolence || hasProfanity;
 }
 
-// Replaces violent/profane words in notes with **** only in threatening context
-function cleanNotes(value) {
-  let cleaned = filter.clean(value);
-  for (const word of CLEAN_WORDS) {
-    const pattern = new RegExp(
-      `\\b${word}\\b(?=\\s+(you|them|him|her|us|me))|(?<=\\b(i|im|ill|going to|want to|will)\\s+)\\b${word}\\b`,
-      "gi"
-    );
-    cleaned = cleaned.replace(pattern, "****");
-  }
-  return cleaned;
-}
-
 export default function AddPatientPage() {
   const router = useRouter();
 
-  const [stat, setStat] = useState("");
+  /**
+   * STATE MANAGEMENT
+   * ---------------------------------------------------------
+   */
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  const status = [
-    { id: 1, name: "Active" },
-    { id: 2, name: "Inactive" },
-  ];
+  const [dob, setDob] = useState(""); // Managed separately for masking logic
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -71,28 +53,54 @@ export default function AddPatientPage() {
     notes: "",
   });
 
-  {/* FORM HANDLERS: CHANGE & SUBMIT */}
+  /**
+   * DATE HANDLING & MASKING
+   * ---------------------------------------------------------
+   */
+
+  // Converts digits to MM/DD/YYYY format as the user types
+  function applyDobMask(value) {
+    const digits = value.replace(/\D/g, "").slice(0, 8);
+    let result = digits;
+    if (digits.length > 4) result = digits.slice(0, 2) + "/" + digits.slice(2, 4) + "/" + digits.slice(4);
+    else if (digits.length > 2) result = digits.slice(0, 2) + "/" + digits.slice(2);
+    return result;
+  }
+
+  // Converts the masked string to DB-friendly YYYY-MM-DD
+  function dobToISO() {
+    if (!dob || dob.length < 10) return null;
+    const [mm, dd, yyyy] = dob.split("/");
+    if (!mm || !dd || !yyyy || yyyy.length < 4) return null;
+    return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+  }
+
+  /**
+   * EVENT HANDLERS
+   * ---------------------------------------------------------
+   */
+
   function handleChange(e) {
     const { name, value } = e.target;
 
-    // For name fields — block entirely if profanity or violence detected
+    // Real-time validation for Names
     if (name === "firstName" || name === "lastName") {
       if (containsBlockedContent(value)) {
-        // Block the input — don't update state, show error
         setError("Violence and Profanity is prohibited");
-        return;
+        return; // Block state update if it contains forbidden content
       } else {
         setError("");
       }
     }
 
-    // Check notes field for profanity and violent language while typing
+    // Real-time validation for Notes (allows state update but shows error)
     if (name === "notes") {
-      setError("");
-      setFormData((prev) => ({
-        ...prev,
-        [name]: cleanNotes(value),
-      }));
+      if (containsBlockedContent(value)) {
+        setError("Notes contain inappropriate language.");
+      } else {
+        setError("");
+      }
+      setFormData((prev) => ({ ...prev, [name]: value }));
       return;
     }
 
@@ -102,11 +110,15 @@ export default function AddPatientPage() {
     }));
   }
 
+  /**
+   * FORM SUBMISSION
+   * ---------------------------------------------------------
+   */
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
 
-    // Basic Validation
+    // 1. Required Field Validation
     if (
       !formData.firstName.trim() ||
       !formData.lastName.trim() ||
@@ -116,7 +128,7 @@ export default function AddPatientPage() {
       return;
     }
 
-    // Check firstName and lastName for profanity/violent language on submit
+    // 2. Content Safety Validation
     if (containsBlockedContent(formData.firstName)) {
       setError("First name contains inappropriate language.");
       return;
@@ -127,9 +139,15 @@ export default function AddPatientPage() {
       return;
     }
 
-    // Double-check notes on submit in case anything slipped through
     if (formData.notes && containsBlockedContent(formData.notes)) {
       setError("Notes contain inappropriate language.");
+      return;
+    }
+
+    // 3. Date Validation
+    const isoDate = dobToISO();
+    if (dob && !isoDate) {
+      setError("Please enter a valid date of birth (MM/DD/YYYY).");
       return;
     }
 
@@ -138,18 +156,16 @@ export default function AddPatientPage() {
 
       const res = await fetch("/api/patients", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           firstName: formData.firstName.trim(),
           lastName: formData.lastName.trim(),
           phone: formData.phone.trim(),
           email: formData.email.trim() || null,
           ahcNumber: formData.ahcNumber.trim() || null,
-          dob: null,
+          dob: isoDate,
           notes: formData.notes.trim() || null,
-          reminderOptIn: stat !== "Inactive",
+          reminderOptIn: true, // Defaulting to true for new registrations
         }),
       });
 
@@ -159,6 +175,7 @@ export default function AddPatientPage() {
         throw new Error(data.error || "Failed to create patient");
       }
 
+      // Success: Redirect back to the list and refresh the server data
       router.push("/Patients");
       router.refresh();
     } catch (err) {
@@ -172,9 +189,10 @@ export default function AddPatientPage() {
     <main className="flex h-dvh flex-col w-full bg-background text-foreground">
       <NavBarComp />
 
+      {/* Main container with custom scrollbar styling */}
       <div className="min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
-        
-        {/* HEADER: BACK NAVIGATION & PAGE TITLE */}
+
+        {/* BREADCRUMB & TITLE */}
         <header className="py-4">
           <div className="flex items-center gap-4">
             <Link
@@ -189,8 +207,6 @@ export default function AddPatientPage() {
         </header>
 
         <div className="flex justify-center">
-          
-          {/* PATIENT REGISTRATION CARD */}
           <Card className="w-full h-full max-w-2xl bg-dropdown border-foreground">
             <CardHeader>
               <CardTitle className="text-xl font-bold">
@@ -205,8 +221,8 @@ export default function AddPatientPage() {
               <form onSubmit={handleSubmit}>
                 <FieldGroup>
                   <FieldSet>
-                    
-                    {/* NAME INPUTS */}
+
+                    {/* PERSONAL DETAILS SECTION */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         fieldLabel="First Name"
@@ -228,7 +244,7 @@ export default function AddPatientPage() {
                       />
                     </div>
 
-                    {/* CONTACT INFO */}
+                    {/* CONTACT DETAILS SECTION */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <FormField
                         fieldLabel="Email"
@@ -247,12 +263,12 @@ export default function AddPatientPage() {
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        mask="phone"
+                        mask="phone" // Built-in mask in FormField component
                       />
                     </div>
 
-                    {/* HEALTH CARD & STATUS SELECT */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* IDENTIFICATION & BIRTH SECTION */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                       <FormField
                         fieldLabel="AHC Number"
                         placeholder="Optional"
@@ -263,22 +279,29 @@ export default function AddPatientPage() {
                         mask="ahc"
                       />
 
-                      <div className="grid grid-cols-1 gap-4">
-                        <FormField
-                          fieldLabel="Status"
-                          displayText={stat}
-                          setItemSearch={setStat}
-                          itemsArray={status}
-                          variant="select"
+                      <Field className="flex flex-col gap-1">
+                        <FieldLabel className="font-bold">Date of Birth</FieldLabel>
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="MM/DD/YYYY"
+                          maxLength={10}
+                          value={dob}
+                          onChange={(e) => setDob(applyDobMask(e.target.value))}
+                          className="h-10 w-full rounded-md border border-foreground bg-background dark:bg-input/30 px-3 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
                         />
-                      </div>
+                      </Field>
                     </div>
 
+                    {/* NOTES SECTION */}
                     <Field className="flex flex-col gap-2">
                       <FieldLabel className="font-bold">Notes</FieldLabel>
                       <textarea
                         className={`w-full min-h-24 rounded-md border px-3 py-2 text-sm bg-background dark:bg-input/30 transition-all ${
-                          error.includes("Blocked") ? "border-red-500 ring-2 ring-red-500/20" : "border-foreground"
+                          // Visual error feedback for notes validation
+                          error.includes("inappropriate") && error.includes("Notes")
+                            ? "border-red-500 ring-2 ring-red-500/20"
+                            : "border-foreground"
                         }`}
                         name="notes"
                         value={formData.notes}
@@ -287,14 +310,14 @@ export default function AddPatientPage() {
                       />
                     </Field>
 
-                    {/* ERROR MESSAGE DISPLAY */}
+                    {/* ALERT AREA */}
                     {error && (
                       <p className="pt-4 text-sm text-red-500 font-bold uppercase italic">
                         {error}
                       </p>
                     )}
 
-                    {/* CANCEL & CREATE */}
+                    {/* FORM ACTIONS */}
                     <div className="flex gap-4 pt-6">
                       <Link href="/Patients" className="flex-1">
                         <Button
@@ -307,7 +330,7 @@ export default function AddPatientPage() {
 
                       <Button
                         type="submit"
-                        disabled={submitting || !!error}
+                        disabled={submitting || !!error} // Prevents submission if API is busy or client validation fails
                         className="flex-1 bg-button-primary hover:bg-button-primary-foreground text-white font-bold"
                       >
                         {submitting ? "Creating..." : "Create Patient"}

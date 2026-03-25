@@ -41,13 +41,16 @@ import Link from "next/link";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 export default function PatientHistory() {
+  // State for filtering and sorting
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "startTime",
     direction: "desc",
   });
+  
   const small = useMediaQuery("(max-width: 768px)");
 
+  // Mock historical data
   const historyData = [
     {
       id: 10,
@@ -171,6 +174,7 @@ export default function PatientHistory() {
     },
   ];
 
+  // Helper functions for date/time display
   const formatDate = (iso) =>
     new Date(iso).toLocaleDateString("en-US", {
       month: "short",
@@ -184,9 +188,11 @@ export default function PatientHistory() {
       minute: "2-digit",
     });
 
+  // Data processing (Filter -> Sort)
   const processedData = useMemo(() => {
     let items = [...historyData];
 
+    // Global text search across multiple fields
     if (searchTerm.trim()) {
       const lowSearch = searchTerm.toLowerCase();
       items = items.filter((item) => {
@@ -200,6 +206,7 @@ export default function PatientHistory() {
       });
     }
 
+    // Column sorting logic
     items.sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key])
         return sortConfig.direction === "asc" ? -1 : 1;
@@ -211,6 +218,7 @@ export default function PatientHistory() {
     return items;
   }, [searchTerm, sortConfig, historyData]);
 
+  // Map keys to readable display names
   const sortLabels = {
     id: "ID",
     patientName: "Patient Name",
@@ -223,7 +231,8 @@ export default function PatientHistory() {
       <NavBarComp />
 
       <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden flex-1">
-        {/* Page Header */}
+        
+        {/* Navigation and Actions */}
         <header className="flex flex-row py-4 items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link href="/Summary">
@@ -235,7 +244,7 @@ export default function PatientHistory() {
           </div>
 
           <div className="flex items-center gap-2 flex-1 max-w-2xl justify-end">
-            {/* Search Bar */}
+            {/* Search Component */}
             <InputGroup className="bg-input border-foreground max-w-md">
               <InputGroupInput
                 placeholder="Search..."
@@ -247,7 +256,7 @@ export default function PatientHistory() {
               </InputGroupAddon>
             </InputGroup>
 
-            {/* Sort Menu */}
+            {/* Sorting Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -278,9 +287,7 @@ export default function PatientHistory() {
 
                 <DropdownMenuLabel>Order</DropdownMenuLabel>
                 <DropdownMenuItem
-                  onClick={() =>
-                    setSortConfig({ ...sortConfig, direction: "asc" })
-                  }
+                  onClick={() => setSortConfig({ ...sortConfig, direction: "asc" })}
                   className="flex justify-between items-center cursor-pointer"
                 >
                   Ascending
@@ -289,9 +296,7 @@ export default function PatientHistory() {
                   )}
                 </DropdownMenuItem>
                 <DropdownMenuItem
-                  onClick={() =>
-                    setSortConfig({ ...sortConfig, direction: "desc" })
-                  }
+                  onClick={() => setSortConfig({ ...sortConfig, direction: "desc" })}
                   className="flex justify-between items-center cursor-pointer"
                 >
                   Descending
@@ -304,7 +309,7 @@ export default function PatientHistory() {
           </div>
         </header>
 
-        {/* Data Table */}
+        {/* Scrollable Table Container */}
         <div className="rounded-xl border-foreground bg-dropdown flex flex-1 flex-col min-h-0 overflow-hidden shadow-sm">
           <div className="min-h-0 overflow-y-auto scrollbar-rounded flex-1">
             <Table className="border-separate border-spacing-0">
@@ -340,14 +345,14 @@ export default function PatientHistory() {
                     </TableCell>
                     <TableCell className="font-medium py-4">
                       <div className="flex items-center gap-2">
-                        <User size={14} className="text-muted-foreground" />{" "}
+                        <User size={14} className="text-muted-foreground" />
                         {visit.patientName}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col text-sm">
                         <span className="font-medium flex items-center gap-1 text-foreground">
-                          <Calendar size={12} className="text-button-primary" />{" "}
+                          <Calendar size={12} className="text-button-primary" />
                           {formatDate(visit.startTime)}
                         </span>
                         <span className="text-muted-foreground flex items-center gap-1">
@@ -360,7 +365,7 @@ export default function PatientHistory() {
                       <span
                         className={`text-sm py-1.5 rounded-full font-semibold inline-flex items-center justify-center w-24 ${
                           visit.status === "Completed"
-                            ? "bg-[#a0ce66] text-primary"
+                            ? "bg-green-700 text-primary"
                             : visit.status === "Confirmed"
                               ? "bg-blue-500 text-white"
                               : "bg-yellow-100 text-red-600"
@@ -369,6 +374,7 @@ export default function PatientHistory() {
                         {visit.status}
                       </span>
                     </TableCell>
+                    {/* Row Context Menu */}
                     <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
