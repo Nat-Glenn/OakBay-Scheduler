@@ -3,10 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import NavBarComp from "@/components/NavBarComp";
 import { connectGoogleAccount, disconnectGoogleAccount } from "./connectAccount";
-import { User, ShieldCheck, Lock, KeyRound, Link as LinkIcon, Check, Unlink, Trash2 } from "lucide-react";
+import { User, ShieldCheck, Lock, Link as LinkIcon, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { toast } from "sonner";
 import { auth } from "@/app/Login/Firebase/firebase";
@@ -25,9 +24,8 @@ export default function Settings() {
   const [userEmail, setUserEmail] = useState("");
   const [userPhoto, setUserPhoto] = useState(null);
 
-  // FIXED: Removed <HTMLInputElement>
   const fileInputRef = useRef(null); 
-  const small = useMediaQuery("(max-width: 768px)");
+  const isMobile = useMediaQuery("(max-width: 768px)");
   const router = useRouter();
 
   useEffect(() => {
@@ -49,7 +47,6 @@ export default function Settings() {
     return () => unsubscribe();
   }, []);
 
-  // FIXED: Removed React.ChangeEvent type
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -57,7 +54,6 @@ export default function Settings() {
     
     const reader = new FileReader();
     reader.onloadend = () => {
-      // FIXED: Removed "as string" type assertion
       const result = reader.result; 
       setUserPhoto(result);
       localStorage.setItem("admin_local_avatar", result);
@@ -72,7 +68,6 @@ export default function Settings() {
       await connectGoogleAccount();
       toast.success("Google account linked successfully!");
     } catch (error) { 
-      // FIXED: Removed ": any"
       if (error?.code === "auth/multi-factor-auth-required") {
         const resolver = getMultiFactorResolver(auth, error);
         const phoneHint = resolver.hints.find(h => h.factorId === PhoneMultiFactorGenerator.FACTOR_ID);
@@ -114,51 +109,49 @@ export default function Settings() {
   };
 
   return (
-    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
+    // min-h-screen allows the page to grow if content wraps
+    <main className="flex flex-col min-h-screen w-full bg-background">
       <NavBarComp />
       
-      <div className="flex flex-col px-4 pb-4 overflow-hidden">
-        <header className="py-4">
-          {!small && <h1 className="text-3xl font-bold text-foreground">Settings</h1>}
+      <div className="flex flex-col flex-1 px-4 pb-8">
+        <header className="py-6">
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Settings</h1>
         </header>
 
-        <div className="flex flex-col md:flex-row gap-4 min-h-0 overflow-hidden">
+        {/* Main Content Layout: Stack on mobile, side-by-side on md */}
+        <div className="flex flex-col md:flex-row gap-6 items-start">
           
           {/* PROFILE SIDEBAR */}
-          <div className="flex w-full md:w-1/4">
-            <Card className="flex flex-col w-full border-foreground bg-background text-foreground overflow-hidden">
-              <CardHeader className="border-b border-foreground/30 pb-6">
+          <aside className="w-full md:w-80 lg:w-96 flex-shrink-0">
+            <Card className="border-foreground bg-background text-foreground shadow-sm">
+              <CardHeader className="border-b border-foreground/20 pb-6">
                 <div className="flex flex-row items-center gap-4">
                   <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*" className="hidden" />
-                  <div className="h-14 w-14 rounded-2xl bg-ring/20 flex items-center justify-center border border-ring/30 overflow-hidden">
+                  <div className="h-16 w-16 flex-shrink-0 rounded-2xl bg-ring/10 flex items-center justify-center border border-ring/20 overflow-hidden">
                     {userPhoto ? (
                       <img src={userPhoto} className="h-full w-full object-cover" alt="Profile" />
                     ) : (
-                      <User className="text-ring" size={28} />
+                      <User className="text-ring" size={32} />
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-xl text-foreground leading-tight truncate">
+                    <p className="font-bold text-lg text-foreground leading-tight truncate">
                       {userName}
                     </p>
-                    <p className="text-sm text-button-primary font-mono truncate">
-                      Admin
+                    <p className="text-sm text-button-primary font-mono font-semibold uppercase tracking-wider">
+                      Administrator
                     </p>
                   </div>
                 </div>
               </CardHeader>
 
-              <CardContent className="space-y-6 pt-6 flex-1 overflow-y-auto scrollbar-rounded">
-                <div className="space-y-4">
-                  <div className="grid gap-4 text-sm">
-                    <div className="flex justify-between flex-col">
-                      <span className="text-muted-foreground font-bold">Email</span>
-                      <span className="text-foreground truncate">{userEmail}</span>
-                    </div>
-                  </div>
+              <CardContent className="pt-6 space-y-6">
+                <div className="space-y-1">
+                  <span className="text-xs font-bold text-muted-foreground uppercase">Email Address</span>
+                  <p className="text-sm text-foreground break-all font-medium">{userEmail}</p>
                 </div>
 
-                <div className="pt-4 space-y-2">
+                <div className="space-y-2 pt-2">
                    <Button 
                     variant="secondary" 
                     className="w-full font-bold"
@@ -178,88 +171,99 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </aside>
 
           {/* SECURITY MAIN CONTENT */}
-          <div className="flex flex-1 min-h-0">
-            <Card className="flex flex-col w-full border-foreground bg-background text-foreground">
-              <CardHeader className=" border-b border-foreground">
+          <section className="flex-1 w-full">
+            <Card className="border-foreground bg-background text-foreground shadow-sm">
+              <CardHeader className="border-b border-foreground/20">
                 <div className="flex items-center gap-2">
                   <ShieldCheck size={20} className="text-button-primary" />
-                  <CardTitle className="text-lg">Security & Access</CardTitle>
+                  <CardTitle className="text-lg uppercase tracking-tight">Security & Access</CardTitle>
                 </div>
               </CardHeader>
 
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
+              <CardContent className="p-6 lg:p-8">
+                {/* Internal grid: Stacks on small screens, side-by-side on large */}
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
+                  
+                  {/* Password Section */}
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex items-center gap-2 text-sm font-bold">
                       <Lock size={16} className="text-button-primary" />
-                      <p>Password Management</p>
+                      <span>Password Management</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">Update your login credentials securely.</p>
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      Update your login credentials. We recommend using a unique password to protect your admin account.
+                    </p>
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="destructive" className="w-full md:w-auto px-8">Reset Password</Button>
+                        <Button variant="destructive" className="w-full sm:w-fit px-8 font-bold">Reset Password</Button>
                       </DialogTrigger>
                       <DialogContent>
                         <DialogHeader>
-                          <DialogTitle>Confirm Reset</DialogTitle>
+                          <DialogTitle>Confirm Password Reset</DialogTitle>
                           <DialogDescription>
-                            Are you sure? This will send a reset email to {userEmail}.
+                            This will send a secure reset link to <strong>{userEmail}</strong>. You will be logged out immediately.
                           </DialogDescription>
                         </DialogHeader>
-                        <DialogFooter>
+                        <DialogFooter className="gap-2 sm:gap-0">
                           <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
                           <Button variant="destructive" onClick={handleResetConfirm} disabled={resettingPassword}>
-                            {resettingPassword ? "Sending..." : "Continue"}
+                            {resettingPassword ? "Sending..." : "Send Reset Email"}
                           </Button>
                         </DialogFooter>
                       </DialogContent>
                     </Dialog>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 text-sm font-semibold">
+                  {/* Google Connection Section */}
+                  <div className="flex flex-col space-y-4">
+                    <div className="flex items-center gap-2 text-sm font-bold">
                       <LinkIcon size={16} className="text-button-primary" />
-                      <p>Google Account Connection</p>
+                      <span>External Account Sync</span>
                     </div>
-                    <div className="space-y-4">
+                    
+                    <div className="flex-1">
                       {googleConnected ? (
-                        <>
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#a0ce66]/10 text-[#a0ce66] border border-[#a0ce66]/20 rounded-md text-xs font-bold w-fit">
-                            <Check size={14}/> LINKED
+                        <div className="space-y-4">
+                          <div className="flex items-center gap-2 px-3 py-2 bg-green-500/10 text-green-600 border border-green-500/20 rounded-lg text-xs font-black w-fit">
+                            <Check size={14} strokeWidth={3}/> GOOGLE LINKED
                           </div>
+                          <p className="text-sm text-muted-foreground">Your account is connected for one-tap sign-in.</p>
                           <Button 
                             variant="outline" 
-                            className="w-full md:w-auto" 
+                            className="w-full sm:w-fit font-bold border-foreground/20" 
                             onClick={handleDisconnectGoogle} 
                             disabled={disconnectingGoogle}
                           >
                             {disconnectingGoogle ? "Unlinking..." : "Disconnect Google"}
                           </Button>
-                        </>
+                        </div>
                       ) : (
-                        <>
-                          <p className="text-sm text-muted-foreground italic">Enable one-tap login by connecting your Google account.</p>
+                        <div className="space-y-4">
+                          <p className="text-sm text-muted-foreground italic leading-relaxed">
+                            Link your Google account to enable faster access and an additional layer of recovery.
+                          </p>
                           <Button 
                             variant="secondary" 
-                            className="w-full md:w-auto px-8" 
+                            className="w-full sm:w-fit px-8 font-bold" 
                             onClick={handleConnectGoogle} 
                             disabled={connectingGoogle}
                           >
-                            {connectingGoogle ? "Linking..." : "Connect Google"}
+                            {connectingGoogle ? "Linking..." : "Connect Google Account"}
                           </Button>
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
+
                 </div>
               </CardContent>
             </Card>
-          </div>
+          </section>
         </div>
       </div>
     </main>
   );
-}
+} 
