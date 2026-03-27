@@ -34,10 +34,6 @@ import FormField from "@/components/FormField";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { toast } from "sonner";
 
-/**
- * UTILS & CONSTANTS
- * ---------------------------------------------------------
- */
 const BLOCKED_WORDS = [
   "kill", "knife", "murder", "stab", "shoot", "gun",
   "suicide", "attack", "punch", "bomb", "threat"
@@ -51,12 +47,8 @@ function containsBlockedContent(value) {
   const hasProfanity = filter.check(lower);
   return hasViolence || hasProfanity;
 }
-
+// State Managements
 export default function PatientProfiles() {
-  /**
-   * STATE MANAGEMENT
-   * ---------------------------------------------------------
-   */
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPatient, setSelectedPatient] = useState(null); // Patient currently in the side panel
   const [patients, setPatients] = useState([]);
@@ -77,10 +69,7 @@ export default function PatientProfiles() {
     { id: 2, name: "Inactive" },
   ];
 
-  /**
-   * DATA FORMATTING & MASKS
-   * ---------------------------------------------------------
-   */
+// Data Formatting
   
   // Applies MM/DD/YYYY mask as the user types
   function applyDobMask(value) {
@@ -106,10 +95,6 @@ export default function PatientProfiles() {
     return `${mm}/${dd}/${yyyy}`;
   }
 
-  /**
-   * DATA FETCHING
-   * ---------------------------------------------------------
-   */
   useEffect(() => {
     async function loadPatients() {
       try {
@@ -137,10 +122,6 @@ export default function PatientProfiles() {
     loadPatients();
   }, [searchTerm]); // Re-runs whenever search string changes
 
-  /**
-   * BUSINESS LOGIC
-   * ---------------------------------------------------------
-   */
 
   function calculateAge(dobString) {
     if (!dobString || dobString === "—") return "—";
@@ -201,10 +182,7 @@ export default function PatientProfiles() {
     setEditForm((prev) => ({ ...prev, [name]: value }));
   }
 
-  /**
-   * FORM SUBMISSION
-   * ---------------------------------------------------------
-   */
+  // Form Submission
   async function handleEditSave() {
     // Basic validation
     if (!editForm.firstName.trim() || !editForm.lastName.trim() || !editForm.phone.trim()) {
@@ -366,7 +344,7 @@ export default function PatientProfiles() {
                       </div>
                     </div>
                     <div className="pt-4 mt-auto space-y-2">
-                      <Button variant="secondary" className="w-full font-bold" onClick={() => openEditModal(selectedPatient)}><Pencil size={14} className="mr-2" /> Edit Patient</Button>
+                      <Button variant="default" className="w-full font-bold" onClick={() => openEditModal(selectedPatient)}><Pencil size={14} className="mr-2" /> Edit Patient</Button>
                       <Link href="/?fromPatient=true" className="block w-full"><Button variant="secondary" className="w-full font-bold">Schedule Appointment</Button></Link>
                     </div>
                   </CardContent>

@@ -60,18 +60,17 @@ export default function Settings() {
 
   /* PROFILE PHOTO HANDLING */
   const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const file = e.target.files?.[0]; // inputs first file selected
+    if (!file) return; // if nothing is selected, do nothing 
 
     // Client-side size validation (1MB limit)
     if (file.size > 1024 * 1024) return toast.error("Image must be under 1MB.");
     
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onloadend = () => { //loads the image from the reader 
       const result = reader.result; 
       setUserPhoto(result);
-      // Persist the image to local storage as a Base64 string
-      localStorage.setItem("admin_local_avatar", result);
+      localStorage.setItem("admin_local_avatar", result); // image to local storage
       toast.success("Photo updated locally.");
     };
     reader.readAsDataURL(file);

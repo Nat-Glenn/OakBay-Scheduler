@@ -51,7 +51,7 @@ export default function Summary() {
 
   const small = useMediaQuery("(max-width: 768px)");
 
-  // Mock data for expense drill-down
+  // Mock data for expense
   const expenseDetails = {
     "Medical Supplies": [
       { id: "TX-101", item: "Latex Gloves (Bulk)", date: "Feb 15", cost: "$1,200" },
@@ -174,7 +174,7 @@ export default function Summary() {
             </CardContent>
           </Card>
 
-          {/* Right Panel: Financial Overview with Progress Bars */}
+          {/* Financial Overview with Progress Bars */}
           <Card className="shadow-sm border-sidebar">
             <CardHeader className="py-6 px-8">
               <CardTitle className="text-xl font-bold">Financial Overview</CardTitle>
@@ -194,7 +194,7 @@ export default function Summary() {
         </div>
       </div>
 
-      {/* Popup: Shows detailed transactions when an expense category is clicked */}
+      {/* Shows detailed transactions when an expense category is clicked */}
       <Dialog open={!!selectedExpense} onOpenChange={() => setSelectedExpense(null)}>
         <DialogContent className="sm:max-w-md bg-background border-sidebar text-foreground">
           <DialogHeader>
@@ -314,7 +314,7 @@ function ProgressItem({ label, value, percentage, color, onClick }) {
   );
 }
 
-/* Simple badge component for visit status coloring */
+/* badge component for visit status coloring */
 function StatusBadge({ status }) {
   const isCompleted = status === "Completed";
   return (

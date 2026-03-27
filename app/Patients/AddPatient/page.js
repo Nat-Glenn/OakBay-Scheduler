@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import filter from "leo-profanity";
 import NavBarComp from "@/components/NavBarComp";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, Hand } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,10 +16,7 @@ import {
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
 
-/**
- * VALIDATION CONSTANTS
- * ---------------------------------------------------------
- */
+// VALIDATION CONSTANTS 
 const BLOCKED_WORDS = [
   "kill", "knife", "murder", "stab", "shoot", "gun",
   "suicide", "attack", "punch", "bomb", "threat"
@@ -36,13 +33,10 @@ function containsBlockedContent(value) {
 export default function AddPatientPage() {
   const router = useRouter();
 
-  /**
-   * STATE MANAGEMENT
-   * ---------------------------------------------------------
-   */
+  // State Management
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [dob, setDob] = useState(""); // Managed separately for masking logic
+  const [dob, setDob] = useState("");
 
   const [formData, setFormData] = useState({
     firstName: "",
@@ -52,11 +46,8 @@ export default function AddPatientPage() {
     ahcNumber: "",
     notes: "",
   });
-
-  /**
-   * DATE HANDLING & MASKING
-   * ---------------------------------------------------------
-   */
+  
+  // DATE HANDLING & MASKING
 
   // Converts digits to MM/DD/YYYY format as the user types
   function applyDobMask(value) {
@@ -75,11 +66,7 @@ export default function AddPatientPage() {
     return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
   }
 
-  /**
-   * EVENT HANDLERS
-   * ---------------------------------------------------------
-   */
-
+  // Event Handlers
   function handleChange(e) {
     const { name, value } = e.target;
 
@@ -93,7 +80,7 @@ export default function AddPatientPage() {
       }
     }
 
-    // Real-time validation for Notes (allows state update but shows error)
+    // validation for Notes 
     if (name === "notes") {
       if (containsBlockedContent(value)) {
         setError("Notes contain inappropriate language.");
@@ -165,7 +152,7 @@ export default function AddPatientPage() {
           ahcNumber: formData.ahcNumber.trim() || null,
           dob: isoDate,
           notes: formData.notes.trim() || null,
-          reminderOptIn: true, // Defaulting to true for new registrations
+          reminderOptIn: true,
         }),
       });
 
