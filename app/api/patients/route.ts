@@ -27,6 +27,11 @@ export async function POST(req: Request) {
         ? String(body.ahcNumber).trim()
         : null;
 
+    const dob =
+      body.dob !== undefined && body.dob !== null
+        ? String(body.dob).trim()
+        : null;
+
     // Clean notes instead of rejecting, bad words are replaced with ***)
     const notes = cleanField(body.notes);
     if (hasProfanity(firstName)) {
@@ -73,6 +78,7 @@ export async function POST(req: Request) {
         phone,
         email: email || null,
         ahcNumber: ahcNumber ? encryptField(ahcNumber) : null,
+        dob: dob || null,
         reminderOptIn: body.reminderOptIn ?? true,
         notes, 
       },

@@ -26,6 +26,7 @@ model Patient {
   phone           String
   email           String?
   ahcNumber       String?
+  dob             String?
   reminderOptIn   Boolean       @default(true)
   notes           String?
   createdAt       DateTime      @default(now())
