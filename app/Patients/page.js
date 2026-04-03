@@ -39,18 +39,22 @@ const BLOCKED_WORDS = [
   "suicide", "attack", "punch", "bomb", "threat"
 ];
 
-// Checks for both explicit violence list and general profanity
+// Whole-word matching to avoid false positives (e.g. "establishment" containing "stab")
 function containsBlockedContent(value) {
   if (!value) return false;
   const lower = value.toLowerCase();
-  const hasViolence = BLOCKED_WORDS.some((word) => lower.includes(word));
+  const hasViolence = BLOCKED_WORDS.some((word) => {
+    const regex = new RegExp(`\\b${word}\\b`);
+    return regex.test(lower);
+  });
   const hasProfanity = filter.check(lower);
   return hasViolence || hasProfanity;
 }
+
 // State Managements
 export default function PatientProfiles() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState(null); // Patient currently in the side panel
+  const [selectedPatient, setSelectedPatient] = useState(null);
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -69,8 +73,8 @@ export default function PatientProfiles() {
     { id: 2, name: "Inactive" },
   ];
 
-// Data Formatting
-  
+  // Data Formatting
+
   // Applies MM/DD/YYYY mask as the user types
   function applyDobMask(value) {
     const digits = value.replace(/\D/g, "").slice(0, 8);
@@ -95,12 +99,47 @@ export default function PatientProfiles() {
     return `${mm}/${dd}/${yyyy}`;
   }
 
+  // Validates DOB is between 1 and 120 years old
+  function validateDobRange(dobString) {
+    if (!dobString || dobString.length < 10) return null;
+    const [mm, dd, yyyy] = dobString.split("/");
+    if (!mm || !dd || !yyyy || yyyy.length < 4) return null;
+
+    const birth = new Date(`${yyyy}-${mm}-${dd}`);
+    const today = new Date();
+
+    if (isNaN(birth.getTime())) return "Please Enter a valid date of birth";
+    if (birth > today) return "Please Enter a valid date of birth";
+
+    const age = today.getFullYear() - birth.getFullYear();
+    const notYetHadBirthday =
+      today.getMonth() < birth.getMonth() ||
+      (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate());
+    const actualAge = notYetHadBirthday ? age - 1 : age;
+
+    if (actualAge < 1) return "Please Enter a valid date of birth";
+    if (actualAge > 120) return "Please Enter a valid date of birth";
+    return null;
+  }
+
+  // Handles DOB input with masking + live range validation
+  function handleEditDobChange(e) {
+    const masked = applyDobMask(e.target.value);
+    setEditDob(masked);
+
+    if (masked.length === 10) {
+      const ageError = validateDobRange(masked);
+      setValidationError(ageError || "");
+    } else {
+      setValidationError("");
+    }
+  }
+
   useEffect(() => {
     async function loadPatients() {
       try {
         setLoading(true);
         setError("");
-        // Standard GET request with search query param
         const res = await fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
         const data = await res.json();
         
@@ -108,7 +147,6 @@ export default function PatientProfiles() {
         
         setPatients(data);
 
-        // Keep the side panel details up-to-date if the list refreshes
         if (selectedPatient) {
           const updatedSelected = data.find((p) => p.id === selectedPatient.id);
           if (updatedSelected) setSelectedPatient(getDisplayedPatient(updatedSelected));
@@ -120,7 +158,7 @@ export default function PatientProfiles() {
       }
     }
     loadPatients();
-  }, [searchTerm]); // Re-runs whenever search string changes
+  }, [searchTerm]);
 
 
   function calculateAge(dobString) {
@@ -129,7 +167,6 @@ export default function PatientProfiles() {
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
-    // Adjust age if birthday hasn't occurred yet this year
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
     return age;
   }
@@ -140,7 +177,6 @@ export default function PatientProfiles() {
     return `${mm}/${dd}/${yyyy}`;
   }
 
-  // Maps raw DB patient object to UI-friendly structure
   function getDisplayedPatient(patient) {
     return {
       ...patient,
@@ -148,12 +184,11 @@ export default function PatientProfiles() {
       status: patient.reminderOptIn ? "Active" : "Inactive",
       age: calculateAge(patient.dob),
       dob: patient.dob || "—",
-      lastVisit: "—", // Placeholder for future enhancement
+      lastVisit: "—",
       nextAppt: null,
     };
   }
 
-  // Populates the edit form and opens modal
   function openEditModal(patient) {
     setValidationError("");
     setEditForm({
@@ -184,7 +219,6 @@ export default function PatientProfiles() {
 
   // Form Submission
   async function handleEditSave() {
-    // Basic validation
     if (!editForm.firstName.trim() || !editForm.lastName.trim() || !editForm.phone.trim()) {
       toast.error("First name, last name, and phone are required.");
       return;
@@ -196,7 +230,15 @@ export default function PatientProfiles() {
       return;
     }
 
-    // Final safety check before API call
+    // Date range validation (1–120 years)
+    if (editDob) {
+      const ageError = validateDobRange(editDob);
+      if (ageError) {
+        setValidationError(ageError);
+        return;
+      }
+    }
+
     if (containsBlockedContent(editForm.firstName) || containsBlockedContent(editForm.lastName) || containsBlockedContent(editForm.notes)) {
       setValidationError("Please remove inappropriate language before saving.");
       toast.error("Validation failed: Inappropriate language detected.");
@@ -223,7 +265,6 @@ export default function PatientProfiles() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update patient");
 
-      // REFRESH DATA: Re-fetch list and update the side panel
       const refreshed = await fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
       const refreshedData = await refreshed.json();
       setPatients(refreshedData);
@@ -370,18 +411,21 @@ export default function PatientProfiles() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <FormField fieldLabel="AHC Number" name="ahcNumber" value={editForm.ahcNumber} onChange={handleEditChange} mask="ahc" variant="add" />
-              <div className="flex flex-col gap-2">
-                <label className="text-sm font-bold">Date of Birth</label>
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="MM/DD/YYYY"
-                  maxLength={10}
-                  className="flex h-10 w-full rounded-md border border-foreground bg-background px-3 py-2 text-sm focus-visible:ring-2 focus-visible:ring-ring focus:outline-none"
-                  value={editDob}
-                  onChange={(e) => setEditDob(applyDobMask(e.target.value))}
-                />
-              </div>
+              <FormField
+                fieldLabel="Date of Birth"
+                placeholder="MM/DD/YYYY"
+                variant="add"
+                name="editDob"
+                value={editDob}
+                onChange={handleEditDobChange}
+                maxLength={10}
+                inputMode="numeric"
+                className={
+                  validationError && (validationError.includes("date") || validationError.includes("year") || validationError.includes("valid"))
+                    ? "border-red-500 ring-2 ring-red-500/20"
+                    : ""
+                }
+              />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <FormField fieldLabel="Status" displayText={editStat} setItemSearch={setEditStat} itemsArray={statusOptions} variant="select" />

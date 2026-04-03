@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import filter from "leo-profanity";
 import NavBarComp from "@/components/NavBarComp";
-import { ChevronLeft, Hand } from "lucide-react";
+import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,16 +16,19 @@ import {
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
 
-// VALIDATION CONSTANTS 
+// VALIDATION CONSTANTS
 const BLOCKED_WORDS = [
   "kill", "knife", "murder", "stab", "shoot", "gun",
-  "suicide", "attack", "punch", "bomb", "threat"
+  "suicide", "attack", "punch", "bomb", "threat", "booty"
 ];
 
-// Helper to check for profanity or violent keywords
+// checks if theres blocked words inside
 function containsBlockedContent(value) {
   const lower = value.toLowerCase();
-  const hasViolence = BLOCKED_WORDS.some((word) => lower.includes(word));
+  const hasViolence = BLOCKED_WORDS.some((word) => {
+    const regex = new RegExp(`\\b${word}\\b`);
+    return regex.test(lower);
+  });
   const hasProfanity = filter.check(lower);
   return hasViolence || hasProfanity;
 }
@@ -46,7 +49,7 @@ export default function AddPatientPage() {
     ahcNumber: "",
     notes: "",
   });
-  
+
   // DATE HANDLING & MASKING
 
   // Converts digits to MM/DD/YYYY format as the user types
@@ -66,6 +69,31 @@ export default function AddPatientPage() {
     return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
   }
 
+  // Validates DOB is between 1 and 120 years old
+  function validateDobRange(dobString) {
+    if (!dobString || dobString.length < 10) return null;
+    const [mm, dd, yyyy] = dobString.split("/");
+    if (!mm || !dd || !yyyy || yyyy.length < 4) return null;
+
+    const birth = new Date(`${yyyy}-${mm}-${dd}`);
+    const today = new Date();
+
+    if (isNaN(birth.getTime())) return "Please Enter a valid date of birth";
+
+    // checks if date is a future date
+    if (birth > today) return "Please Enter a valid date of birth";
+
+    const age = today.getFullYear() - birth.getFullYear();
+    const notYetHadBirthday =
+      today.getMonth() < birth.getMonth() ||
+      (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate());
+    const actualAge = notYetHadBirthday ? age - 1 : age;
+
+    if (actualAge < 1) return "Please Enter a valid date of birth";
+    if (actualAge > 120) return "Please Enter a valid date of birth";
+    return null;
+  }
+
   // Event Handlers
   function handleChange(e) {
     const { name, value } = e.target;
@@ -74,13 +102,13 @@ export default function AddPatientPage() {
     if (name === "firstName" || name === "lastName") {
       if (containsBlockedContent(value)) {
         setError("Violence and Profanity is prohibited");
-        return; // Block state update if it contains forbidden content
+        return;
       } else {
         setError("");
       }
     }
 
-    // validation for Notes 
+    // Validation for Notes
     if (name === "notes") {
       if (containsBlockedContent(value)) {
         setError("Notes contain inappropriate language.");
@@ -97,10 +125,23 @@ export default function AddPatientPage() {
     }));
   }
 
-  /**
-   * FORM SUBMISSION
-   * ---------------------------------------------------------
-   */
+  // Handles DOB input with masking + live range validation
+  function handleDobChange(e) {
+    const masked = applyDobMask(e.target.value);
+    setDob(masked);
+
+    // Only validate once the full date is entered
+    if (masked.length === 10) {
+      const ageError = validateDobRange(masked);
+      setError(ageError || "");
+    } else {
+      setError("");
+    }
+  }
+
+
+
+  // FORM SUBMISSION
   async function handleSubmit(e) {
     e.preventDefault();
     setError("");
@@ -131,11 +172,20 @@ export default function AddPatientPage() {
       return;
     }
 
-    // 3. Date Validation
+    // 3. Date Format Validation
     const isoDate = dobToISO();
     if (dob && !isoDate) {
       setError("Please enter a valid date of birth (MM/DD/YYYY).");
       return;
+    }
+
+    // 4. Date Range Validation (1–120 years old)
+    if (dob) {
+      const ageError = validateDobRange(dob);
+      if (ageError) {
+        setError(ageError);
+        return;
+      }
     }
 
     try {
@@ -162,7 +212,6 @@ export default function AddPatientPage() {
         throw new Error(data.error || "Failed to create patient");
       }
 
-      // Success: Redirect back to the list and refresh the server data
       router.push("/Patients");
       router.refresh();
     } catch (err) {
@@ -176,7 +225,6 @@ export default function AddPatientPage() {
     <main className="flex h-dvh flex-col w-full bg-background text-foreground">
       <NavBarComp />
 
-      {/* Main container with custom scrollbar styling */}
       <div className="min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
 
         {/* BREADCRUMB & TITLE */}
@@ -250,7 +298,7 @@ export default function AddPatientPage() {
                         name="phone"
                         value={formData.phone}
                         onChange={handleChange}
-                        mask="phone" // Built-in mask in FormField component
+                        mask="phone"
                       />
                     </div>
 
@@ -266,18 +314,21 @@ export default function AddPatientPage() {
                         mask="ahc"
                       />
 
-                      <Field className="flex flex-col gap-1">
-                        <FieldLabel className="font-bold">Date of Birth</FieldLabel>
-                        <input
-                          type="text"
-                          inputMode="numeric"
-                          placeholder="MM/DD/YYYY"
-                          maxLength={10}
-                          value={dob}
-                          onChange={(e) => setDob(applyDobMask(e.target.value))}
-                          className="h-10 w-full rounded-md border border-foreground bg-background dark:bg-input/30 px-3 py-2 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-0"
-                        />
-                      </Field>
+                      <FormField
+                        fieldLabel="Date of Birth"
+                        placeholder="MM/DD/YYYY"
+                        variant="add"
+                        name="dob"
+                        value={dob}
+                        onChange={handleDobChange}
+                        maxLength={10}
+                        inputMode="numeric"
+                        className={
+                          error && (error.includes("age") || error.includes("year") || error.includes("future") || error.includes("date"))
+                            ? "border-red-500 ring-2 ring-red-500/20"
+                            : ""
+                        }
+                      />
                     </div>
 
                     {/* NOTES SECTION */}
@@ -285,7 +336,6 @@ export default function AddPatientPage() {
                       <FieldLabel className="font-bold">Notes</FieldLabel>
                       <textarea
                         className={`w-full min-h-24 rounded-md border px-3 py-2 text-sm bg-background dark:bg-input/30 transition-all ${
-                          // Visual error feedback for notes validation
                           error.includes("inappropriate") && error.includes("Notes")
                             ? "border-red-500 ring-2 ring-red-500/20"
                             : "border-foreground"
@@ -317,7 +367,7 @@ export default function AddPatientPage() {
 
                       <Button
                         type="submit"
-                        disabled={submitting || !!error} // Prevents submission if API is busy or client validation fails
+                        disabled={submitting || !!error}
                         className="flex-1 bg-button-primary hover:bg-button-primary-foreground text-white font-bold"
                       >
                         {submitting ? "Creating..." : "Create Patient"}
