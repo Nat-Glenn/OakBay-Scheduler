@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
-import { hasProfanity, cleanField } from "@/lib/profanity"; // Profanity helper
-import { encryptField, decryptField } from "@/lib/encrypt"; // Encryption helper
+import { hasProfanity, cleanField } from "@/lib/profanity";
+import { encryptField, decryptField } from "@/lib/encrypt";
 
 function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
   return {
@@ -12,61 +12,39 @@ function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const firstName = String(body.firstName ?? "").trim();
     const lastName = String(body.lastName ?? "").trim();
     const phone = String(body.phone ?? "").trim();
-
     const email =
       body.email !== undefined && body.email !== null
         ? String(body.email).trim()
         : null;
-
     const ahcNumber =
       body.ahcNumber !== undefined && body.ahcNumber !== null
         ? String(body.ahcNumber).trim()
         : null;
-
     const dob =
       body.dob !== undefined && body.dob !== null
         ? String(body.dob).trim()
         : null;
 
-    // Clean notes instead of rejecting, bad words are replaced with ***)
     const notes = cleanField(body.notes);
+
     if (hasProfanity(firstName)) {
       return Response.json(
         { error: "First name cannot contain inappropriate language" },
         { status: 400 },
       );
     }
-
     if (hasProfanity(lastName)) {
       return Response.json(
         { error: "Last name cannot contain inappropriate language" },
         { status: 400 },
       );
     }
-
-    // Required fields validation
     if (!firstName || !lastName || !phone) {
       return Response.json(
         { error: "First name, last name, and phone are required" },
-        { status: 400 },
-      );
-    }
-
-    // Profanity in names is rejected
-    if (hasProfanity(firstName)) {
-      return Response.json(
-        { error: "First name cannot contain inappropriate language" },
-        { status: 400 },
-      );
-    }
-
-    if (hasProfanity(lastName)) {
-      return Response.json(
-        { error: "Last name cannot contain inappropriate language" },
         { status: 400 },
       );
     }
@@ -80,7 +58,7 @@ export async function POST(req: Request) {
         ahcNumber: ahcNumber ? encryptField(ahcNumber) : null,
         dob: dob || null,
         reminderOptIn: body.reminderOptIn ?? true,
-        notes, 
+        notes,
       },
     });
 
@@ -99,14 +77,24 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const search = (searchParams.get("search") ?? "").trim();
 
-    // Simple search: first name OR last name OR phone
+    const numericId = Number(search);
+    const isId = search !== "" && Number.isInteger(numericId) && numericId > 0;
+
     const patients = await prisma.patient.findMany({
       where: search
         ? {
             OR: [
               { firstName: { contains: search, mode: "insensitive" } },
-              { lastName: { contains: search, mode: "insensitive" } },
-              { phone: { contains: search } },
+              { lastName:  { contains: search, mode: "insensitive" } },
+              ...(isId ? [{ id: { equals: numericId } }] : []),
+              ...(search.includes(" ")
+                ? [{
+                    AND: [
+                      { firstName: { contains: search.split(" ")[0], mode: "insensitive" } },
+                      { lastName:  { contains: search.split(" ")[1], mode: "insensitive" } },
+                    ],
+                  }]
+                : []),
             ],
           }
         : undefined,
@@ -117,9 +105,6 @@ export async function GET(req: Request) {
     return Response.json(patients.map(decryptPatient));
   } catch (err) {
     console.error(err);
-    return Response.json(
-      { error: "Failed to fetch patients" },
-      { status: 500 },
-    );
+    return Response.json({ error: "Failed to fetch patients" }, { status: 500 });
   }
 }
