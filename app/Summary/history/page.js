@@ -3,10 +3,17 @@
 import React, { useEffect, useMemo, useState } from "react";
 import NavBarComp from "@/components/NavBarComp";
 import Link from "next/link";
-import { ArrowLeft, Search } from "lucide-react";
+import {
+  ArrowLeft,
+  Search,
+  Calendar,
+  Clock,
+  User,
+  ListFilter,
+  Check,
+  ChevronDown,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -15,6 +22,19 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  InputGroup,
+  InputGroupInput,
+  InputGroupAddon,
+} from "@/components/ui/input-group";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 
 export default function SummaryHistoryPage() {
@@ -24,6 +44,10 @@ export default function SummaryHistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [tableSearch, setTableSearch] = useState("");
+  const [sortConfig, setSortConfig] = useState({
+    key: "date",
+    direction: "desc",
+  });
 
   useEffect(() => {
     async function loadHistory() {
@@ -31,13 +55,8 @@ export default function SummaryHistoryPage() {
         setLoading(true);
         setError("");
 
-        const res = await fetch("/api/summary/history", {
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to load history");
-        }
+        const res = await fetch("/api/summary/history", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load history");
 
         const data = await res.json();
         setHistoryData(Array.isArray(data) ? data : []);
@@ -52,10 +71,17 @@ export default function SummaryHistoryPage() {
     loadHistory();
   }, []);
 
+  const sortLabels = {
+    patient: "Patient Name",
+    date: "Date",
+    type: "Type",
+    status: "Status",
+  };
+
   const filteredHistory = useMemo(() => {
     const search = tableSearch.toLowerCase();
 
-    return historyData.filter((visit) => {
+    let items = historyData.filter((visit) => {
       const patient = String(visit.patient || "").toLowerCase();
       const type = String(visit.type || "").toLowerCase();
       const status = String(visit.status || "").toLowerCase();
@@ -68,24 +94,41 @@ export default function SummaryHistoryPage() {
         paymentMethod.includes(search)
       );
     });
-  }, [historyData, tableSearch]);
+
+    items.sort((a, b) => {
+      const aVal = a[sortConfig.key] ?? "";
+      const bVal = b[sortConfig.key] ?? "";
+      if (aVal < bVal) return sortConfig.direction === "asc" ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === "asc" ? 1 : -1;
+      return 0;
+    });
+
+    return items;
+  }, [historyData, tableSearch, sortConfig]);
 
   function formatVisitDate(dateValue) {
     if (!dateValue) return "—";
-
     const date = new Date(dateValue);
     if (Number.isNaN(date.getTime())) return "—";
-
-    return date.toLocaleDateString("en-CA", {
-      year: "numeric",
+    return date.toLocaleDateString("en-US", {
       month: "short",
       day: "numeric",
+      year: "numeric",
+    });
+  }
+
+  function formatVisitTime(dateValue) {
+    if (!dateValue) return null;
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return null;
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
     });
   }
 
   function formatCurrency(amount) {
     if (amount === null || amount === undefined) return "—";
-
     return new Intl.NumberFormat("en-CA", {
       style: "currency",
       currency: "CAD",
@@ -95,43 +138,31 @@ export default function SummaryHistoryPage() {
 
   function normalizeStatus(status) {
     if (!status) return "Pending";
-
     const lower = String(status).toLowerCase();
 
-    if (
-      lower === "checked-out" ||
-      lower === "completed" ||
-      lower === "complete"
-    ) {
+    if (lower === "checked-out" || lower === "checked_out" || lower === "completed" || lower === "complete")
       return "Completed";
-    }
-
-    if (lower === "checked-in") {
+    if (lower === "checked-in" || lower === "checked_in")
       return "In Progress";
-    }
-
-    if (lower === "cancelled" || lower === "canceled") {
+    if (lower === "confirmed")
+      return "Confirmed";
+    if (lower === "cancelled" || lower === "canceled")
       return "Cancelled";
-    }
+    if (lower === "requested")
+      return "Requested";
 
     return String(status)
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
+      .replace(/[-_]/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
   if (loading) {
     return (
-      <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
+      <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
         <NavBarComp />
-        <div className="flex flex-col min-w-0 overflow-y-auto px-4 pb-4">
-          {!small && (
-            <header className="py-4 flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-foreground">
-                Visit History
-              </h1>
-            </header>
-          )}
-          <div className="p-6 text-foreground">Loading history...</div>
+        <div className="flex flex-col min-w-0 px-4 pb-4">
+          {!small && <header className="py-4"><h1 className="text-3xl font-bold">Visit History</h1></header>}
+          <div className="p-6">Loading history...</div>
         </div>
       </main>
     );
@@ -139,16 +170,10 @@ export default function SummaryHistoryPage() {
 
   if (error) {
     return (
-      <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
+      <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
         <NavBarComp />
-        <div className="flex flex-col min-w-0 overflow-y-auto px-4 pb-4">
-          {!small && (
-            <header className="py-4 flex items-center justify-between">
-              <h1 className="text-3xl font-bold text-foreground">
-                Visit History
-              </h1>
-            </header>
-          )}
+        <div className="flex flex-col min-w-0 px-4 pb-4">
+          {!small && <header className="py-4"><h1 className="text-3xl font-bold">Visit History</h1></header>}
           <div className="p-6 text-red-500">{error}</div>
         </div>
       </main>
@@ -156,134 +181,149 @@ export default function SummaryHistoryPage() {
   }
 
   return (
-    <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
+    <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
       <NavBarComp />
 
-      <div className="flex flex-col min-w-0 overflow-y-auto px-4 pb-4">
-        {!small && (
-          <header className="py-4 flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                Visit History
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                Full patient visit history from real appointment records
-              </p>
-            </div>
+      <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden flex-1">
 
+        {/* Page Header */}
+        <header className="flex flex-row py-4 items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <Link href="/Summary">
-              <Button variant="secondary" className="gap-2">
-                <ArrowLeft size={16} />
-                Back to Summary
+              <Button variant="ghost" size="icon" className="rounded-full">
+                <ArrowLeft size={20} />
               </Button>
             </Link>
-          </header>
-        )}
+            {!small && <h1 className="text-3xl font-bold">Visit History</h1>}
+          </div>
 
-        <Card className="shadow-sm border-sidebar mt-4">
-          <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between py-6 px-8 gap-4">
-            <CardTitle className="text-xl font-bold">
-              All Recorded Visits
-            </CardTitle>
-
-            <div className="relative flex-1 md:flex-none w-full md:w-64 border border-sidebar dark:border-foreground rounded-md overflow-hidden">
-              <Search
-                className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                size={14}
-              />
-              <Input
-                placeholder="Search history"
-                className="pl-8 bg-muted/50 border-none h-10 text-sm w-full focus-visible:ring-0"
+          <div className="flex items-center gap-2 flex-1 max-w-2xl justify-end">
+            <InputGroup className="bg-input border-border max-w-md">
+              <InputGroupInput
+                placeholder="Search..."
                 value={tableSearch}
                 onChange={(e) => setTableSearch(e.target.value)}
               />
-            </div>
-          </CardHeader>
+              <InputGroupAddon>
+                <Search size={18} />
+              </InputGroupAddon>
+            </InputGroup>
 
-          <CardContent className="px-8 pb-8 overflow-x-auto">
-            <Table className="text-base min-w-[800px]">
-              <TableHeader>
-                <TableRow className="hover:bg-transparent border-b">
-                  <TableHead className="py-4 text-primary/50">Patient</TableHead>
-                  <TableHead className="py-4 text-primary/50">Date</TableHead>
-                  <TableHead className="py-4 text-primary/50">Type</TableHead>
-                  <TableHead className="py-4 text-primary/50">Status</TableHead>
-                  <TableHead className="py-4 text-primary/50">
-                    Payment
-                  </TableHead>
-                  <TableHead className="py-4 text-primary/50">Amount</TableHead>
-                  <TableHead className="py-4 text-primary/50">Notes</TableHead>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="flex gap-2 items-center border-border font-semibold h-11">
+                  <ListFilter size={18} />
+                  {!small && `Sort: ${sortLabels[sortConfig.key]}`}
+                  <ChevronDown size={16} className="opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Sort By Column</DropdownMenuLabel>
+                {Object.entries(sortLabels).map(([key, label]) => (
+                  <DropdownMenuItem
+                    key={key}
+                    onClick={() => setSortConfig({ ...sortConfig, key })}
+                    className="flex justify-between items-center cursor-pointer"
+                  >
+                    {label}
+                    {sortConfig.key === key && <Check size={16} className="text-button-primary" />}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Order</DropdownMenuLabel>
+                <DropdownMenuItem
+                  onClick={() => setSortConfig({ ...sortConfig, direction: "asc" })}
+                  className="flex justify-between items-center cursor-pointer"
+                >
+                  Ascending
+                  {sortConfig.direction === "asc" && <Check size={16} className="text-button-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setSortConfig({ ...sortConfig, direction: "desc" })}
+                  className="flex justify-between items-center cursor-pointer"
+                >
+                  Descending
+                  {sortConfig.direction === "desc" && <Check size={16} className="text-button-primary" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+
+        {/* Data Table */}
+        <div className="rounded-xl border border-border bg-dropdown flex flex-1 flex-col min-h-0 overflow-hidden shadow-sm">
+          <div className="min-h-0 overflow-y-auto scrollbar-rounded flex-1">
+            <Table className="border-separate border-spacing-0">
+              <TableHeader className="sticky top-0 z-10">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="bg-input border-b border-border font-bold text-foreground">Patient</TableHead>
+                  <TableHead className="bg-input border-b border-border font-bold text-foreground">Date & Time</TableHead>
+                  <TableHead className="bg-input border-b border-border font-bold text-foreground">Type</TableHead>
+                  <TableHead className="bg-input border-b border-border font-bold text-foreground text-center">Status</TableHead>
+                  <TableHead className="bg-input border-b border-border font-bold text-foreground">Payment</TableHead>
+                  <TableHead className="bg-input border-b border-border font-bold text-foreground">Amount</TableHead>
                 </TableRow>
               </TableHeader>
 
               <TableBody>
                 {filteredHistory.length > 0 ? (
                   filteredHistory.map((visit) => (
-                    <TableRow
-                      key={visit.id}
-                      className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                    >
-                      <TableCell className="font-bold text-foreground py-5">
-                        {visit.patient}
+                    <TableRow key={visit.id} className="border-border/50 hover:bg-border/30">
+                      <TableCell className="font-medium py-4">
+                        <div className="flex items-center gap-2">
+                          <User size={14} className="text-muted-foreground" />
+                          {visit.patient}
+                        </div>
                       </TableCell>
-                      <TableCell className="font-medium text-foreground py-5">
-                        {formatVisitDate(visit.date)}
+                      <TableCell>
+                        <div className="flex flex-col text-sm">
+                          <span className="font-medium flex items-center gap-1 text-foreground">
+                            <Calendar size={12} className="text-button-primary" />
+                            {formatVisitDate(visit.date)}
+                          </span>
+                          {formatVisitTime(visit.date) && (
+                            <span className="text-muted-foreground flex items-center gap-1">
+                              <Clock size={12} /> {formatVisitTime(visit.date)}
+                            </span>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="font-medium text-foreground py-5">
-                        {visit.type || "—"}
+                      <TableCell className="font-medium">{visit.type || "—"}</TableCell>
+                      <TableCell className="text-center">
+                        <span
+                          className={`text-sm py-1.5 rounded-full font-semibold inline-flex items-center justify-center w-24 ${
+                            normalizeStatus(visit.status) === "Completed"
+                              ? "bg-[#a0ce66] text-primary"
+                              : normalizeStatus(visit.status) === "Confirmed"
+                                ? "bg-blue-500 text-white"
+                                : normalizeStatus(visit.status) === "Cancelled"
+                                  ? "bg-red-100 text-red-600"
+                                  : normalizeStatus(visit.status) === "In Progress"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : normalizeStatus(visit.status) === "Requested"
+                                      ? "bg-yellow-100 text-yellow-700"
+                                      : "bg-yellow-100 text-red-600"
+                          }`}
+                        >
+                          {normalizeStatus(visit.status)}
+                        </span>
                       </TableCell>
-                      <TableCell className="py-5">
-                        <StatusBadge status={normalizeStatus(visit.status)} />
-                      </TableCell>
-                      <TableCell className="font-medium text-foreground py-5">
-                        {visit.paymentMethod || "—"}
-                      </TableCell>
-                      <TableCell className="font-medium text-foreground py-5">
-                        {formatCurrency(visit.amount)}
-                      </TableCell>
-                      <TableCell className="font-medium text-foreground py-5 max-w-[220px] truncate">
-                        {visit.notes || "—"}
-                      </TableCell>
+                      <TableCell className="font-medium">{visit.paymentMethod || "—"}</TableCell>
+                      <TableCell className="font-medium">{formatCurrency(visit.amount)}</TableCell>
                     </TableRow>
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell
-                      colSpan={7}
-                      className="text-center py-8 text-muted-foreground"
-                    >
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       No visit history found.
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     </main>
-  );
-}
-
-function StatusBadge({ status }) {
-  const normalized = String(status || "").toLowerCase();
-  const isCompleted = normalized === "completed";
-  const isCancelled = normalized === "cancelled";
-  const isInProgress = normalized === "in progress";
-
-  return (
-    <span
-      className={`text-sm py-1.5 rounded-full font-semibold inline-flex items-center justify-center min-w-24 px-3 ${
-        isCompleted
-          ? "bg-green-700 text-primary"
-          : isCancelled
-            ? "bg-red-100 text-red-600"
-            : isInProgress
-              ? "bg-blue-100 text-blue-700"
-              : "bg-yellow-100 text-red-600"
-      }`}
-    >
-      {status}
-    </span>
   );
 }

@@ -12,8 +12,6 @@ import {
   Send,
   X,
   Search,
-  ChevronRight,
-  Receipt,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,13 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import Link from "next/link";
 
@@ -53,28 +44,10 @@ export default function Summary() {
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summaryError, setSummaryError] = useState("");
 
-  // Table filtering and modals
+  // Table filtering
   const [tableSearch, setTableSearch] = useState("");
-  const [selectedExpense, setSelectedExpense] = useState(null);
 
   const small = useMediaQuery("(max-width: 768px)");
-
-  // Mock expense data for now
-  const expenseDetails = {
-    "Medical Supplies": [
-      { id: "TX-101", item: "Latex Gloves (Bulk)", date: "Feb 15", cost: "$1,200" },
-      { id: "TX-102", item: "Syringes & Needles", date: "Feb 12", cost: "$800" },
-      { id: "TX-103", item: "Sterilization Trays", date: "Feb 05", cost: "$2,200" },
-    ],
-    "Staff Salaries": [
-      { id: "PAY-01", item: "Nursing Staff (Admin)", date: "Feb 01", cost: "$4,500" },
-      { id: "PAY-02", item: "Reception Desk", date: "Feb 01", cost: "$2,300" },
-    ],
-    "Facility Rent": [
-      { id: "RENT-Feb", item: "Main Office Lease", date: "Feb 01", cost: "$1,100" },
-      { id: "UTIL-Feb", item: "Water & Electricity", date: "Feb 10", cost: "$200" },
-    ],
-  };
 
   useEffect(() => {
     async function loadSummary() {
@@ -82,13 +55,8 @@ export default function Summary() {
         setSummaryLoading(true);
         setSummaryError("");
 
-        const res = await fetch("/api/summary", {
-          cache: "no-store",
-        });
-
-        if (!res.ok) {
-          throw new Error("Failed to load summary");
-        }
+        const res = await fetch("/api/summary", { cache: "no-store" });
+        if (!res.ok) throw new Error("Failed to load summary");
 
         const data = await res.json();
         setSummaryData(data);
@@ -106,6 +74,8 @@ export default function Summary() {
   const stats = summaryData?.stats || {
     totalPatients: 0,
     monthlyRevenue: 0,
+    weeklyRevenue: 0,
+    yearlyRevenue: 0,
     todaysAppointments: 0,
   };
 
@@ -116,7 +86,6 @@ export default function Summary() {
       const patient = String(visit.patient || "").toLowerCase();
       const type = String(visit.type || "").toLowerCase();
       const search = tableSearch.toLowerCase();
-
       return patient.includes(search) || type.includes(search);
     });
   }, [recentVisits, tableSearch]);
@@ -166,10 +135,8 @@ export default function Summary() {
 
   function formatVisitDate(dateValue) {
     if (!dateValue) return "—";
-
     const date = new Date(dateValue);
     if (Number.isNaN(date.getTime())) return "—";
-
     return date.toLocaleDateString("en-CA", {
       year: "numeric",
       month: "short",
@@ -179,27 +146,19 @@ export default function Summary() {
 
   function normalizeStatus(status) {
     if (!status) return "Pending";
-
     const lower = String(status).toLowerCase();
 
-    if (
-      lower === "checked-out" ||
-      lower === "completed" ||
-      lower === "complete"
-    ) {
+    if (lower === "checked-out" || lower === "checked_out" || lower === "completed" || lower === "complete")
       return "Completed";
-    }
-
-    if (lower === "checked-in") {
+    if (lower === "checked-in" || lower === "checked_in")
       return "In Progress";
-    }
-
-    if (lower === "cancelled" || lower === "canceled") {
+    if (lower === "cancelled" || lower === "canceled")
       return "Cancelled";
-    }
+    if (lower === "requested")
+      return "Requested";
 
     return String(status)
-      .replace(/-/g, " ")
+      .replace(/[-_]/g, " ")
       .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
@@ -208,11 +167,7 @@ export default function Summary() {
       <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
         <NavBarComp />
         <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
-          {!small && (
-            <header className="py-4">
-              <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-            </header>
-          )}
+          {!small && <header className="py-4"><h1 className="text-3xl font-bold text-foreground">Summary</h1></header>}
           <div className="p-6 text-foreground">Loading summary...</div>
         </div>
       </main>
@@ -224,11 +179,7 @@ export default function Summary() {
       <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
         <NavBarComp />
         <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
-          {!small && (
-            <header className="py-4">
-              <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-            </header>
-          )}
+          {!small && <header className="py-4"><h1 className="text-3xl font-bold text-foreground">Summary</h1></header>}
           <div className="p-6 text-red-500">{summaryError}</div>
         </div>
       </main>
@@ -246,57 +197,33 @@ export default function Summary() {
           </header>
         )}
 
+        {/* STAT CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 mt-4">
-          <StatCard
-            title="Total Patients"
-            value={stats.totalPatients}
-            icon={<Users />}
-            trend="Live"
-          />
-          <StatCard
-            title="Monthly Revenue"
-            value={formatCurrency(stats.monthlyRevenue)}
-            icon={<DollarSign />}
-            trend="Live"
-          />
-          <StatCard
-            title="Monthly Expenses"
-            value="$12,300"
-            icon={<TrendingUp />}
-            trend="Mock"
-          />
-          <StatCard
-            title="Today's Appts"
-            value={stats.todaysAppointments}
-            icon={<Calendar />}
-            trend="Live"
-          />
+          <StatCard title="Total Patients" value={stats.totalPatients} icon={<Users />} trend="Live" />
+          <StatCard title="Weekly Revenue" value={formatCurrency(stats.weeklyRevenue)} icon={<TrendingUp />} trend="Live" />
+          <StatCard title="Monthly Revenue" value={formatCurrency(stats.monthlyRevenue)} icon={<DollarSign />} trend="Live" />
+          <StatCard title="Yearly Revenue" value={formatCurrency(stats.yearlyRevenue)} icon={<DollarSign />} trend="Live" />
         </div>
 
+        {/* SECOND ROW */}
         <div className="pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+          {/* RECENT VISITS TABLE */}
           <Card className="lg:col-span-2 shadow-sm border-sidebar">
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between py-6 px-8 gap-4">
-              <CardTitle className="text-xl font-bold">
-                Recent Patient Visits
-              </CardTitle>
+              <CardTitle className="text-xl font-bold">Recent Patient Visits</CardTitle>
               <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
                 <div className="relative flex-1 md:flex-none w-full md:w-48 border border-sidebar dark:border-foreground rounded-md overflow-hidden">
-                  <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    size={14}
-                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={14} />
                   <Input
-                    placeholder="Search"
+                    placeholder="Search by Name"
                     className="pl-8 bg-muted/50 border-none h-10 text-sm w-full focus-visible:ring-0"
                     value={tableSearch}
                     onChange={(e) => setTableSearch(e.target.value)}
                   />
                 </div>
                 <Link href="/Summary/history">
-                  <Button
-                    variant="secondary"
-                    className="h-10 font-semibold whitespace-nowrap"
-                  >
+                  <Button variant="secondary" className="h-10 font-semibold whitespace-nowrap">
                     View History
                   </Button>
                 </Link>
@@ -307,45 +234,27 @@ export default function Summary() {
               <Table className="text-base min-w-[500px]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b">
-                    <TableHead className="py-4 text-primary/50">
-                      Patient
-                    </TableHead>
+                    <TableHead className="py-4 text-primary/50">Patient</TableHead>
                     <TableHead className="py-4 text-primary/50">Date</TableHead>
                     <TableHead className="py-4 text-primary/50">Type</TableHead>
-                    <TableHead className="py-4 text-primary/50 text-center">
-                      Status
-                    </TableHead>
+                    <TableHead className="py-4 text-primary/50 text-center">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredVisits.length > 0 ? (
                     filteredVisits.map((visit) => (
-                      <TableRow
-                        key={visit.id}
-                        className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                      >
-                        <TableCell className="font-bold text-foreground py-5">
-                          {visit.patient}
-                        </TableCell>
-                        <TableCell className="font-medium text-foreground py-5">
-                          {formatVisitDate(visit.date)}
-                        </TableCell>
-                        <TableCell className="font-medium text-foreground py-5">
-                          {visit.type || "—"}
-                        </TableCell>
+                      <TableRow key={visit.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
+                        <TableCell className="font-bold text-foreground py-5">{visit.patient}</TableCell>
+                        <TableCell className="font-medium text-foreground py-5">{formatVisitDate(visit.date)}</TableCell>
+                        <TableCell className="font-medium text-foreground py-5">{visit.type || "—"}</TableCell>
                         <TableCell className="py-5 text-center">
-                          <StatusBadge
-                            status={normalizeStatus(visit.status)}
-                          />
+                          <StatusBadge status={normalizeStatus(visit.status)} />
                         </TableCell>
                       </TableRow>
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        className="text-center py-8 text-muted-foreground"
-                      >
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
                         No recent visits found.
                       </TableCell>
                     </TableRow>
@@ -355,103 +264,42 @@ export default function Summary() {
             </CardContent>
           </Card>
 
+          {/* TODAY'S APPOINTMENTS */}
           <Card className="shadow-sm border-sidebar">
             <CardHeader className="py-6 px-8">
-              <CardTitle className="text-xl font-bold">
-                Financial Overview
+              <CardTitle className="text-xl font-bold flex items-center gap-2">
+                <Calendar size={20} className="text-button-primary" />
+                Today's Appointments
               </CardTitle>
             </CardHeader>
             <CardContent className="px-8 pb-8">
-              <div className="space-y-8">
-                <ProgressItem
-                  label="Medical Supplies"
-                  value="$4,200"
-                  percentage="65%"
-                  color="bg-blue-500"
-                  onClick={() => setSelectedExpense("Medical Supplies")}
-                />
-                <ProgressItem
-                  label="Staff Salaries"
-                  value="$6,800"
-                  percentage="85%"
-                  color="bg-green-500"
-                  onClick={() => setSelectedExpense("Staff Salaries")}
-                />
-                <ProgressItem
-                  label="Facility Rent"
-                  value="$1,300"
-                  percentage="40%"
-                  color="bg-red-500"
-                  onClick={() => setSelectedExpense("Facility Rent")}
-                />
-                <div className="pt-6 border-t mt-8 flex justify-between items-center">
-                  <span className="text-lg font-bold text-foreground">
-                    Total Expenses
-                  </span>
-                  <span className="text-xl font-bold text-destructive">
-                    $12,300
-                  </span>
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-center p-4 rounded-xl bg-primary/5 border border-sidebar">
+                  <span className="text-muted-foreground font-medium">Scheduled</span>
+                  <span className="text-3xl font-bold text-primary">{stats.todaysAppointments}</span>
                 </div>
+                <Link href="/" className="block w-full">
+                  <Button variant="secondary" className="w-full font-semibold">
+                    View Schedule
+                  </Button>
+                </Link>
               </div>
             </CardContent>
           </Card>
+
         </div>
       </div>
 
-      <Dialog
-        open={!!selectedExpense}
-        onOpenChange={() => setSelectedExpense(null)}
-      >
-        <DialogContent className="sm:max-w-md bg-background border-sidebar text-foreground">
-          <DialogHeader>
-            <DialogTitle className="text-xl flex items-center gap-2">
-              <Receipt className="text-[#A0CE66]" size={20} />
-              {selectedExpense} Breakdown
-            </DialogTitle>
-            <DialogDescription>
-              Detailed transactions for the current month.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="mt-4 space-y-3">
-            {selectedExpense &&
-              expenseDetails[selectedExpense]?.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between items-center p-3 rounded-lg border border-sidebar/20 bg-muted/30"
-                >
-                  <div>
-                    <p className="font-bold text-sm">{item.item}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {item.date} • {item.id}
-                    </p>
-                  </div>
-                  <span className="font-mono font-bold text-[#A0CE66]">
-                    {item.cost}
-                  </span>
-                </div>
-              ))}
-          </div>
-        </DialogContent>
-      </Dialog>
-
+      {/* AI CHAT ASSISTANT */}
       <div className="fixed bottom-8 right-8 flex flex-col items-end z-10">
         {isChatOpen && (
           <Card className="w-75 lg:w-96 mb-2 shadow-2xl overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300 flex flex-col bg-background">
             <CardHeader className="bg-sidebar text-white font-bold p-5 flex flex-row items-center justify-between space-y-0">
               <div className="flex flex-col">
-                <CardTitle className="text-md font-bold text-white">
-                  Practice Assistant
-                </CardTitle>
-                <p className="text-xs text-blue-200 mt-1">
-                  How can I help you today?
-                </p>
+                <CardTitle className="text-md font-bold text-white">Practice Assistant</CardTitle>
+                <p className="text-xs text-blue-200 mt-1">How can I help you today?</p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-white hover:bg-white/10 h-10 w-10 -mr-2"
-                onClick={() => setIsChatOpen(false)}
-              >
+              <Button variant="ghost" size="icon" className="text-white hover:bg-white/10 h-10 w-10 -mr-2" onClick={() => setIsChatOpen(false)}>
                 <X size={22} />
               </Button>
             </CardHeader>
@@ -527,38 +375,10 @@ function StatCard({ title, value, icon, trend }) {
             {trend} <ArrowUpRight size={16} className="ml-1" />
           </div>
         </div>
-        <h3 className="text-md font-medium text-primary uppercase tracking-wider text-xs">
-          {title}
-        </h3>
+        <h3 className="text-md font-medium text-primary uppercase tracking-wider text-xs">{title}</h3>
         <p className="text-3xl font-bold text-primary mt-1">{value}</p>
       </CardContent>
     </Card>
-  );
-}
-
-function ProgressItem({ label, value, percentage, color, onClick }) {
-  return (
-    <div
-      className="space-y-2 cursor-pointer group p-2 mb-2 rounded-xl hover:bg-button-secondary/50 transition-all"
-      onClick={onClick}
-    >
-      <div className="flex justify-between text-base items-center">
-        <span className="font-medium text-primary">{label}</span>
-        <div className="flex items-center gap-2">
-          <span className="font-bold text-foreground">{value}</span>
-          <ChevronRight
-            size={14}
-            className="text-muted-foreground group-hover:translate-x-1 transition-transform"
-          />
-        </div>
-      </div>
-      <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden">
-        <div
-          className={`${color} h-3 rounded-full transition-all duration-500`}
-          style={{ width: percentage }}
-        ></div>
-      </div>
-    </div>
   );
 }
 
@@ -566,6 +386,8 @@ function StatusBadge({ status }) {
   const normalized = String(status || "").toLowerCase();
   const isCompleted = normalized === "completed";
   const isCancelled = normalized === "cancelled";
+  const isInProgress = normalized === "in progress";
+  const isRequested = normalized === "requested";
 
   return (
     <span
@@ -574,7 +396,11 @@ function StatusBadge({ status }) {
           ? "bg-green-700 text-primary"
           : isCancelled
             ? "bg-red-100 text-red-600"
-            : "bg-yellow-100 text-red-600"
+            : isInProgress
+              ? "bg-blue-100 text-blue-700"
+              : isRequested
+                ? "bg-yellow-100 text-yellow-700"
+                : "bg-yellow-100 text-red-600"
       }`}
     >
       {status}
