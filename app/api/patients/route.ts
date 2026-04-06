@@ -80,29 +80,47 @@ export async function GET(req: Request) {
     const numericId = Number(search);
     const isId = search !== "" && Number.isInteger(numericId) && numericId > 0;
 
-    const patients = await prisma.patient.findMany({
-      where: search
-        ? {
-            OR: [
-              { firstName: { contains: search, mode: "insensitive" } },
-              { lastName:  { contains: search, mode: "insensitive" } },
-              ...(isId ? [{ id: { equals: numericId } }] : []),
-              ...(search.includes(" ")
-                ? [{
-                    AND: [
-                      { firstName: { contains: search.split(" ")[0], mode: "insensitive" } },
-                      { lastName:  { contains: search.split(" ")[1], mode: "insensitive" } },
-                    ],
-                  }]
-                : []),
-            ],
-          }
-        : undefined,
-      orderBy: [{ id: "asc" }],
-      take: 25,
-    });
+ const numericSearch = Number(search);
 
-    return Response.json(patients.map(decryptPatient));
+const patients = await prisma.patient.findMany({
+  where: search
+    ? {
+        OR: [
+          { firstName: { contains: search, mode: "insensitive" } },
+          { lastName: { contains: search, mode: "insensitive" } },
+          { phone: { contains: search } },
+          ...(!Number.isNaN(numericSearch) ? [{ id: numericSearch }] : []),
+        ],
+      }
+    : undefined,
+  orderBy: [{ id: "asc" }],
+  take: 25,
+  include: {
+    appointments: {
+      orderBy: {
+        startTime: "desc",
+      },
+      take: 1,
+      select: {
+        startTime: true,
+      },
+    },
+  },
+});
+
+    return Response.json(
+  patients.map((patient) => {
+    const decryptedPatient = decryptPatient(patient);
+
+    return {
+      ...decryptedPatient,
+      lastVisit:
+        patient.appointments.length > 0
+          ? patient.appointments[0].startTime
+          : null,
+    };
+  }),
+);
   } catch (err) {
     console.error(err);
     return Response.json({ error: "Failed to fetch patients" }, { status: 500 });

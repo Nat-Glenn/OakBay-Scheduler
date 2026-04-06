@@ -105,26 +105,33 @@ export async function POST(req: Request) {
       );
     }
 
-    // Basic overlap check for the same provider (if providerId is assigned)
-    if (providerId) {
-      const overlap = await prisma.appointment.findFirst({
-        where: {
-          providerId,
-          AND: [
-            { startTime: { lt: endTime } }, // existing starts before new ends
-            { endTime: { gt: startTime } }, // existing ends after new starts
-          ],
-        },
-      });
+    let slot = 1;
 
-      if (overlap) {
-        return Response.json(
-          { error: "Time conflict: provider already has an appointment in that time range." },
-          { status: 409 }
-        );
-      }
-    }
+if (providerId) {
+  const existingAppointments = await prisma.appointment.findMany({
+    where: {
+      providerId,
+      startTime,
+    },
+    orderBy: {
+      slot: "asc",
+    },
+    select: {
+      slot: true,
+    },
+  });
 
+  if (existingAppointments.length >= 4) {
+    return Response.json(
+      { error: "All 4 slots for this time have been booked." },
+      { status: 409 }
+    );
+  }
+
+  const usedSlots = existingAppointments.map((appt) => appt.slot);
+  const allSlots = [1, 2, 3, 4];
+  slot = allSlots.find((s) => !usedSlots.includes(s)) || 1;
+}
     const patient = await prisma.patient.findUnique({ where: { id: patientId } });
     if (!patient) {
       return Response.json({ error: "Patient not found" }, { status: 400 });
@@ -137,6 +144,7 @@ export async function POST(req: Request) {
         status: "REQUESTED", // default
         startTime,
         endTime,
+        slot,
         providerId,
         createdByUserId,
         requestMessage, 

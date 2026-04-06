@@ -145,55 +145,100 @@ export default function AppointmentInformation({
     }
   };
 
-  const handleEditAppointment = () => {
-    if (!selectedAppointment) return false;
+ const handleEditAppointment = async () => {
+  if (!selectedAppointment) return false;
 
-    if (!editType || !editPractitioner || !editTime || !editDate) {
-      toast.warning("Please fill out all fields.", { position: "top-right" });
-      return false;
-    }
+  if (!editType || !editPractitioner || !editTime || !editDate) {
+    toast.warning("Please fill out all fields.", { position: "top-right" });
+    return false;
+  }
 
-    const selected = new Date(editDate);
-    selected.setHours(0, 0, 0, 0);
+  const selected = new Date(editDate);
+  selected.setHours(0, 0, 0, 0);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    if (selected < today) {
-      toast.warning("Cannot book appointments for past dates.", {
+  if (selected < today) {
+    toast.warning("Cannot book appointments for past dates.", {
+      position: "top-right",
+    });
+    return false;
+  }
+
+  const formattedDate = formatDateDMY(editDate);
+
+  let slotToUse = active.slot;
+
+  if (
+    editTime !== active.time ||
+    editPractitioner !== selectedAppointment.practitioner
+  ) {
+    const availableSlot = getAvailableSlot(
+      appointments.filter((a) => a.id !== selectedAppointment.id),
+      formattedDate,
+      editTime,
+      editPractitioner,
+    );
+
+    if (!availableSlot) {
+      toast.warning("No available slots for this time.", {
         position: "top-right",
       });
       return false;
     }
 
-    const formattedDate = formatDateDMY(editDate);
+    slotToUse = availableSlot;
+  }
 
-    let slotToUse = active.slot;
+  let providerIdToUse = selectedAppointment.providerId;
 
-    // If time OR practitioner changed → re-check slot
-    if (
-      editTime !== active.time ||
-      editPractitioner !== selectedAppointment.practitioner
-    ) {
-      const availableSlot = getAvailableSlot(
-        appointments.filter((a) => a.id !== selectedAppointment.id),
-        formattedDate,
-        editTime,
-        editPractitioner,
-      );
+if (editPractitioner !== selectedAppointment.practitioner) {
+  const selectedPractitioner = practitioners.find(
+    (p) => p.name === editPractitioner,
+  );
 
-      if (!availableSlot) {
-        toast.warning("No available slots for this time.", {
-          position: "top-right",
-        });
-        return false;
-      }
+  if (!selectedPractitioner) {
+    toast.warning("Invalid practitioner selected.", {
+      position: "top-right",
+    });
+    return false;
+  }
 
-      slotToUse = availableSlot;
+  providerIdToUse = selectedPractitioner.id;
+}
+
+  const [hours, minutes] = editTime.split(":").map(Number);
+
+  const startTime = new Date(editDate);
+  startTime.setHours(hours, minutes, 0, 0);
+
+  const endTime = new Date(startTime);
+  endTime.setMinutes(endTime.getMinutes() + 15);
+
+  try {
+    const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+      type: editType,
+      providerId: providerIdToUse,
+      startTime: startTime.toISOString(),
+      endTime: endTime.toISOString(),
+}),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to update appointment");
     }
 
     const updatedAppointment = {
       ...selectedAppointment,
+      ...data.data,
       type: editType,
       practitioner: editPractitioner,
       time: editTime,
@@ -214,7 +259,13 @@ export default function AppointmentInformation({
     });
 
     return true;
-  };
+  } catch (err) {
+    toast.error(err.message || "Failed to update appointment.", {
+      position: "top-right",
+    });
+    return false;
+  }
+};
 
   const openEditDialog = (appointment) => {
     if (!appointment) return false;
@@ -332,12 +383,12 @@ export default function AppointmentInformation({
                 <AlertDialogAction
                   className="bg-button-primary"
                   variant="secondary"
-                  onClick={(e) => {
-                    const success = handleEditAppointment();
-                    if (!success) {
-                      e.preventDefault();
+                  onClick={async (e) => {
+                  const success = await handleEditAppointment();
+                  if (!success) {
+                  e.preventDefault();
                     }
-                  }}
+        }}
                 >
                   Save Changes
                 </AlertDialogAction>

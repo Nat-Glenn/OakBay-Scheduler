@@ -47,6 +47,10 @@ export default function Practitioners() {
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [editOpen, setEditOpen] = useState(false);
+const [editName, setEditName] = useState("");
+const [editEmail, setEditEmail] = useState("");
+const [editPhone, setEditPhone] = useState("");
   const small = useMediaQuery("(max-width: 768px)");
 
   function isValidEmail(value) {
@@ -147,6 +151,64 @@ export default function Practitioners() {
       return false;
     }
   };
+
+  const handleEditPractitioner = async () => {
+  if (!selectedPractitioner) return false;
+
+  if (!editName.trim() || !editEmail.trim()) {
+    toast.warning("Please fill out name and email.", {
+      position: "top-right",
+    });
+    return false;
+  }
+
+  try {
+    const res = await fetch(`/api/practitioners/${selectedPractitioner.id}`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: editName,
+        email: editEmail,
+        phone: editPhone,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to update practitioner");
+    }
+
+    const updated = {
+      ...selectedPractitioner,
+      name: editName,
+      email: editEmail,
+      phone: editPhone,
+    };
+
+    setPractitioners((prev) =>
+      prev.map((p) =>
+        p.id === selectedPractitioner.id ? updated : p,
+      ),
+    );
+
+    setSelectedPractitioner(updated);
+    setEditOpen(false);
+
+    toast.success("Practitioner updated successfully.", {
+      position: "top-right",
+    });
+
+    return true;
+  } catch (err) {
+    toast.error(err.message || "Failed to update practitioner.", {
+      position: "top-right",
+    });
+    return false;
+  }
+};
 
   return (
     <>
@@ -256,9 +318,18 @@ export default function Practitioners() {
                                 <DropdownMenuItem className="focus:bg-border">
                                   View Details
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="focus:bg-border">
-                                  Edit
-                                </DropdownMenuItem>
+                                <DropdownMenuItem
+  className="focus:bg-border"
+  onClick={() => {
+    setEditName(p.name || "");
+    setEditEmail(p.email || "");
+    setEditPhone(p.phone || "");
+    setSelectedPractitioner(p);
+    setEditOpen(true);
+  }}
+>
+  Edit
+</DropdownMenuItem>
                                 <DropdownMenuItem>
                                   <DeletePopUp
                                     variant="dropdown"
@@ -397,6 +468,50 @@ export default function Practitioners() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={editOpen} onOpenChange={setEditOpen}>
+  <DialogContent>
+    <DialogHeader>
+      <DialogTitle>Edit Practitioner</DialogTitle>
+    </DialogHeader>
+
+    <div className="flex flex-col gap-4 py-4">
+      <FormField
+        fieldLabel="Full Name"
+        variant="add"
+        value={editName}
+        onChange={(e) => setEditName(e.target.value)}
+      />
+
+      <FormField
+        fieldLabel="Email"
+        variant="add"
+        mode="email"
+        value={editEmail}
+        onChange={(e) => setEditEmail(e.target.value)}
+      />
+
+      <FormField
+        fieldLabel="Phone"
+        variant="add"
+        value={editPhone}
+        onChange={(e) => setEditPhone(e.target.value)}
+      />
+    </div>
+
+    <DialogFooter>
+      <Button
+        onClick={async (e) => {
+          const success = await handleEditPractitioner();
+          if (!success) e.preventDefault();
+        }}
+        className="bg-button-primary text-white"
+      >
+        Save Changes
+      </Button>
+    </DialogFooter>
+  </DialogContent>
+</Dialog>
     </>
   );
 }

@@ -177,17 +177,30 @@ export default function PatientProfiles() {
     return `${mm}/${dd}/${yyyy}`;
   }
 
-  function getDisplayedPatient(patient) {
-    return {
-      ...patient,
-      name: `${patient.firstName} ${patient.lastName}`,
-      status: patient.reminderOptIn ? "Active" : "Inactive",
-      age: calculateAge(patient.dob),
-      dob: patient.dob || "—",
-      lastVisit: "—",
-      nextAppt: null,
-    };
-  }
+  function formatLastVisit(dateString) {
+  if (!dateString) return "—";
+
+  const date = new Date(dateString);
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return date.toLocaleDateString("en-CA", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function getDisplayedPatient(patient) {
+  return {
+    ...patient,
+    name: `${patient.firstName} ${patient.lastName}`,
+    status: patient.reminderOptIn ? "Active" : "Inactive",
+    age: calculateAge(patient.dob),
+    dob: patient.dob || "—",
+    lastVisit: formatLastVisit(patient.lastVisit),
+    nextAppt: null,
+  };
+}
 
   function openEditModal(patient) {
     setValidationError("");
