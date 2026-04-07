@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
-import { decryptField } from "@/lib/encrypt";
+import { encryptField, decryptField } from "@/lib/encrypt"; // FIXED: added encryptField — was missing, PATCH crashes without it
 
 // GET /api/patients/[id]
 // Returns a single patient by ID.
@@ -98,7 +98,11 @@ export async function PATCH(
       },
     });
 
-    return Response.json(updatedPatient);
+    // Decrypt ahcNumber before returning to frontend
+    return Response.json({
+      ...updatedPatient,
+      ahcNumber: decryptField(updatedPatient.ahcNumber),
+    });
   } catch (error) {
     console.error("PATCH /api/patients/[id] error:", error);
     return Response.json({ error: "Failed to update patient" }, { status: 500 });

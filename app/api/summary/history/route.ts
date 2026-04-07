@@ -42,10 +42,8 @@ export async function GET(req: Request) {
             : {},
           status
             ? {
-                status: {
-                  equals: status,
-                  mode: "insensitive",
-                },
+                // Convert to uppercase to match how statuses are stored in DB
+                status: status.toUpperCase(),
               }
             : {},
         ],
@@ -66,9 +64,9 @@ export async function GET(req: Request) {
       date: visit.startTime,
       type: visit.type,
       status: visit.status,
-      paymentMethod: visit.payment?.method ?? null,
+      // FIXED: was visit.payment?.method — field is paymentType not method
+      paymentMethod: visit.payment?.paymentType ?? null,
       amount: visit.payment?.amount ?? null,
-      notes: visit.notes ?? "",
     }));
 
     return Response.json(history);

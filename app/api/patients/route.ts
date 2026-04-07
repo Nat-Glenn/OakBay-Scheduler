@@ -28,8 +28,30 @@ export async function POST(req: Request) {
         ? String(body.dob).trim()
         : null;
 
+    // Max year of birth must be at least 1 year ago — patient must be at least 1 year old
+    if (dob) {
+      const dobDate = new Date(dob);
+      const oneYearAgo = new Date();
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+      if (dobDate > oneYearAgo) {
+        return Response.json(
+          { error: "Date of birth must be at least 1 year ago" },
+          { status: 400 }
+        );
+      }
+    }
+
     const notes = cleanField(body.notes);
 
+    // Required fields validation — check these before profanity to give clear errors
+    if (!firstName || !lastName || !phone) {
+      return Response.json(
+        { error: "First name, last name, and phone are required" },
+        { status: 400 },
+      );
+    }
+
+    // Profanity in names is rejected
     if (hasProfanity(firstName)) {
       return Response.json(
         { error: "First name cannot contain inappropriate language" },
@@ -39,12 +61,6 @@ export async function POST(req: Request) {
     if (hasProfanity(lastName)) {
       return Response.json(
         { error: "Last name cannot contain inappropriate language" },
-        { status: 400 },
-      );
-    }
-    if (!firstName || !lastName || !phone) {
-      return Response.json(
-        { error: "First name, last name, and phone are required" },
         { status: 400 },
       );
     }
@@ -77,50 +93,46 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const search = (searchParams.get("search") ?? "").trim();
 
-    const numericId = Number(search);
-    const isId = search !== "" && Number.isInteger(numericId) && numericId > 0;
+    const numericSearch = Number(search);
 
- const numericSearch = Number(search);
-
-const patients = await prisma.patient.findMany({
-  where: search
-    ? {
-        OR: [
-          { firstName: { contains: search, mode: "insensitive" } },
-          { lastName: { contains: search, mode: "insensitive" } },
-          { phone: { contains: search } },
-          ...(!Number.isNaN(numericSearch) ? [{ id: numericSearch }] : []),
-        ],
-      }
-    : undefined,
-  orderBy: [{ id: "asc" }],
-  take: 25,
-  include: {
-    appointments: {
-      orderBy: {
-        startTime: "desc",
+    const patients = await prisma.patient.findMany({
+      where: search
+        ? {
+            OR: [
+              { firstName: { contains: search, mode: "insensitive" } },
+              { lastName: { contains: search, mode: "insensitive" } },
+              { phone: { contains: search } },
+              ...(!Number.isNaN(numericSearch) ? [{ id: numericSearch }] : []),
+            ],
+          }
+        : undefined,
+      orderBy: [{ id: "asc" }],
+      take: 25,
+      include: {
+        appointments: {
+          orderBy: {
+            startTime: "desc",
+          },
+          take: 1,
+          select: {
+            startTime: true,
+          },
+        },
       },
-      take: 1,
-      select: {
-        startTime: true,
-      },
-    },
-  },
-});
+    });
 
     return Response.json(
-  patients.map((patient) => {
-    const decryptedPatient = decryptPatient(patient);
-
-    return {
-      ...decryptedPatient,
-      lastVisit:
-        patient.appointments.length > 0
-          ? patient.appointments[0].startTime
-          : null,
-    };
-  }),
-);
+      patients.map((patient) => {
+        const decryptedPatient = decryptPatient(patient);
+        return {
+          ...decryptedPatient,
+          lastVisit:
+            patient.appointments.length > 0
+              ? patient.appointments[0].startTime
+              : null,
+        };
+      }),
+    );
   } catch (err) {
     console.error(err);
     return Response.json({ error: "Failed to fetch patients" }, { status: 500 });

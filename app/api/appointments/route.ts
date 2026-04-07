@@ -86,6 +86,22 @@ export async function POST(req: Request) {
       return Response.json({ error: "endTime must be after startTime" }, { status: 400 });
     }
 
+    // TC-073: Validate appointment type against allowed list — rejects invalid types
+    const allowedTypes = [
+      "Chiropractic Adjustment",
+      "Massage",
+      "Intense Massage",
+      "Initial Consultation",
+      "Follow-up",
+      "Adjustment",
+    ];
+    if (!allowedTypes.includes(type)) {
+      return Response.json(
+        { error: "Invalid appointment type", accepted: allowedTypes },
+        { status: 400 }
+      );
+    }
+
     // Optional fields
     const providerId = body.providerId ? Number(body.providerId) : null;
     const createdByUserId = body.createdByUserId ? Number(body.createdByUserId) : null;
@@ -105,33 +121,48 @@ export async function POST(req: Request) {
       );
     }
 
+    // TC-062/063: Max length validation on notes fields — prevents silent data overflow
+    if (requestMessage && requestMessage.length > 500) {
+      return Response.json(
+        { error: "Request message cannot exceed 500 characters" },
+        { status: 400 }
+      );
+    }
+    if (adminNotes && adminNotes.length > 500) {
+      return Response.json(
+        { error: "Admin notes cannot exceed 500 characters" },
+        { status: 400 }
+      );
+    }
+
     let slot = 1;
 
-if (providerId) {
-  const existingAppointments = await prisma.appointment.findMany({
-    where: {
-      providerId,
-      startTime,
-    },
-    orderBy: {
-      slot: "asc",
-    },
-    select: {
-      slot: true,
-    },
-  });
+    if (providerId) {
+      const existingAppointments = await prisma.appointment.findMany({
+        where: {
+          providerId,
+          startTime,
+        },
+        orderBy: {
+          slot: "asc",
+        },
+        select: {
+          slot: true,
+        },
+      });
 
-  if (existingAppointments.length >= 4) {
-    return Response.json(
-      { error: "All 4 slots for this time have been booked." },
-      { status: 409 }
-    );
-  }
+      if (existingAppointments.length >= 4) {
+        return Response.json(
+          { error: "All 4 slots for this time have been booked." },
+          { status: 409 }
+        );
+      }
 
-  const usedSlots = existingAppointments.map((appt) => appt.slot);
-  const allSlots = [1, 2, 3, 4];
-  slot = allSlots.find((s) => !usedSlots.includes(s)) || 1;
-}
+      const usedSlots = existingAppointments.map((appt) => appt.slot);
+      const allSlots = [1, 2, 3, 4];
+      slot = allSlots.find((s) => !usedSlots.includes(s)) || 1;
+    }
+
     const patient = await prisma.patient.findUnique({ where: { id: patientId } });
     if (!patient) {
       return Response.json({ error: "Patient not found" }, { status: 400 });
@@ -147,8 +178,8 @@ if (providerId) {
         slot,
         providerId,
         createdByUserId,
-        requestMessage, 
-        adminNotes,     
+        requestMessage,
+        adminNotes,
       },
       include: {
         patient: true,

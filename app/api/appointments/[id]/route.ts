@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
 import { cleanField } from "@/lib/profanity";
+import { sendReminderEmail } from "@/lib/email";
 
 export async function PATCH(
   req: Request,
@@ -118,6 +119,17 @@ if (providerId !== undefined && startTime !== undefined) {
       include: { patient: true, provider: true, payment: true },
     });
 
+    // TC-064: Send cancellation notification if status changed to CANCELLED
+    // and patient has an email and has opted in to reminders
+    if (status === "CANCELLED" && updated.patient?.email && updated.patient?.reminderOptIn) {
+      await sendReminderEmail({
+        to: updated.patient.email,
+        patientName: `${updated.patient.firstName} ${updated.patient.lastName}`,
+        appointmentType: updated.type,
+        startTime: updated.startTime,
+      });
+    }
+
     return ok(updated);
   } catch (err) {
     console.error(err);
@@ -143,6 +155,12 @@ export async function DELETE(
     });
 
     if (!exists) return notFound("Appointment not found");
+
+    // Delete payment first if it exists — payment has a FK to appointment
+    // so deleting the appointment without removing payment first causes a constraint error
+    await prisma.payment.deleteMany({
+      where: { appointmentId: id },
+    });
 
     await prisma.appointment.delete({
       where: { id },
