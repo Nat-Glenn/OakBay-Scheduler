@@ -25,12 +25,37 @@ jobs:
       - name: Build app
         run: npm run build
 
+      - name: Debug build output
+        run: |
+          echo "Root .next:"
+          ls -la .next || true
+          echo ""
+          echo ".next/standalone:"
+          ls -la .next/standalone || true
+          echo ""
+          echo ".next/BUILD_ID:"
+          ls -la .next/BUILD_ID || true
+
       - name: Prepare standalone package
         run: |
           mkdir -p deploy
           cp -r .next/standalone/. deploy/
-          cp -r .next/static deploy/.next
-          cp -r public deploy/public || true
+          mkdir -p deploy/.next
+          cp -r .next/static deploy/.next/static
+          cp .next/BUILD_ID deploy/.next/BUILD_ID
+          cp -r .next/server deploy/.next/server
+          cp -r public deploy/public || true   
+
+      - name: Debug deploy package
+        run: |
+          echo "Deploy root:"
+          ls -la deploy || true
+          echo ""
+          echo "Deploy .next:"
+          ls -la deploy/.next || true
+          echo ""
+          echo "Deploy .next/server:"
+          ls -la deploy/.next/server || true     
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
