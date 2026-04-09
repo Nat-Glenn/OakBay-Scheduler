@@ -1,17 +1,23 @@
-name: Build and deploy Node.js app to Azure Web App - oakbay-scheduler
+name: CI/CD - OakBay Scheduler
 
 on:
   push:
     branches:
       - main
+      - '**'
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build:
+  ci:
+    name: Build Check
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -32,16 +38,34 @@ jobs:
           NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
           NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
-      - name: Debug build output
-        run: |
-          echo "Root .next:"
-          ls -la .next || true
-          echo ""
-          echo ".next/standalone:"
-          ls -la .next/standalone || true
-          echo ""
-          echo ".next/BUILD_ID:"
-          ls -la .next/BUILD_ID || true
+  package:
+    name: Package Production Build
+    runs-on: ubuntu-latest
+    needs: ci
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
+        env:
+          NEXT_PUBLIC_FIREBASE_API_KEY: ${{ secrets.NEXT_PUBLIC_FIREBASE_API_KEY }}
+          NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${{ secrets.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN }}
+          NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
+          NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${{ secrets.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET }}
+          NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID }}
+          NEXT_PUBLIC_FIREBASE_APP_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_APP_ID }}
 
       - name: Prepare standalone package
         run: |
@@ -51,18 +75,7 @@ jobs:
           cp -r .next/static deploy/.next/static
           cp .next/BUILD_ID deploy/.next/BUILD_ID
           cp -r .next/server deploy/.next/server
-          cp -r public deploy/public || true   
-
-      - name: Debug deploy package
-        run: |
-          echo "Deploy root:"
-          ls -la deploy || true
-          echo ""
-          echo "Deploy .next:"
-          ls -la deploy/.next || true
-          echo ""
-          echo "Deploy .next/server:"
-          ls -la deploy/.next/server || true     
+          cp -r public deploy/public || true
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -72,8 +85,10 @@ jobs:
           include-hidden-files: true
 
   deploy:
+    name: Deploy to Azure
     runs-on: ubuntu-latest
-    needs: build
+    needs: package
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Download artifact
