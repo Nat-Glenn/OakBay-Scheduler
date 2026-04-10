@@ -200,11 +200,13 @@ export async function POST(req: Request) {
     });
 
     if (appointment.patient?.email) {
-  await sendBookingConfirmationEmail({
+  sendBookingConfirmationEmail({
     to: appointment.patient.email,
     patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
     appointmentType: appointment.type,
     startTime: appointment.startTime,
+  }).catch((error) => {
+    console.error("Failed to send booking confirmation email:", error);
   });
 }
 

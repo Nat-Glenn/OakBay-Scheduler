@@ -137,6 +137,7 @@ if (providerId !== undefined && startTime !== undefined) {
   }
 }
 
+
 export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -149,15 +150,27 @@ export async function DELETE(
       return badRequest("Invalid appointment id", { id: idStr });
     }
 
-    const exists = await prisma.appointment.findUnique({
+    const appointment = await prisma.appointment.findUnique({
       where: { id },
-      select: { id: true },
+      include: {
+        patient: true,
+      },
     });
 
-    if (!exists) return notFound("Appointment not found");
+    if (!appointment) return notFound("Appointment not found");
 
-    // Delete payment first if it exists — payment has a FK to appointment
-    // so deleting the appointment without removing payment first causes a constraint error
+
+if (appointment.patient?.email) {
+  sendCancellationEmail({
+    to: appointment.patient.email,
+    patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
+    appointmentType: appointment.type,
+    startTime: appointment.startTime,
+  }).catch((error) => {
+    console.error("Failed to send cancellation email:", error);
+  });
+}
+
     await prisma.payment.deleteMany({
       where: { appointmentId: id },
     });
