@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { cleanField, hasUnsafeLanguage } from "@/lib/profanity"; //safety + profanity tools
+import { sendBookingConfirmationEmail } from "@/lib/email";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
@@ -197,6 +198,15 @@ export async function POST(req: Request) {
         payment: true,
       },
     });
+
+    if (appointment.patient?.email) {
+  await sendBookingConfirmationEmail({
+    to: appointment.patient.email,
+    patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
+    appointmentType: appointment.type,
+    startTime: appointment.startTime,
+  });
+}
 
     return Response.json(appointment, { status: 201 });
   } catch (err) {

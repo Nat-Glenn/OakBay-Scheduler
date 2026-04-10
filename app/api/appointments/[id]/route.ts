@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
 import { cleanField } from "@/lib/profanity";
-import { sendReminderEmail } from "@/lib/email";
+import { sendCancellationEmail } from "@/lib/email";
 
 export async function PATCH(
   req: Request,
@@ -121,14 +121,14 @@ if (providerId !== undefined && startTime !== undefined) {
 
     // TC-064: Send cancellation notification if status changed to CANCELLED
     // and patient has an email and has opted in to reminders
-    if (status === "CANCELLED" && updated.patient?.email && updated.patient?.reminderOptIn) {
-      await sendReminderEmail({
-        to: updated.patient.email,
-        patientName: `${updated.patient.firstName} ${updated.patient.lastName}`,
-        appointmentType: updated.type,
-        startTime: updated.startTime,
-      });
-    }
+    if (status === "CANCELLED" && updated.patient?.email) {
+  await sendCancellationEmail({
+    to: updated.patient.email,
+    patientName: `${updated.patient.firstName} ${updated.patient.lastName}`,
+    appointmentType: updated.type,
+    startTime: updated.startTime,
+  });
+}
 
     return ok(updated);
   } catch (err) {
