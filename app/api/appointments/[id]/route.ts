@@ -81,29 +81,25 @@ export async function PATCH(
 
     let slot: number | undefined = undefined;
 
-if (providerId !== undefined && startTime !== undefined) {
-  const existingAppointments = await prisma.appointment.findMany({
-    where: {
-      providerId,
-      startTime,
-      NOT: { id },
-    },
-    orderBy: {
-      slot: "asc",
-    },
-    select: {
-      slot: true,
-    },
-  });
+    if (providerId !== undefined && startTime !== undefined) {
+      const existingAppointments = await prisma.appointment.findMany({
+        where: {
+          providerId,
+          startTime,
+          NOT: { id },
+        },
+        orderBy: { slot: "asc" },
+        select: { slot: true },
+      });
 
-  if (existingAppointments.length >= 4) {
-    return badRequest("All 4 slots for this time have been booked.");
-  }
+      if (existingAppointments.length >= 4) {
+        return badRequest("All 4 slots for this time have been booked.");
+      }
 
-  const usedSlots = existingAppointments.map((appt) => appt.slot);
-  const allSlots = [1, 2, 3, 4];
-  slot = allSlots.find((s) => !usedSlots.includes(s));
-}
+      const usedSlots = existingAppointments.map((appt) => appt.slot);
+      const allSlots = [1, 2, 3, 4];
+      slot = allSlots.find((s) => !usedSlots.includes(s));
+    }
 
     const updated = await prisma.appointment.update({
       where: { id },
@@ -119,16 +115,16 @@ if (providerId !== undefined && startTime !== undefined) {
       include: { patient: true, provider: true, payment: true },
     });
 
-    // TC-064: Send cancellation notification if status changed to CANCELLED
-    // and patient has an email and has opted in to reminders
+    // Send cancellation email if appointment was cancelled
+    
     if (status === "CANCELLED" && updated.patient?.email) {
-  await sendCancellationEmail({
-    to: updated.patient.email,
-    patientName: `${updated.patient.firstName} ${updated.patient.lastName}`,
-    appointmentType: updated.type,
-    startTime: updated.startTime,
-  });
-}
+      await sendCancellationEmail({
+        to: updated.patient.email,
+        patientName: `${updated.patient.firstName} ${updated.patient.lastName}`,
+        appointmentType: updated.type,
+        startTime: updated.startTime,
+      });
+    }
 
     return ok(updated);
   } catch (err) {
@@ -136,7 +132,6 @@ if (providerId !== undefined && startTime !== undefined) {
     return serverError("Failed to update appointment");
   }
 }
-
 
 export async function DELETE(
   req: Request,
@@ -152,25 +147,29 @@ export async function DELETE(
 
     const appointment = await prisma.appointment.findUnique({
       where: { id },
-      include: {
-        patient: true,
-      },
+      include: { patient: true },
     });
 
     if (!appointment) return notFound("Appointment not found");
 
+    // Only send cancellation email if appointment was active — not if already
+    // COMPLETED or CANCELLED (patient already knows)
+    const activeStatuses = ["REQUESTED", "CONFIRMED", "CHECKED_IN"];
+    if (
+      activeStatuses.includes(appointment.status) &&
+      appointment.patient?.email
+    ) {
+      sendCancellationEmail({
+        to: appointment.patient.email,
+        patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
+        appointmentType: appointment.type,
+        startTime: appointment.startTime,
+      }).catch((error) => {
+        console.error("Failed to send cancellation email:", error);
+      });
+    }
 
-if (appointment.patient?.email) {
-  sendCancellationEmail({
-    to: appointment.patient.email,
-    patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
-    appointmentType: appointment.type,
-    startTime: appointment.startTime,
-  }).catch((error) => {
-    console.error("Failed to send cancellation email:", error);
-  });
-}
-
+    // Delete payment first — FK constraint requires this before appointment delete
     await prisma.payment.deleteMany({
       where: { appointmentId: id },
     });

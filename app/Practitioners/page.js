@@ -75,7 +75,7 @@ const [editPhone, setEditPhone] = useState("");
           phone: p.phone || "—",
         }));
 
-        setPractitioners(data);
+        setPractitioners(mappedPractitioners);
       } catch (err) {
         console.error("Failed to load practitioners:", err);
         toast.error("Failed to load practitioners.", {
