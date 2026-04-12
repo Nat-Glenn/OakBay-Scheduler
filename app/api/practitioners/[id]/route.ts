@@ -22,17 +22,26 @@ export async function PATCH(
       body.email !== undefined ? String(body.email).trim() : undefined;
 
     const phone =
-      body.phone !== undefined
-        ? String(body.phone).trim()
-        : undefined;
+      body.phone !== undefined ? String(body.phone).trim() : undefined;
 
     const existing = await prisma.user.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, email: true },
     });
 
     if (!existing) {
       return notFound("Practitioner not found");
+    }
+
+    // Check email isn't already taken by another user
+    if (email && email !== existing.email) {
+      const emailTaken = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true },
+      });
+      if (emailTaken) {
+        return badRequest("A user with this email already exists");
+      }
     }
 
     const updatedPractitioner = await prisma.user.update({
@@ -41,6 +50,14 @@ export async function PATCH(
         ...(name !== undefined ? { name } : {}),
         ...(email !== undefined ? { email } : {}),
         ...(phone !== undefined ? { phone: phone || null } : {}),
+      },
+      
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
       },
     });
 
