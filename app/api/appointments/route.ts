@@ -87,7 +87,7 @@ export async function POST(req: Request) {
       return Response.json({ error: "endTime must be after startTime" }, { status: 400 });
     }
 
-    // TC-073: Validate appointment type against allowed list — rejects invalid types
+    // Validate appointment type against allowed list
     const allowedTypes = [
       "Chiropractic Adjustment",
       "Massage",
@@ -122,7 +122,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // TC-062/063: Max length validation on notes fields — prevents silent data overflow
+    // Max length validation on notes fields
     if (requestMessage && requestMessage.length > 500) {
       return Response.json(
         { error: "Request message cannot exceed 500 characters" },
