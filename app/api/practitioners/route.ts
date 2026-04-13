@@ -1,6 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/hash";
 
+// Only letters, spaces, hyphens, and apostrophes — no numbers in names
+const nameRegex = /^[a-zA-Z\s'\-]+$/;
+
+// Basic email format check
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function GET() {
   try {
     const practitioners = await prisma.user.findMany({
@@ -45,6 +51,34 @@ export async function POST(req: Request) {
     if (!email) {
       return Response.json(
         { error: "Email is required" },
+        { status: 400 }
+      );
+    }
+
+    // Name: letters only, max 50 characters
+    if (!nameRegex.test(name)) {
+      return Response.json(
+        { error: "Name can only contain letters, spaces, hyphens, and apostrophes" },
+        { status: 400 }
+      );
+    }
+    if (name.length > 50) {
+      return Response.json(
+        { error: "Name cannot exceed 50 characters" },
+        { status: 400 }
+      );
+    }
+
+    // Email format and length validation
+    if (email.length > 254) {
+      return Response.json(
+        { error: "Email cannot exceed 254 characters" },
+        { status: 400 }
+      );
+    }
+    if (!emailRegex.test(email)) {
+      return Response.json(
+        { error: "Invalid email format" },
         { status: 400 }
       );
     }
