@@ -1,6 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
 
+// Only letters, spaces, hyphens, and apostrophes — no numbers in names
+const nameRegex = /^[a-zA-Z\s'\-]+$/;
+
+// Basic email format check
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Phone: optional +, then digits/spaces/hyphens/dots/parens, 7–15 chars
+const phoneRegex = /^\+?[\d\s\-().]{7,15}$/;
+
 export async function PATCH(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -23,6 +32,31 @@ export async function PATCH(
 
     const phone =
       body.phone !== undefined ? String(body.phone).trim() : undefined;
+
+    // Name: letters only, max 50 characters (only validate if field is being updated)
+    if (name !== undefined) {
+      if (!nameRegex.test(name)) {
+        return badRequest("Name can only contain letters, spaces, hyphens, and apostrophes");
+      }
+      if (name.length > 50) {
+        return badRequest("Name cannot exceed 50 characters");
+      }
+    }
+
+    // Phone format validation (only validate if field is being updated)
+    if (phone !== undefined && phone !== "" && !phoneRegex.test(phone)) {
+      return badRequest("Invalid phone number format");
+    }
+
+    // Email format and length validation (only validate if field is being updated)
+    if (email !== undefined) {
+      if (email.length > 254) {
+        return badRequest("Email cannot exceed 254 characters");
+      }
+      if (!emailRegex.test(email)) {
+        return badRequest("Invalid email format");
+      }
+    }
 
     const existing = await prisma.user.findUnique({
       where: { id },

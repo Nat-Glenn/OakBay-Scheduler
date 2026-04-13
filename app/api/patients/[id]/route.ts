@@ -2,6 +2,15 @@ import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
 import { encryptField, decryptField } from "@/lib/encrypt"; // FIXED: added encryptField — was missing, PATCH crashes without it
 
+// Only letters, spaces, hyphens, and apostrophes — no numbers in names
+const nameRegex = /^[a-zA-Z\s'\-]+$/;
+
+// Basic email format check
+const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Phone: optional +, then digits/spaces/hyphens/dots/parens, 7–15 chars
+const phoneRegex = /^\+?[\d\s\-().]{7,15}$/;
+
 // GET /api/patients/[id]
 // Returns a single patient by ID.
 // Called by AddAppointment.js when opening from a patient profile page.
@@ -43,7 +52,7 @@ export async function PATCH(
     const { id } = await context.params;
     const patientId = Number(id);
 
-    if (!patientId || Number.isNaN(patientId)) {
+    if (!Number.isInteger(patientId) || patientId <= 0) {
       return Response.json({ error: "Invalid patient id" }, { status: 400 });
     }
 
@@ -79,6 +88,61 @@ export async function PATCH(
         : body.notes === null
           ? null
           : undefined;
+
+    // Name: letters only, max 50 characters (only validate if field is being updated)
+    if (firstName !== undefined) {
+      if (!nameRegex.test(firstName)) {
+        return Response.json(
+          { error: "First name can only contain letters, spaces, hyphens, and apostrophes" },
+          { status: 400 }
+        );
+      }
+      if (firstName.length > 50) {
+        return Response.json(
+          { error: "First name cannot exceed 50 characters" },
+          { status: 400 }
+        );
+      }
+    }
+
+    if (lastName !== undefined) {
+      if (!nameRegex.test(lastName)) {
+        return Response.json(
+          { error: "Last name can only contain letters, spaces, hyphens, and apostrophes" },
+          { status: 400 }
+        );
+      }
+      if (lastName.length > 50) {
+        return Response.json(
+          { error: "Last name cannot exceed 50 characters" },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Phone format validation (only validate if field is being updated)
+    if (phone !== undefined && !phoneRegex.test(phone)) {
+      return Response.json(
+        { error: "Invalid phone number format" },
+        { status: 400 }
+      );
+    }
+
+    // Email format and length validation (only validate if field is being updated)
+    if (email !== undefined && email !== null) {
+      if (email.length > 254) {
+        return Response.json(
+          { error: "Email cannot exceed 254 characters" },
+          { status: 400 }
+        );
+      }
+      if (!emailRegex.test(email)) {
+        return Response.json(
+          { error: "Invalid email format" },
+          { status: 400 }
+        );
+      }
+    }
 
     const updatedPatient = await prisma.patient.update({
       where: { id: patientId },
