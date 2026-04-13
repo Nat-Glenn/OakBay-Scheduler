@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     const phone = String(body.phone ?? "").trim();
     const email =
       body.email !== undefined && body.email !== null
-        ? String(body.email).trim()
+        ? String(body.email).trim().toLowerCase()
         : null;
     const ahcNumber =
       body.ahcNumber !== undefined && body.ahcNumber !== null

@@ -58,7 +58,7 @@ export async function PATCH(
       body.phone !== undefined ? String(body.phone).trim() : undefined;
     const email =
       body.email !== undefined && body.email !== null
-        ? String(body.email).trim()
+        ? String(body.email).trim().toLowerCase()
         : body.email === null
           ? null
           : undefined;
