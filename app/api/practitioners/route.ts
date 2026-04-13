@@ -1,11 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/hash";
-
-// Only letters, spaces, hyphens, and apostrophes — no numbers in names
-const nameRegex = /^[a-zA-Z\s'\-]+$/;
-
-// Basic email format check
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { nameRegex, emailRegex } from "@/lib/validate";
 
 export async function GET() {
   try {

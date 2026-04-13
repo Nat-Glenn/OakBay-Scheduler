@@ -1,14 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
-
-// Only letters, spaces, hyphens, and apostrophes — no numbers in names
-const nameRegex = /^[a-zA-Z\s'\-]+$/;
-
-// Basic email format check
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// Phone: optional +, then digits/spaces/hyphens/dots/parens, 7–15 chars
-const phoneRegex = /^\+?[\d\s\-().]{7,15}$/;
+import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
 
 export async function PATCH(
   req: Request,
@@ -28,7 +20,7 @@ export async function PATCH(
       body.name !== undefined ? String(body.name).trim() : undefined;
 
     const email =
-      body.email !== undefined ? String(body.email).trim() : undefined;
+      body.email !== undefined ? String(body.email).trim().toLowerCase() : undefined;
 
     const phone =
       body.phone !== undefined ? String(body.phone).trim() : undefined;

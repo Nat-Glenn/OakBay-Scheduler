@@ -1,15 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { hasProfanity, cleanField } from "@/lib/profanity";
 import { encryptField, decryptField } from "@/lib/encrypt";
-
-// Only letters, spaces, hyphens, and apostrophes — no numbers in names
-const nameRegex = /^[a-zA-Z\s'\-]+$/;
-
-// Basic email format check
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// Phone: optional +, then digits/spaces/hyphens/dots/parens, 7–15 chars
-const phoneRegex = /^\+?[\d\s\-().]{7,15}$/;
+import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
 
 function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
   return {
