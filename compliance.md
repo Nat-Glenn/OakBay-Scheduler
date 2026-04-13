@@ -63,7 +63,7 @@ Key principles: consent, limiting collection, accuracy, safeguards, and accounta
 |-----|------|----------------|
 | notes field not encrypted | May contain health information | Encrypt using lib/encrypt.ts |
 | No audit log | HIA s.63 requires access tracking | Add AuditLog Prisma model |
-| authGuard.ts is empty | API routes have no auth protection | Implement Firebase token verification |
+| authGuard.ts built but not applied to routes | API routes have no auth protection until frontend sends Bearer token | Apply verifyAuth middleware once frontend sends Firebase token in Authorization header |
 | No role-based field filtering | Receptionists can see AHC numbers | Redact AHC from receptionist responses |
 
 ---
@@ -87,5 +87,5 @@ Never commit this key to Git.
 Patients may request access to or correction of their personal health information.
 These requests should be handled by the clinic administrator directly in the system.
 
-*Last updated: March 2026*
+*Last updated: April 2026*
 *Prepared for Oak Bay Family Chiropractic — SAIT Capstone Project (G6 SAITMafia)*
