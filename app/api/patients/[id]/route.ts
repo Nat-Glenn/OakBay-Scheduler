@@ -1,15 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { ok, badRequest, notFound, serverError } from "@/lib/api";
+import { badRequest, notFound, serverError } from "@/lib/api";
 import { encryptField, decryptField } from "@/lib/encrypt"; // FIXED: added encryptField — was missing, PATCH crashes without it
-
-// Only letters, spaces, hyphens, and apostrophes — no numbers in names
-const nameRegex = /^[a-zA-Z\s'\-]+$/;
-
-// Basic email format check
-const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-// Phone: optional +, then digits/spaces/hyphens/dots/parens, 7–15 chars
-const phoneRegex = /^\+?[\d\s\-().]{7,15}$/;
+import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
 
 // GET /api/patients/[id]
 // Returns a single patient by ID.
