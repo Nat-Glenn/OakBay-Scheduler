@@ -304,9 +304,9 @@ export default function AddAppointment({
           position: "top-center",
         },
       );
-
-      return true;
       setValidationError("");
+      return true;
+      
     } catch (err) {
       setValidationError("Failed to create patient.")
       return false;
