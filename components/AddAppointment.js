@@ -10,6 +10,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
+  AlertDialogDescription,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -49,6 +50,8 @@ export default function AddAppointment({
   const [patients, setPatients] = useState([]);
   const [practitioners, setPractitioners] = useState([]);
   const [selectedPatientId, setSelectedPatientId] = useState(patientId || null);
+  const [isOpen, setIsOpen] = useState(open ?? false);
+    const [validationError, setValidationError] = useState("");
 
   const types = [
     { id: 1, name: "Chiropractic Adjustment" },
@@ -66,6 +69,24 @@ export default function AddAppointment({
     { id: 8, name: "10:45" },
     { id: 9, name: "11:00" },
     { id: 10, name: "11:15" },
+    { id: 11, name: "11:30" },
+    { id: 12, name: "11:45" },
+    { id: 13, name: "14:00" },
+    { id: 14, name: "14:15" },
+    { id: 15, name: "14:30" },
+    { id: 16, name: "14:45" },
+    { id: 17, name: "15:00" },
+    { id: 18, name: "15:15" },
+    { id: 19, name: "15:30" },
+    { id: 20, name: "15:45" },
+    { id: 21, name: "16:00" },
+    { id: 22, name: "16:15" },
+    { id: 23, name: "16:30" },
+    { id: 24, name: "16:45" },
+    { id: 25, name: "17:00" },
+    { id: 26, name: "17:15" },
+    { id: 27, name: "17:30" },
+    { id: 28, name: "17:45" },
   ];
 
   useEffect(() => {
@@ -185,16 +206,12 @@ export default function AddAppointment({
     const finalPatientId = patientId || selectedPatientId;
 
     if (!finalPatientId) {
-      toast.warning("Please select a patient.", {
-        position: "top-right",
-      });
+      setValidationError("Please select a patient.")
       return false;
     }
 
     if (!formType || !formPractitioner || !formTime || !date) {
-      toast.warning("Please fill out all of the fields.", {
-        position: "top-right",
-      });
+      setValidationError("Please fill out all of the fields.")
       return false;
     }
 
@@ -205,9 +222,7 @@ export default function AddAppointment({
     today.setHours(0, 0, 0, 0);
 
     if (selected < today) {
-      toast.warning("Cannot book appointments for past dates.", {
-        position: "top-right",
-      });
+      setValidationError("Cannot book appointments for past dates.");
       return false;
     }
 
@@ -221,9 +236,7 @@ export default function AddAppointment({
     );
 
     if (!availableSlot) {
-      toast.warning("All slots for this hour have been booked.", {
-        position: "top-right",
-      });
+      setValidationError("All slots for this hour have been booked.");
       return false;
     }
 
@@ -288,15 +301,14 @@ export default function AddAppointment({
       toast.success(
         `Appointment created on ${newAppointment.date} at ${newAppointment.time} for ${newAppointment.name}.`,
         {
-          position: "top-right",
+          position: "top-center",
         },
       );
 
       return true;
+      setValidationError("");
     } catch (err) {
-      toast.error(err.message || "Failed to create appointment.", {
-        position: "top-right",
-      });
+      setValidationError("Failed to create patient.")
       return false;
     } finally {
       setSubmitting(false);
@@ -304,7 +316,7 @@ export default function AddAppointment({
   };
 
   return (
-    <AlertDialog defaultOpen={open} className="bg-background">
+    <AlertDialog open={isOpen} onOpenChange={setIsOpen} className="bg-background">
       <AlertDialogTrigger asChild>
         <Button
           className={`${variant === "icon" ? "flex items-center" : "flex"}`}
@@ -317,14 +329,14 @@ export default function AddAppointment({
       <AlertDialogContent className="bg-background text-foreground">
         <AlertDialogHeader>
           <AlertDialogTitle>Add a new appointment</AlertDialogTitle>
+          <AlertDialogDescription>
+                    Create a new appointment and add it to the schedule.
+          </AlertDialogDescription>
 
           <div className="w-full max-w-md">
             <form>
               <FieldGroup>
                 <FieldSet>
-                  <FieldDescription>
-                    Create a new appointment and add it to the schedule.
-                  </FieldDescription>
 
                   {patientId ? (
                     <Field>
@@ -398,6 +410,11 @@ export default function AddAppointment({
                 </FieldSet>
               </FieldGroup>
             </form>
+                        {validationError && (
+              <p className="text-sm text-center text-red-500 font-bold uppercase italic animate-pulse pt-4">
+                {validationError}
+              </p>
+            )}
           </div>
         </AlertDialogHeader>
 
@@ -408,9 +425,12 @@ export default function AddAppointment({
             disabled={submitting}
             className="bg-button-primary hover:bg-button-primary-foreground text-white"
             onClick={async (e) => {
+              e.preventDefault(); // always prevent auto-close
+
               const success = await handleCreateAppointment();
-              if (!success) {
-                e.preventDefault();
+
+              if (success) {
+                setIsOpen(false); // close ONLY on success
               }
             }}
           >

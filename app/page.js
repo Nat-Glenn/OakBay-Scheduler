@@ -41,6 +41,16 @@ export default function Appointments() {
     "14:45",
     "15:00",
     "15:15",
+    "15:30",
+    "15:45",
+    "16:00",
+    "16:15",
+    "16:30",
+    "16:45",
+    "17:00",
+    "17,15",
+    "17:30",
+    "17:45",
   ];
 
   const [appointments, setAppointments] = useState([]);

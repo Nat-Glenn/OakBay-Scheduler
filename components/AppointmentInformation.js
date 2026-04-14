@@ -48,7 +48,7 @@ import {
 } from "@/components/ui/popover";
 import { DatePicker } from "./DatePicker";
 import FormField from "@/components/FormField";
-import { Settings } from "lucide-react";
+import { Pencil, Settings } from "lucide-react";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { DeletePopUp } from "@/components/DeletePopUp";
 
@@ -309,7 +309,7 @@ if (editPractitioner !== selectedAppointment.practitioner) {
                 }
                 onClick={() => openEditDialog(active)}
               >
-                <Settings />
+                <Pencil />
               </Button>
             </AlertDialogTrigger>
             <AlertDialogContent className="bg-background text-foreground border border-foreground">
