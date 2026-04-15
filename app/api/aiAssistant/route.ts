@@ -1,8 +1,9 @@
 import { access, readdir, readFile } from "fs/promises";
 import path from "path";
 
-const OLLAMA_HOST = process.env.OLLAMA_HOST || "http://127.0.0.1:11434";
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "qwen2.5-coder:7b";
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const GROQ_MODEL = process.env.GROQ_MODEL || "openai/gpt-oss-120b";
+const GROQ_BASE_URL = process.env.GROQ_BASE_URL || "https://api.groq.com/openai/v1";
 
 const INCLUDED_DIRS = ["app", "components", "lib", "prisma", "utils"];
 const INCLUDED_EXTENSIONS = new Set([
@@ -66,6 +67,7 @@ const AI_ROUTE_HINTS = [
   "ai assistant",
   "practice assistant",
   "ollama",
+  "groq",
   "model",
   "prompt",
   "retrieval",
@@ -156,6 +158,16 @@ function normalizeText(value: string) {
 function unique(values: string[]) {
   return [...new Set(values.filter(Boolean))];
 }
+function normalizeIntentText(value: string) {
+  return normalizeText(value)
+    .replace(/sctructure/g, "structure")
+    .replace(/structre/g, "structure")
+    .replace(/architechture/g, "architecture")
+    .replace(/proved/g, "provide")
+    .replace(/provde/g, "provide")
+    .replace(/can u/g, "can you");
+}
+
 
 function singularizeToken(token: string) {
   const value = normalizeText(token);
@@ -466,8 +478,8 @@ function inferMode(
   explicitCodeRequest: boolean,
   retrievalQuery: string
 ): "chat" | "debug" | "architecture" | "implementation" | "explain" | "locate" {
-  const current = normalizeText(currentMessage);
-  const retrieval = normalizeText(retrievalQuery);
+  const current = normalizeIntentText(currentMessage);
+  const retrieval = normalizeIntentText(retrievalQuery);
   const words = current.split(/\s+/).filter(Boolean);
 
   const casualWords = [
@@ -561,10 +573,13 @@ function inferMode(
 
   const architectureWords = [
     "architecture",
-    "project structure",
+    "file structure",
     "folder structure",
+    "project structure",
     "codebase structure",
     "repo structure",
+    "repo layout",
+    "folder layout",
     "how is the project organized",
     "how is this project organized",
     "overview of the project",
@@ -1502,6 +1517,76 @@ function countConsecutiveFileInventoryResponses(messages: ChatMessage[]) {
   return count;
 }
 
+
+function isArchitectureResponseText(value: string) {
+  const normalized = normalizeText(value);
+
+  return (
+    normalized.includes("this looks like a next.js app-router project") &&
+    normalized.includes("high-level structure") &&
+    (normalized.includes("main page routes") ||
+      normalized.includes("more page routes") ||
+      normalized.includes("more architecture details"))
+  );
+}
+
+function lastAssistantWasArchitectureResponse(messages: ChatMessage[]) {
+  const lastAssistant = getLastAssistantMessage(messages) || "";
+
+  if (!lastAssistant) return false;
+
+  return isArchitectureResponseText(lastAssistant);
+}
+
+function isArchitectureContinuation(
+  message: string,
+  messages: ChatMessage[]
+) {
+  if (!lastAssistantWasArchitectureResponse(messages)) return false;
+
+  const m = normalizeText(message);
+
+  const continuationPhrases = [
+    "what else",
+    "anything else",
+    "show more",
+    "more",
+    "what else",
+    "what else is there",
+    "what else do you see",
+    "what else is in there",
+    "any more",
+    "keep going",
+  ];
+
+  return continuationPhrases.some((phrase) => m === phrase || m.includes(phrase));
+}
+
+function countConsecutiveArchitectureResponses(messages: ChatMessage[]) {
+  let count = 0;
+
+  for (let i = messages.length - 1; i >= 0; i -= 1) {
+    const msg = messages[i];
+
+    if (
+      msg.role !== "assistant" ||
+      typeof msg.content !== "string" ||
+      !msg.content.trim()
+    ) {
+      continue;
+    }
+
+    if (isArchitectureResponseText(msg.content)) {
+      count += 1;
+      continue;
+    }
+
+    if (count > 0) break;
+  }
+
+  return count;
+}
+
 function isFileListingQuestion(message: string, messages: ChatMessage[] = []) {
   const m = normalizeText(message);
 
@@ -1772,14 +1857,21 @@ function buildPageScopeReply(
 
 
 function isArchitectureQuestion(message: string) {
-  const m = normalizeText(message);
+  const m = normalizeIntentText(message);
 
   const architecturePhrases = [
     "architecture",
-    "project structure",
+    "file structure",
     "folder structure",
+    "project structure",
     "codebase structure",
     "repo structure",
+    "repo layout",
+    "folder layout",
+    "file layout",
+    "project layout",
+    "provide the file structure",
+    "can you provide the file structure",
     "project overview",
     "overview of the project",
     "how is the project organized",
@@ -1788,7 +1880,11 @@ function isArchitectureQuestion(message: string) {
     "what does the project look like",
   ];
 
-  return architecturePhrases.some((phrase) => m.includes(phrase));
+  return (
+    architecturePhrases.some((phrase) => m.includes(phrase)) ||
+    (m.includes("structure") &&
+      ["file", "folder", "project", "repo", "codebase"].some((term) => m.includes(term)))
+  );
 }
 
 function routeFromPageFile(relativePath: string) {
@@ -1807,11 +1903,22 @@ function routeFromRouteFile(relativePath: string) {
 }
 
 function buildArchitectureReply(
-  repoFiles: Array<{ relativePath: string; raw: string }>
+  repoFiles: Array<{ relativePath: string; raw: string }>,
+  options?: {
+    pageOffset?: number;
+    apiOffset?: number;
+    componentOffset?: number;
+  }
 ) {
   if (repoFiles.length === 0) {
     return "I can’t map the project architecture yet because the repo scan did not return any files.";
   }
+
+  const pageOffset = options?.pageOffset ?? 0;
+  const apiOffset = options?.apiOffset ?? 0;
+  const componentOffset = options?.componentOffset ?? 0;
+  const isContinuation =
+    pageOffset > 0 || apiOffset > 0 || componentOffset > 0;
 
   const dirCount = (dir: string) =>
     repoFiles.filter((file) => file.relativePath.startsWith(`${dir}/`)).length;
@@ -1845,53 +1952,88 @@ function buildArchitectureReply(
   const componentExamples = repoFiles
     .filter((file) => file.relativePath.startsWith("components/"))
     .map((file) => `\`${file.relativePath}\``)
-    .slice(0, 5);
+    .sort((a, b) => a.localeCompare(b));
 
-  const lines = [
-    "This looks like a Next.js app-router project.",
-    "",
-    "High-level structure:",
-    `- \`app/\` contains pages and route handlers (${dirCount("app")} files).`,
-    `- \`components/\` contains shared UI pieces (${dirCount("components")} files).`,
-    `- \`lib/\` contains app logic and helpers (${dirCount("lib")} files).`,
-    `- \`utils/\` contains utility helpers (${dirCount("utils")} files).`,
-    `- \`prisma/\` contains database-related files (${dirCount("prisma")} files).`,
-    "",
-    "Main page routes:",
-  ];
+  const pageChunk = pageRoutes.slice(pageOffset, pageOffset + 10);
+  const apiChunk = apiRoutes.slice(apiOffset, apiOffset + 8);
+  const componentChunk = componentExamples.slice(componentOffset, componentOffset + 5);
 
-  if (pageRoutes.length === 0) {
-    lines.push("- I did not find any app-router page files.");
+  if (isContinuation && pageChunk.length === 0 && apiChunk.length === 0 && componentChunk.length === 0) {
+    return [
+      `I already showed the sampled architecture details I have from the ${repoFiles.length} scanned repo files.`,
+      "",
+      `Page routes available: ${pageRoutes.length}.`,
+      `API routes available: ${apiRoutes.length}.`,
+      `Shared components available: ${componentExamples.length}.`,
+    ].join("\n");
+  }
+
+  const lines = isContinuation
+    ? [
+        `I scanned ${repoFiles.length} repo files in this Next.js app-router project.`,
+        "",
+        "Here are more architecture details from the repo scan:",
+        "",
+        "More page routes:",
+      ]
+    : [
+        "This looks like a Next.js app-router project.",
+        "",
+        "High-level structure:",
+        `- \`app/\` contains pages and route handlers (${dirCount("app")} files).`,
+        `- \`components/\` contains shared UI pieces (${dirCount("components")} files).`,
+        `- \`lib/\` contains app logic and helpers (${dirCount("lib")} files).`,
+        `- \`utils/\` contains utility helpers (${dirCount("utils")} files).`,
+        `- \`prisma/\` contains database-related files (${dirCount("prisma")} files).`,
+        "",
+        "Main page routes:",
+      ];
+
+  if (pageChunk.length === 0) {
+    lines.push(isContinuation ? "- No additional page routes to show." : "- I did not find any app-router page files.");
   } else {
-    for (const entry of pageRoutes.slice(0, 10)) {
+    for (const entry of pageChunk) {
       lines.push(`- \`${entry.route}\` → \`${entry.file}\``);
     }
   }
 
-  lines.push("", "API routes:");
+  lines.push("", isContinuation ? "More API routes:" : "API routes:");
 
-  if (apiRoutes.length === 0) {
-    lines.push("- I did not find any route handler files.");
+  if (apiChunk.length === 0) {
+    lines.push(isContinuation ? "- No additional API routes to show." : "- I did not find any route handler files.");
   } else {
-    for (const entry of apiRoutes.slice(0, 8)) {
+    for (const entry of apiChunk) {
       lines.push(`- \`${entry.route}\` → \`${entry.file}\``);
     }
   }
 
-  lines.push("", "Shared component examples:");
+  lines.push("", isContinuation ? "More shared component examples:" : "Shared component examples:");
 
-  if (componentExamples.length === 0) {
-    lines.push("- I did not find shared components in `components/`.");
+  if (componentChunk.length === 0) {
+    lines.push(isContinuation ? "- No additional shared components to show." : "- I did not find shared components in \`components/\`.");
   } else {
-    for (const entry of componentExamples) {
+    for (const entry of componentChunk) {
       lines.push(`- ${entry}`);
     }
   }
 
-  lines.push(
-    "",
-    `Overall, I scanned ${repoFiles.length} repo files, so I can answer architecture questions directly from the codebase instead of guessing.`
-  );
+  const remainingPages = Math.max(0, pageRoutes.length - (pageOffset + pageChunk.length));
+  const remainingApis = Math.max(0, apiRoutes.length - (apiOffset + apiChunk.length));
+  const remainingComponents = Math.max(0, componentExamples.length - (componentOffset + componentChunk.length));
+
+  if (remainingPages > 0 || remainingApis > 0 || remainingComponents > 0) {
+    lines.push(
+      "",
+      `Still available from the repo scan: ${remainingPages} more page routes, ${remainingApis} more API routes, ${remainingComponents} more shared components.`
+    );
+  }
+
+  if (!isContinuation) {
+    lines.push(
+      "",
+      `Overall, I scanned ${repoFiles.length} repo files, so I can answer architecture questions directly from the codebase instead of guessing.`
+    );
+  }
 
   return lines.join("\n");
 }
@@ -2029,6 +2171,40 @@ function buildFollowUpQuestion(
   }
 
   return `Sure — what do you want to implement?${codeHint}`;
+}
+
+function buildImplementationGuidanceReply(message: string, files: RetrievedFile[]) {
+  if (files.length === 0) return null;
+
+  const primary = files[0];
+  const m = normalizeText(message);
+
+  const actionText =
+    m.includes("button")
+      ? "add a button"
+      : m.includes("form")
+        ? "update the form"
+        : m.includes("link") || m.includes("navigate") || m.includes("redirect")
+          ? "change navigation"
+          : "make the requested UI change";
+
+  const notes: string[] = [];
+
+  if (m.includes("appointment") || m.includes("appointments")) {
+    notes.push("Find the action area or header where the summary controls already live.");
+    notes.push("Add a new button or link there and point it at the appointments route used by the app.");
+  } else {
+    notes.push("Start by locating the closest existing UI block for that change.");
+    notes.push("Add the new control beside the related controls so the UI stays consistent.");
+  }
+
+  notes.push("If you want the exact implementation, ask for code and I’ll write the patch against that file.");
+
+  return [
+    `The strongest match is \`${primary.relativePath}\`.`,
+    `Start there first to ${actionText}.`,
+    ...notes,
+  ].join("\n");
 }
 
 function buildDeterministicImplementationReply(files: RetrievedFile[]) {
@@ -2300,50 +2476,91 @@ function isFullFileStyleReply(reply: string) {
   );
 }
 
-async function parseOllamaResponse(res: Response) {
+function groqContentToText(content: unknown): string {
+  if (typeof content === "string") {
+    return content;
+  }
+
+  if (Array.isArray(content)) {
+    return content
+      .map((part) => {
+        if (typeof part === "string") return part;
+
+        if (part && typeof part === "object") {
+          const value = (part as { text?: unknown; content?: unknown }).text ??
+            (part as { text?: unknown; content?: unknown }).content;
+          return typeof value === "string" ? value : "";
+        }
+
+        return "";
+      })
+      .filter(Boolean)
+      .join("\n")
+      .trim();
+  }
+
+  return "";
+}
+
+async function parseGroqResponse(res: Response) {
   const text = await res.text();
+  let data: any;
 
   try {
-    return JSON.parse(text);
+    data = JSON.parse(text);
   } catch {
     if (!res.ok) {
-      throw new Error(text || "Ollama request failed");
+      throw new Error(text || "Groq request failed");
     }
 
     return { response: text };
   }
+
+  if (!res.ok) {
+    throw new Error(
+      data?.error?.message || data?.error || text || "Groq request failed"
+    );
+  }
+
+  const response = groqContentToText(data?.choices?.[0]?.message?.content);
+
+  return {
+    ...data,
+    response,
+  };
 }
 
-async function callOllama(prompt: string, numPredict: number) {
+async function callGroq(prompt: string, numPredict: number) {
+  if (!GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY is not set");
+  }
+
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 20_000);
 
   try {
-    const ollamaRes = await fetch(`${OLLAMA_HOST}/api/generate`, {
+    const groqRes = await fetch(`${GROQ_BASE_URL}/chat/completions`, {
       method: "POST",
       signal: controller.signal,
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${GROQ_API_KEY}`,
       },
       body: JSON.stringify({
-        model: OLLAMA_MODEL,
-        prompt,
+        model: GROQ_MODEL,
+        messages: [
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        temperature: 0.05,
+        max_tokens: numPredict,
         stream: false,
-        options: {
-          temperature: 0.05,
-          num_predict: numPredict,
-          stop: ["RECENT CHAT:", "RELEVANT PROJECT FILES:", "FINAL ANSWER:"],
-        },
       }),
     });
 
-    const data = await parseOllamaResponse(ollamaRes);
-
-    if (!ollamaRes.ok) {
-      throw new Error(data?.error || "Ollama request failed");
-    }
-
-    return data;
+    return await parseGroqResponse(groqRes);
   } finally {
     clearTimeout(timeout);
   }
@@ -2366,6 +2583,7 @@ function finalizeReply(reply: string, allowCode: boolean) {
 
 function isLowValueReply(reply: string) {
   const cleaned = normalizeText(reply)
+    .replace(/```[\s\S]*?```/g, "")
     .replace(/[.!?]+$/g, "")
     .trim();
 
@@ -2378,11 +2596,26 @@ function isLowValueReply(reply: string) {
     "sure",
     "sounds good",
     "got it",
+    "alight",
     "alright",
     "all right",
   ]);
 
-  return lowValueReplies.has(cleaned);
+  if (lowValueReplies.has(cleaned)) return true;
+
+  const shortReply = cleaned.split(/\s+/).length <= 8;
+  const weakStarts = [
+    "done",
+    "ok",
+    "okay",
+    "sure",
+    "sounds good",
+    "got it",
+    "alright",
+    "all right",
+  ];
+
+  return shortReply && weakStarts.some((value) => cleaned.startsWith(value));
 }
 
 function extractMentionedPaths(reply: string) {
@@ -2464,6 +2697,27 @@ export async function POST(req: Request) {
     const repoRoot = await resolveRepoRoot();
     const repoFiles = await getRepoFiles();
     const repoFileCount = repoFiles.length;
+
+    if (isArchitectureContinuation(message, messages)) {
+      const continuationCount = countConsecutiveArchitectureResponses(messages);
+
+      return Response.json({
+        reply: buildArchitectureReply(repoFiles, {
+          pageOffset: continuationCount * 10,
+          apiOffset: continuationCount * 8,
+          componentOffset: continuationCount * 5,
+        }),
+        contextFiles: 0,
+        mode: "architecture",
+        retrievedFiles: [],
+        primaryTarget: null,
+        answerSource: "deterministic_architecture_continuation",
+        debug: {
+          repoRoot,
+          repoFileCount,
+        },
+      });
+    }
 
     if (isArchitectureQuestion(message)) {
       return Response.json({
@@ -2659,6 +2913,32 @@ export async function POST(req: Request) {
     }
 
     if (
+      mode === "implementation" &&
+      !forceCodeMode &&
+      !explicitCodeRequest &&
+      files.length > 0 &&
+      hasSpecificImplementationDetails(message)
+    ) {
+      return Response.json({
+        reply: buildImplementationGuidanceReply(message, files),
+        contextFiles: files.length,
+        mode,
+        retrievedFiles,
+        primaryTarget,
+        answerSource: "deterministic_guided_implementation",
+        debug: {
+          repoRoot,
+          repoFileCount,
+          rankedFiles: files.slice(0, 5).map((file) => ({
+            path: file.relativePath,
+            score: file.score,
+            matchedTerms: file.matchedTerms,
+          })),
+        },
+      });
+    }
+
+    if (
       shouldUseDeterministicImplementationReply(
         files,
         mode,
@@ -2712,7 +2992,7 @@ export async function POST(req: Request) {
           answeringFollowUp,
         });
 
-    let data = await callOllama(
+    let data = await callGroq(
       prompt,
       allowCodeMode ? 700 : mode === "debug" ? 420 : 260
     );
@@ -2734,7 +3014,7 @@ export async function POST(req: Request) {
           strictPatchOnly: true,
         });
 
-        data = await callOllama(retryPrompt, 700);
+        data = await callGroq(retryPrompt, 700);
         const retriedReply = normalizeCodeReply(
           finalizeReply(data?.response || data?.reply || "", true),
           files[0]?.relativePath
@@ -2751,6 +3031,7 @@ export async function POST(req: Request) {
 
     if (!allowCodeMode && isLowValueReply(reply)) {
       reply =
+        (isArchitectureQuestion(message) ? buildArchitectureReply(repoFiles) : null) ||
         buildPageScopeReply(message, repoFiles, files) ||
         (mode === "implementation"
           ? buildDeterministicImplementationReply(files)
@@ -2792,6 +3073,21 @@ export async function POST(req: Request) {
     }
 
     if (!allowCodeMode && isLowValueReply(reply)) {
+      if (isArchitectureQuestion(message)) {
+        return Response.json({
+          reply: buildArchitectureReply(repoFiles),
+          contextFiles: 0,
+          mode: "architecture",
+          retrievedFiles: [],
+          primaryTarget: null,
+          answerSource: "deterministic_architecture_fallback",
+          debug: {
+            repoRoot,
+            repoFileCount,
+          },
+        });
+      }
+
       const fallbackPageScopeReply = buildPageScopeReply(message, repoFiles);
 
       if (fallbackPageScopeReply) {
@@ -2830,11 +3126,11 @@ export async function POST(req: Request) {
       },
     });
   } catch (error: unknown) {
-    console.error("OLLAMA ERROR:", error);
+    console.error("GROQ ERROR:", error);
 
     const message =
       error instanceof Error && error.name === "AbortError"
-        ? "Ollama request timed out"
+        ? "Groq request timed out"
         : error instanceof Error
           ? error.message
           : "Unknown error";
