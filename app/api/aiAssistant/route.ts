@@ -100,6 +100,31 @@ const NOISE_WORDS = new Set([
   "it",
 ]);
 
+const RESPONSE_STYLE = `
+When the user asks for a code change, answer in this exact order:
+
+1. Plain-English explanation
+- Explain it like the user does not know code.
+- Say what screen they are changing.
+- Say what the button or feature will do when clicked.
+- Keep this short and clear.
+
+2. File to edit
+- Name the single best file first.
+
+3. What to change
+- Describe the edit in normal language.
+
+4. Code
+- Provide the exact code or diff.
+
+Important:
+- Do not start with raw code.
+- Do not assume routes that do not exist.
+- Use verified files only.
+- If the route is app/page.js, describe it as the home or appointments page.
+`;
+
 let repoCache: { expiresAt: number; files: RepoFile[] } | null = null;
 let resolvedRepoRoot: string | null = null;
 
@@ -124,11 +149,14 @@ function safeSliceText(value: string, maxChars: number) {
   return `${value.slice(0, maxChars)}\n/* truncated */`;
 }
 
-function getXaiConfig() {
+function getGeminiConfig() {
   return {
-    apiKey: process.env.XAI_API_KEY?.trim() || "",
-    model: process.env.XAI_MODEL?.trim() || "grok-4.20",
-    baseUrl: (process.env.XAI_BASE_URL?.trim() || "https://api.x.ai/v1").replace(/\/$/, ""),
+    apiKey: process.env.GEMINI_API_KEY?.trim() || "",
+    model: process.env.GEMINI_MODEL?.trim() || "gemini-2.5-flash",
+    baseUrl: (process.env.GEMINI_BASE_URL?.trim() || "https://generativelanguage.googleapis.com/v1beta").replace(
+      /\/$/,
+      ""
+    ),
   };
 }
 
@@ -584,16 +612,11 @@ function sanitizeHistory(messages: ChatMessage[]) {
 }
 
 function extractAssistantText(apiJson: any) {
-  const content = apiJson?.choices?.[0]?.message?.content;
+  const parts = apiJson?.candidates?.[0]?.content?.parts;
 
-  if (typeof content === "string") {
-    return content.trim();
-  }
-
-  if (Array.isArray(content)) {
-    const joined = content
+  if (Array.isArray(parts)) {
+    const joined = parts
       .map((part) => {
-        if (typeof part === "string") return part;
         if (typeof part?.text === "string") return part.text;
         return "";
       })
@@ -601,6 +624,10 @@ function extractAssistantText(apiJson: any) {
       .trim();
 
     if (joined) return joined;
+  }
+
+  if (typeof apiJson?.text === "string") {
+    return apiJson.text.trim();
   }
 
   return "";
@@ -612,9 +639,11 @@ function isProviderAuthError(error: unknown) {
 
   return (
     text.includes("401") ||
-    text.includes("invalid api key") ||
+    text.includes("403") ||
+    text.includes("api key") ||
     text.includes("unauthorized") ||
-    text.includes("authentication")
+    text.includes("authentication") ||
+    text.includes("permission")
   );
 }
 
@@ -627,13 +656,13 @@ function buildProviderFailureReply(
   const authIssue = isProviderAuthError(error);
 
   const intro = authIssue
-    ? "I can still inspect this repo locally, but I could not use Grok because the configured xAI API key was rejected."
-    : "I can still inspect this repo locally, but I could not reach Grok for this request.";
+    ? "I can still inspect this repo locally, but I could not use Gemini because the configured API key was rejected."
+    : "I can still inspect this repo locally, but I could not reach Gemini for this request.";
 
   const reason = authIssue
-    ? "That usually means XAI_API_KEY is missing, wrong, rotated, or the dev server needs a restart after changing `.env.local`."
+    ? "That usually means GEMINI_API_KEY is missing, wrong, restricted, out of quota, or the server needs a restart after the env var changed."
     : error instanceof Error
-      ? `Grok returned: ${error.message}`
+      ? `Gemini returned: ${error.message}`
       : "The provider request failed for an unknown reason.";
 
   const context =
@@ -642,8 +671,8 @@ function buildProviderFailureReply(
       : "I did not get strong verified file matches for this request.";
 
   const help = wantsExplicitCode(message)
-    ? "I can still help with file discovery and exact target selection, but model-backed code generation will not work until xAI auth is fixed."
-    : "Local repo discovery still works. Questions like file structure and file location do not need Grok.";
+    ? "I can still help with file discovery and exact target selection, but model-backed code generation will not work until Gemini auth is fixed."
+    : "Local repo discovery still works. Questions like file structure and file location do not need Gemini.";
 
   return [intro, reason, "", context, "", help].join("\n");
 }
@@ -653,34 +682,48 @@ async function callChatProvider(args: {
   history: Array<{ role: "user" | "assistant"; content: string }>;
   userPrompt: string;
 }) {
-  const xai = getXaiConfig();
+  const gemini = getGeminiConfig();
 
-  if (!xai.apiKey) {
-    throw new Error("Missing XAI_API_KEY.");
+  if (!gemini.apiKey) {
+    throw new Error("Missing GEMINI_API_KEY.");
   }
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 45_000);
 
   try {
-    const res = await fetch(`${xai.baseUrl}/chat/completions`, {
-      method: "POST",
-      signal: controller.signal,
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${xai.apiKey}`,
+    const contents = [
+      ...args.history.map((msg) => ({
+        role: msg.role === "assistant" ? "model" : "user",
+        parts: [{ text: msg.content }],
+      })),
+      {
+        role: "user",
+        parts: [{ text: args.userPrompt }],
       },
-      body: JSON.stringify({
-        model: xai.model,
-        temperature: 0.15,
-        max_tokens: 1400,
-        messages: [
-          { role: "system", content: args.systemPrompt },
-          ...args.history,
-          { role: "user", content: args.userPrompt },
-        ],
-      }),
-    });
+    ];
+
+    const res = await fetch(
+      `${gemini.baseUrl}/models/${encodeURIComponent(gemini.model)}:generateContent`,
+      {
+        method: "POST",
+        signal: controller.signal,
+        headers: {
+          "Content-Type": "application/json",
+          "x-goog-api-key": gemini.apiKey,
+        },
+        body: JSON.stringify({
+          systemInstruction: {
+            parts: [{ text: args.systemPrompt }],
+          },
+          contents,
+          generationConfig: {
+            temperature: 0.15,
+            maxOutputTokens: 1400,
+          },
+        }),
+      }
+    );
 
     const text = await res.text();
     let data: any = null;
@@ -697,19 +740,19 @@ async function callChatProvider(args: {
         data?.error ||
         data?.message ||
         text ||
-        `xAI request failed with status ${res.status}`;
+        `Gemini request failed with status ${res.status}`;
 
-      throw new Error(`Grok API error (${res.status}): ${providerMessage}`);
+      throw new Error(`Gemini API error (${res.status}): ${providerMessage}`);
     }
 
     const reply = extractAssistantText(data);
     if (!reply) {
-      throw new Error("Grok response did not include message content.");
+      throw new Error("Gemini response did not include message content.");
     }
 
     return {
-      provider: "grok",
-      model: xai.model,
+      provider: "gemini",
+      model: gemini.model,
       reply,
     };
   } finally {
@@ -732,8 +775,10 @@ function buildSystemPrompt(repoFiles: RepoFile[]) {
     "- prefer patches that fit the existing code style",
     "- explain only briefly",
     "If the target file is not verified, say that clearly.",
+    "If a requested route does not exist in the verified files, say that and suggest the closest verified route instead.",
+    RESPONSE_STYLE,
     `Repo summary: ${repoSummary.total} files across ${repoSummary.byDir.join(", ")}.`,
-  ].join("\n");
+  ].join("\n\n");
 }
 
 function buildUserPrompt(args: {
@@ -756,7 +801,8 @@ function buildUserPrompt(args: {
     verifiedContext ? `VERIFIED CONTEXT:\n${verifiedContext}` : "VERIFIED CONTEXT:\n- none",
     "",
     "RESPONSE RULES:",
-    "- If asked for code, return the code.",
+    "- If asked for code, return the explanation first, then the code.",
+    "- Use the exact four-part format from the system instructions for code-change requests.",
     "- If a file is the strongest match, say so.",
     "- Keep the answer grounded in the verified files above.",
     "- Do not claim you changed files; only provide the patch.",
@@ -833,7 +879,7 @@ export async function POST(req: Request) {
       return NextResponse.json({
         reply: buildProviderFailureReply(message, hits, providerError),
         meta: {
-          provider: "grok_unavailable",
+          provider: "gemini_unavailable",
           matchedFiles: hits.map((hit) => hit.relativePath),
         },
       });
