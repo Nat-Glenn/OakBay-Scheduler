@@ -89,41 +89,58 @@ export default function Summary() {
       return patient.includes(search) || type.includes(search);
     });
   }, [recentVisits, tableSearch]);
+async function handleSend(e) {
+  e.preventDefault();
 
-  async function handleSend(e) {
-    e.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed || isLoading) return;
+  const trimmed = query.trim();
+  if (!trimmed || isLoading) return;
 
-    const nextMessages = [...messages, { role: "user", content: trimmed }];
-    setMessages(nextMessages);
-    setQuery("");
-    setIsLoading(true);
+  const nextMessages = [...messages, { role: "user", content: trimmed }];
+  setMessages(nextMessages);
+  setQuery("");
+  setIsLoading(true);
 
-    try {
-      const res = await fetch("/api/aiAssistant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: trimmed,
-          messages: nextMessages.slice(-8),
-        }),
-      });
+  try {
+    const res = await fetch("/api/aiAssistant", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: trimmed,
+        messages: nextMessages.slice(-8),
+      }),
+    });
 
-      const data = await res.json();
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: data.reply || "Done." },
-      ]);
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Error occurred." },
-      ]);
-    } finally {
-      setIsLoading(false);
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      throw new Error(data?.error || "AI request failed");
     }
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content:
+          typeof data?.reply === "string" && data.reply.trim()
+            ? data.reply
+            : "I couldn't generate a usable reply.",
+      },
+    ]);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Unknown AI error";
+
+    setMessages((prev) => [
+      ...prev,
+      {
+        role: "assistant",
+        content: `AI error: ${message}`,
+      },
+    ]);
+  } finally {
+    setIsLoading(false);
   }
+}
 
   function formatCurrency(amount) {
     return new Intl.NumberFormat("en-CA", {
