@@ -187,6 +187,7 @@ export default function PatientProfiles() {
     year: "numeric",
     month: "short",
     day: "numeric",
+    timeZone: "America/Edmonton",
   });
 }
 

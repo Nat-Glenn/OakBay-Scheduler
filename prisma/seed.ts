@@ -202,11 +202,12 @@ async function main() {
     console.log("Patient Created.");
     /////////PATIENTS/////////
 
-    /////////APPOINTMENTS — MDT (UTC-6) for today's appointments/////////
-    const today = new Date();
-    const yyyy = today.getFullYear();
-    const mm = String(today.getMonth() + 1).padStart(2, "0");
-    const dd = String(today.getDate()).padStart(2, "0");
+    /////////APPOINTMENTS — UTC dates, times set as local business hours/////////
+    const now = new Date();
+    // Use UTC date so the seed works correctly on both local and deployed servers
+    const yyyy = now.getUTCFullYear();
+    const mm = String(now.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(now.getUTCDate()).padStart(2, "0");
     const todayStr = `${yyyy}-${mm}-${dd}`;
 
     // Today's appointments
@@ -214,8 +215,8 @@ async function main() {
         data: {
             status: "COMPLETED",
             type: "Chiropractic Adjustment",
-            startTime: new Date(`${todayStr}T09:00:00-06:00`),
-            endTime: new Date(`${todayStr}T09:15:00-06:00`),
+            startTime: new Date(`${todayStr}T15:00:00Z`),
+            endTime: new Date(`${todayStr}T15:15:00Z`),
             slot: 1,
             patientId: patient0.id,
             providerId: doctor.id,
@@ -229,8 +230,8 @@ async function main() {
         data: {
             status: "COMPLETED",
             type: "Massage",
-            startTime: new Date(`${todayStr}T09:15:00-06:00`),
-            endTime: new Date(`${todayStr}T09:30:00-06:00`),
+            startTime: new Date(`${todayStr}T15:15:00Z`),
+            endTime: new Date(`${todayStr}T15:30:00Z`),
             slot: 1,
             patientId: patient7.id,
             providerId: doctor.id,
@@ -244,8 +245,8 @@ async function main() {
         data: {
             status: "CHECKED_IN",
             type: "Initial Consultation",
-            startTime: new Date(`${todayStr}T10:00:00-06:00`),
-            endTime: new Date(`${todayStr}T10:15:00-06:00`),
+            startTime: new Date(`${todayStr}T16:00:00Z`),
+            endTime: new Date(`${todayStr}T16:15:00Z`),
             slot: 1,
             patientId: patient6.id,
             providerId: doctor.id,
@@ -259,8 +260,8 @@ async function main() {
         data: {
             status: "CONFIRMED",
             type: "Chiropractic Adjustment",
-            startTime: new Date(`${todayStr}T11:00:00-06:00`),
-            endTime: new Date(`${todayStr}T11:15:00-06:00`),
+            startTime: new Date(`${todayStr}T17:00:00Z`),
+            endTime: new Date(`${todayStr}T17:15:00Z`),
             slot: 1,
             patientId: patient10.id,
             providerId: doctor.id,
@@ -274,8 +275,8 @@ async function main() {
         data: {
             status: "REQUESTED",
             type: "Follow-up",
-            startTime: new Date(`${todayStr}T14:00:00-06:00`),
-            endTime: new Date(`${todayStr}T14:15:00-06:00`),
+            startTime: new Date(`${todayStr}T20:00:00Z`),
+            endTime: new Date(`${todayStr}T20:15:00Z`),
             slot: 1,
             patientId: patient9.id,
             providerId: doctor.id,

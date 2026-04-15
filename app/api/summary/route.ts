@@ -5,19 +5,29 @@ export async function GET() {
   try {
     const now = new Date();
 
-    const startOfToday = new Date(now);
-    startOfToday.setHours(0, 0, 0, 0);
+    // Calgary timezone — handles MDT (UTC-6) and MST (UTC-7) automatically
+    const CALGARY_TZ = "America/Edmonton";
 
-    const endOfToday = new Date(now);
-    endOfToday.setHours(23, 59, 59, 999);
+    // Determine Calgary's current UTC offset in milliseconds
+    const utcMs = new Date(now.toLocaleString("en-US", { timeZone: "UTC" })).getTime();
+    const calgaryMs = new Date(now.toLocaleString("en-US", { timeZone: CALGARY_TZ })).getTime();
+    const offsetMs = utcMs - calgaryMs;
+
+    // Get today's date in Calgary timezone
+    const calgaryDateStr = now.toLocaleDateString("en-CA", { timeZone: CALGARY_TZ });
+    const [year, month, day] = calgaryDateStr.split("-").map(Number);
+
+    // Start and end of today in Calgary, expressed as UTC
+    const startOfToday = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) + offsetMs);
+    const endOfToday = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) + offsetMs);
 
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
 
     // Start of current week (Monday)
     const startOfWeek = new Date(now);
-    const day = startOfWeek.getDay();
-    const diff = day === 0 ? -6 : 1 - day;
+    const dayOfWeek = startOfWeek.getDay();
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
     startOfWeek.setDate(startOfWeek.getDate() + diff);
     startOfWeek.setHours(0, 0, 0, 0);
 
