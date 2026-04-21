@@ -36,6 +36,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import FormField from "@/components/FormField";
 import { DeletePopUp } from "@/components/DeletePopUp";
@@ -44,20 +45,24 @@ export default function Practitioners() {
   const [practitioners, setPractitioners] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedPractitioner, setSelectedPractitioner] = useState(null);
+
   const [addOpen, setAddOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  const [newPhone, setNewPhone] = useState("");
+
   const [editOpen, setEditOpen] = useState(false);
-const [editName, setEditName] = useState("");
-const [editEmail, setEditEmail] = useState("");
-const [editPhone, setEditPhone] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+
   const small = useMediaQuery("(max-width: 768px)");
 
   function isValidEmail(value) {
     const email = value.trim();
-
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
+
   useEffect(() => {
     async function loadPractitioners() {
       try {
@@ -116,6 +121,7 @@ const [editPhone, setEditPhone] = useState("");
         body: JSON.stringify({
           name: newName,
           email: newEmail,
+          phone: newPhone,
         }),
       });
 
@@ -137,6 +143,7 @@ const [editPhone, setEditPhone] = useState("");
       setAddOpen(false);
       setNewName("");
       setNewEmail("");
+      setNewPhone("");
 
       toast.success("Practitioner added successfully.", {
         position: "top-right",
@@ -153,62 +160,70 @@ const [editPhone, setEditPhone] = useState("");
   };
 
   const handleEditPractitioner = async () => {
-  if (!selectedPractitioner) return false;
+    if (!selectedPractitioner) return false;
 
-  if (!editName.trim() || !editEmail.trim()) {
-    toast.warning("Please fill out name and email.", {
-      position: "top-right",
-    });
-    return false;
-  }
-
-  try {
-    const res = await fetch(`/api/practitioners/${selectedPractitioner.id}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: editName,
-        email: editEmail,
-        phone: editPhone,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to update practitioner");
+    if (!editName.trim() || !editEmail.trim()) {
+      toast.warning("Please fill out name and email.", {
+        position: "top-right",
+      });
+      return false;
     }
 
-    const updated = {
-      ...selectedPractitioner,
-      name: editName,
-      email: editEmail,
-      phone: editPhone,
-    };
+    if (!isValidEmail(editEmail)) {
+      toast.error("Invalid email format", { position: "top-right" });
+      return false;
+    }
 
-    setPractitioners((prev) =>
-      prev.map((p) =>
-        p.id === selectedPractitioner.id ? updated : p,
-      ),
-    );
+    try {
+      const res = await fetch(`/api/practitioners/${selectedPractitioner.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: editName,
+          email: editEmail,
+          phone: editPhone,
+        }),
+      });
 
-    setSelectedPractitioner(updated);
-    setEditOpen(false);
+      const data = await res.json();
 
-    toast.success("Practitioner updated successfully.", {
-      position: "top-right",
-    });
+if (!res.ok) {
+  throw new Error(data.error || "Failed to update practitioner");
+}
 
-    return true;
-  } catch (err) {
-    toast.error(err.message || "Failed to update practitioner.", {
-      position: "top-right",
-    });
-    return false;
-  }
+const practitioner = data.data ?? data;
+
+const updated = {
+  id: practitioner.id,
+  name: practitioner.name || "Unnamed Practitioner",
+  email: practitioner.email || "—",
+  phone: practitioner.phone || "—",
 };
+
+      setPractitioners((prev) =>
+        prev.map((p) => (p.id === selectedPractitioner.id ? updated : p)),
+      );
+
+      setSelectedPractitioner(updated);
+      setEditOpen(false);
+      setEditName("");
+      setEditEmail("");
+      setEditPhone("");
+
+      toast.success("Practitioner updated successfully.", {
+        position: "top-right",
+      });
+
+      return true;
+    } catch (err) {
+      toast.error(err.message || "Failed to update practitioner.", {
+        position: "top-right",
+      });
+      return false;
+    }
+  };
 
   return (
     <>
@@ -216,7 +231,6 @@ const [editPhone, setEditPhone] = useState("");
         <NavBarComp />
 
         <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden">
-          {/* PAGE HEADER */}
           <header className="flex flex-row py-4">
             {!small && (
               <h1 className="text-3xl w-full font-bold text-foreground">
@@ -224,7 +238,6 @@ const [editPhone, setEditPhone] = useState("");
               </h1>
             )}
 
-            {/* SEARCH & ACTIONS BAR */}
             <div className="flex flex-row justify-end gap-4 w-full">
               <div className="relative flex-1 max-w-md">
                 <InputGroup className="bg-input border-foreground text-foreground placeholder:text-muted-foreground ">
@@ -256,9 +269,7 @@ const [editPhone, setEditPhone] = useState("");
           </header>
 
           <div className="flex flex-col min-h-0">
-            {/* MAIN CONTENT AREA */}
             <div className="flex flex-col md:flex-row gap-4 min-h-0">
-              {/* PATIENT LIST TABLE */}
               <div className="rounded-xl border border-foreground bg-dropdown flex flex-1 flex-col min-h-0">
                 <div className="min-h-0 overflow-y-auto scrollbar-rounded rounded-xl">
                   <Table>
@@ -273,6 +284,7 @@ const [editPhone, setEditPhone] = useState("");
                         <TableHead className="w-[100px]"></TableHead>
                       </TableRow>
                     </TableHeader>
+
                     <TableBody>
                       {filteredPractitioners.map((p) => (
                         <TableRow
@@ -283,9 +295,9 @@ const [editPhone, setEditPhone] = useState("");
                               : "hover:bg-border/30"
                           }`}
                           onClick={() => {
-                            if (selectedPractitioner?.id === p.id)
+                            if (selectedPractitioner?.id === p.id) {
                               setSelectedPractitioner(null);
-                            else {
+                            } else {
                               setSelectedPractitioner(p);
                             }
                           }}
@@ -311,25 +323,28 @@ const [editPhone, setEditPhone] = useState("");
                                   <MoreVertical size={16} />
                                 </Button>
                               </DropdownMenuTrigger>
+
                               <DropdownMenuContent
                                 align="end"
-                                className={`border-foreground text-foreground`}
+                                className="border-foreground text-foreground"
                               >
                                 <DropdownMenuItem className="focus:bg-border">
                                   View Details
                                 </DropdownMenuItem>
+
                                 <DropdownMenuItem
-  className="focus:bg-border"
-  onClick={() => {
-    setEditName(p.name || "");
-    setEditEmail(p.email || "");
-    setEditPhone(p.phone || "");
-    setSelectedPractitioner(p);
-    setEditOpen(true);
-  }}
->
-  Edit
-</DropdownMenuItem>
+                                  className="focus:bg-border"
+                                  onClick={() => {
+                                    setEditName(p.name || "");
+                                    setEditEmail(p.email === "—" ? "" : (p.email || ""));
+                                    setEditPhone(p.phone === "—" ? "" : (p.phone || ""));
+                                    setSelectedPractitioner(p);
+                                    setEditOpen(true);
+                                  }}
+                                >
+                                  Edit
+                                </DropdownMenuItem>
+
                                 <DropdownMenuItem>
                                   <DeletePopUp
                                     variant="dropdown"
@@ -357,11 +372,9 @@ const [editPhone, setEditPhone] = useState("");
                 </div>
               </div>
 
-              {/* PATIENT DETAIL SIDE-CARD */}
               {selectedPractitioner && (
                 <div className="flex w-full md:w-1/4 animate-in slide-in-from-bottom-4 md:slide-in-from-right-4 duration-200">
                   <Card className="h-full w-full bg-dropdown border-foreground text-foreground relative overflow-hidden flex flex-col">
-                    {/* CLOSE BUTTON */}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -388,7 +401,6 @@ const [editPhone, setEditPhone] = useState("");
                     </CardHeader>
 
                     <CardContent className="space-y-4 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
-                      {/* PERSONAL INFO */}
                       <div className="space-y-4">
                         <h3 className="text-title text-xs font-black uppercase tracking-widest">
                           Personal Information
@@ -412,13 +424,6 @@ const [editPhone, setEditPhone] = useState("");
                           </div>
                         </div>
                       </div>
-
-                      {/* ACTIONS 
-                      <div className="pt-4 space-y-2 mt-auto">
-                        <Button variant="secondary" className="w-full">
-                          Schedule Appointment
-                        </Button>
-                      </div>*/}
                     </CardContent>
                   </Card>
                 </div>
@@ -428,10 +433,23 @@ const [editPhone, setEditPhone] = useState("");
         </div>
       </main>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog
+        open={addOpen}
+        onOpenChange={(open) => {
+          setAddOpen(open);
+          if (!open) {
+            setNewName("");
+            setNewEmail("");
+            setNewPhone("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Practitioner</DialogTitle>
+            <DialogDescription>
+              Enter the practitioner’s information below.
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col gap-4 py-4">
@@ -451,6 +469,14 @@ const [editPhone, setEditPhone] = useState("");
               value={newEmail}
               onChange={(e) => setNewEmail(e.target.value)}
             />
+            <FormField
+              fieldLabel="Phone"
+              placeholder="403-123-4567"
+              variant="add"
+              value={newPhone}
+              onChange={(e) => setNewPhone(e.target.value)}
+              mask="phone"
+            />
           </div>
 
           <DialogFooter>
@@ -469,49 +495,64 @@ const [editPhone, setEditPhone] = useState("");
         </DialogContent>
       </Dialog>
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-  <DialogContent>
-    <DialogHeader>
-      <DialogTitle>Edit Practitioner</DialogTitle>
-    </DialogHeader>
-
-    <div className="flex flex-col gap-4 py-4">
-      <FormField
-        fieldLabel="Full Name"
-        variant="add"
-        value={editName}
-        onChange={(e) => setEditName(e.target.value)}
-      />
-
-      <FormField
-        fieldLabel="Email"
-        variant="add"
-        mode="email"
-        value={editEmail}
-        onChange={(e) => setEditEmail(e.target.value)}
-      />
-
-      <FormField
-        fieldLabel="Phone"
-        variant="add"
-        value={editPhone}
-        onChange={(e) => setEditPhone(e.target.value)}
-      />
-    </div>
-
-    <DialogFooter>
-      <Button
-        onClick={async (e) => {
-          const success = await handleEditPractitioner();
-          if (!success) e.preventDefault();
+      <Dialog
+        open={editOpen}
+        onOpenChange={(open) => {
+          setEditOpen(open);
+          if (!open) {
+            setEditName("");
+            setEditEmail("");
+            setEditPhone("");
+          }
         }}
-        className="bg-button-primary text-white"
       >
-        Save Changes
-      </Button>
-    </DialogFooter>
-  </DialogContent>
-</Dialog>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Practitioner</DialogTitle>
+            <DialogDescription>
+              Update practitioner information below.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex flex-col gap-4 py-4">
+            <FormField
+              fieldLabel="Full Name"
+              variant="add"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+            />
+
+            <FormField
+              fieldLabel="Email"
+              variant="add"
+              mode="email"
+              value={editEmail}
+              onChange={(e) => setEditEmail(e.target.value)}
+            />
+
+            <FormField
+              fieldLabel="Phone"
+              placeholder="403-123-4567"
+              variant="add"
+              value={editPhone}
+              onChange={(e) => setEditPhone(e.target.value)}
+              mask="phone"
+            />
+          </div>
+
+          <DialogFooter>
+            <Button
+              onClick={async (e) => {
+                const success = await handleEditPractitioner();
+                if (!success) e.preventDefault();
+              }}
+              className="bg-button-primary text-white"
+            >
+              Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

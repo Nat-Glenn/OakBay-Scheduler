@@ -20,6 +20,7 @@ import {
 import AddAppointment from "@/components/AddAppointment";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { useSearchParams } from "next/navigation";
+import { calculateAge } from "@/utils/date";
 
 export default function Appointments() {
   const time = [
@@ -116,7 +117,8 @@ export default function Appointments() {
             name: appt.patient
               ? `${appt.patient.firstName ?? ""} ${appt.patient.lastName ?? ""}`.trim()
               : "Unknown Patient",
-            dob: "—",
+            dob: appt.patient?.dob || "—",
+            age: calculateAge(appt.patient?.dob) || "—",
             email: appt.patient?.email || "—",
             phone: appt.patient?.phone || "—",
             type: appt.type || "—",

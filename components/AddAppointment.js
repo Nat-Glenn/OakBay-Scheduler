@@ -245,11 +245,18 @@ export default function AddAppointment({
 
       const [hours, minutes] = formTime.split(":").map(Number);
 
-      const start = new Date(date);
-      start.setHours(hours, minutes, 0, 0);
+const start = new Date(date);
+start.setHours(hours, minutes, 0, 0);
 
-      const end = new Date(start);
-      end.setMinutes(end.getMinutes() + 15);
+const now = new Date();
+if (start <= now) {
+  setValidationError("Cannot book an appointment for a time that has already passed.");
+  setSubmitting(false);
+  return false;
+}
+
+const end = new Date(start);
+end.setMinutes(end.getMinutes() + 15);
 
       const practitioner = practitioners.find(
         (p) => p.name === formPractitioner,
@@ -308,9 +315,9 @@ export default function AddAppointment({
       return true;
       
     } catch (err) {
-      setValidationError("Failed to create patient.")
-      return false;
-    } finally {
+  setValidationError(err.message || "Failed to create appointment.");
+  return false;
+} finally {
       setSubmitting(false);
     }
   };

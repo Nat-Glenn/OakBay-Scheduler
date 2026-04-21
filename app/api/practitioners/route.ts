@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/hash";
-import { nameRegex, emailRegex } from "@/lib/validate";
+import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
 
 export async function GET() {
   try {
@@ -35,6 +35,7 @@ export async function POST(req: Request) {
 
     const name = String(body.name || "").trim();
     const email = String(body.email || "").trim().toLowerCase();
+    const phone = String(body.phone || "").trim();
 
     if (!name) {
       return Response.json(
@@ -49,6 +50,13 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    if (phone && !phoneRegex.test(phone)) {
+  return Response.json(
+    { error: "Invalid phone number format" },
+    { status: 400 }
+  );
+}
 
     // Name: letters only, max 50 characters
     if (!nameRegex.test(name)) {
@@ -93,18 +101,20 @@ export async function POST(req: Request) {
     const hashedPassword = await hashPassword("temp123");
 
     const practitioner = await prisma.user.create({
-      data: {
-        name,
-        email,
-        role: "provider",
-        password: hashedPassword,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-      },
-    });
+  data: {
+    name,
+    email,
+    phone: phone || null,
+    role: "provider",
+    password: hashedPassword,
+  },
+  select: {
+    id: true,
+    name: true,
+    email: true,
+    phone: true,
+  },
+});
 
     return Response.json(practitioner, { status: 201 });
   } catch (err) {

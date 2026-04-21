@@ -51,6 +51,7 @@ import FormField from "@/components/FormField";
 import { Pencil, Settings } from "lucide-react";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { DeletePopUp } from "@/components/DeletePopUp";
+import { calculateAge } from "@/utils/date";
 
 export default function AppointmentInformation({
   appointment,
@@ -413,9 +414,9 @@ if (editPractitioner !== selectedAppointment.practitioner) {
       </Item>
       <Item size="xs">
         <ItemContent>
-          <ItemTitle className="text-muted-foreground">Dob</ItemTitle>
+          <ItemTitle className="text-muted-foreground">Age</ItemTitle>
           <ItemDescription className="text-foreground">
-            {selectedAppointment?.dob}
+            {calculateAge(selectedAppointment?.age) || "-"}
           </ItemDescription>
         </ItemContent>
       </Item>
