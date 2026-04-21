@@ -10,34 +10,39 @@ function endOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
 }
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    const { searchParams } = new URL(req.url);
-    const dateStr = searchParams.get("date"); // expected: YYYY-MM-DD
+    // Auto-complete overdue checked-in appointments
+await prisma.appointment.updateMany({
+  where: {
+    status: "CHECKED_IN",
+    endTime: {
+      lt: new Date(),
+    },
+  },
+  data: {
+    status: "COMPLETED",
+  },
+});
 
-    if (!dateStr) {
-      return Response.json(
-        { error: "Missing ?date=YYYY-MM-DD" },
-        { status: 400 }
-      );
-    }
-
-    const d = new Date(`${dateStr}T00:00:00`);
-    if (Number.isNaN(d.getTime())) {
-      return Response.json({ error: "Invalid date format" }, { status: 400 });
-    }
-
-    const from = startOfDay(d);
-    const to = endOfDay(d);
+// Auto-cancel overdue requested appointments
+await prisma.appointment.updateMany({
+  where: {
+    status: {
+      in: ["REQUESTED", "CONFIRMED"],
+    },
+    endTime: {
+      lt: new Date(),
+    },
+  },
+  data: {
+    status: "CANCELLED",
+  },
+});
 
     const appointments = await prisma.appointment.findMany({
-      where: {
-        startTime: { gte: from, lte: to },
-      },
       include: {
         patient: true,
-
-        // Prevent exposing password, only the needed info is returned
         provider: {
           select: {
             id: true,
@@ -46,25 +51,23 @@ export async function GET(req: Request) {
             role: true,
           },
         },
-
         payment: true,
       },
-      orderBy: { startTime: "asc" },
     });
 
     return Response.json(appointments);
   } catch (err) {
     console.error(err);
-    return Response.json(
-      { error: "Failed to fetch appointments" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Failed to fetch appointments" }, { status: 500 });
   }
 }
 
 function isValidDate(d: Date) {
   return !Number.isNaN(d.getTime());
 }
+
+
+
 
 export async function POST(req: Request) {
   try {
@@ -83,9 +86,14 @@ export async function POST(req: Request) {
       );
     }
 
-    if (endTime <= startTime) {
-      return Response.json({ error: "endTime must be after startTime" }, { status: 400 });
-    }
+    const now = new Date();
+
+if (startTime <= now) {
+  return Response.json(
+    { error: "Cannot create an appointment for a time that has already passed." },
+    { status: 400 }
+  );
+}
 
     // Validate appointment type against allowed list
     const allowedTypes = [
