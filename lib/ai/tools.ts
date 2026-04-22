@@ -14,6 +14,59 @@ function endOfToday() {
   return d;
 }
 
+function getRangeDates(range: string) {
+  const now = new Date();
+
+  if (range === "daily") {
+    const start = new Date(now);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
+  }
+
+  if (range === "weekly") {
+    const start = new Date(now);
+    const day = start.getDay(); // 0 = Sunday
+    start.setDate(start.getDate() - day);
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date(now);
+    end.setHours(23, 59, 59, 999);
+
+    return { start, end };
+  }
+
+  if (range === "monthly") {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+      23,
+      59,
+      59,
+      999
+    );
+
+    return { start, end };
+  }
+
+  if (range === "yearly") {
+    const start = new Date(now.getFullYear(), 0, 1);
+    const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+
+    return { start, end };
+  }
+
+  return {
+    start: new Date(0),
+    end: new Date(),
+  };
+}
+
 export async function getOverdueAppointments() {
   const now = new Date();
 
@@ -276,24 +329,7 @@ export async function getDailyOperationsReportData() {
 }
 
 export async function getOperationsReportByRange(range: string) {
-  const now = new Date();
-
-  let start: Date;
-  let end: Date;
-
-  if (range === "monthly") {
-    start = new Date(now.getFullYear(), now.getMonth(), 1);
-    end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-  } else if (range === "yearly") {
-    start = new Date(now.getFullYear(), 0, 1);
-    end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-  } else {
-    start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-
-    end = new Date(now);
-    end.setHours(23, 59, 59, 999);
-  }
+  const { start, end } = getRangeDates(range);
 
   const appointments = await prisma.appointment.findMany({
     where: {
@@ -339,5 +375,101 @@ export async function getOperationsReportByRange(range: string) {
     end,
     totals,
     byPractitioner,
+  };
+}
+
+export type FlexibleClinicQuery = {
+  metric: string;
+  status?: string;
+  range?: string;
+  minAmount?: number;
+};
+
+export async function getFlexibleClinicQuery(query: FlexibleClinicQuery) {
+  const { metric, status, range = "monthly", minAmount } = query;
+  const { start, end } = getRangeDates(range);
+
+  const where: {
+    startTime: { gte: Date; lte: Date };
+    status?: string;
+  } = {
+    startTime: {
+      gte: start,
+      lte: end,
+    },
+  };
+
+  if (status) {
+    where.status = status;
+  }
+
+  const appointments = await prisma.appointment.findMany({
+    where,
+    include: {
+      provider: {
+        select: { name: true },
+      },
+      patient: true,
+      payment: true,
+    },
+  });
+
+  if (metric === "count") {
+    return {
+      count: appointments.length,
+      range,
+      status: status || "all",
+    };
+  }
+
+  if (metric === "completed") {
+    const completed = appointments.filter(
+      (a) => a.status === "COMPLETED"
+    ).length;
+
+    return {
+      completed,
+      range,
+    };
+  }
+
+  if (metric === "cancelled") {
+    const cancelled = appointments.filter(
+      (a) => a.status === "CANCELLED"
+    ).length;
+
+    return {
+      cancelled,
+      range,
+    };
+  }
+
+  if (metric === "high_value") {
+    const filtered = appointments
+      .filter((a) => a.payment?.amount != null)
+      .filter((a) => Number(a.payment?.amount) >= (minAmount || 0));
+
+    return filtered.map((a) => ({
+      patient: a.patient
+        ? `${a.patient.firstName ?? ""} ${a.patient.lastName ?? ""}`.trim()
+        : "Unknown Patient",
+      amount: a.payment ? Number(a.payment.amount) : null,
+      provider: a.provider?.name || "Unknown",
+    }));
+  }
+
+  if (metric === "by_practitioner") {
+    const map: Record<string, number> = {};
+
+    for (const a of appointments) {
+      const name = a.provider?.name || "Unknown";
+      map[name] = (map[name] || 0) + 1;
+    }
+
+    return map;
+  }
+
+  return {
+    message: "Query not supported yet",
   };
 }
