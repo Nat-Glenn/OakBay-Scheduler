@@ -28,9 +28,12 @@ function getRangeDates(range: string) {
   }
 
   if (range === "weekly") {
-    const start = new Date(now);
-    const day = start.getDay(); // 0 = Sunday
-    start.setDate(start.getDate() - day);
+    const current = new Date(now);
+    const day = current.getDay();
+    const diff = current.getDate() - day;
+
+    const start = new Date(current);
+    start.setDate(diff);
     start.setHours(0, 0, 0, 0);
 
     const end = new Date(now);
