@@ -1,4 +1,4 @@
-import { client } from "@/lib/ai/client";
+import { getClient } from "@/lib/ai/client";
 import {
   getOverdueAppointments,
   getPatientSummary,
@@ -151,6 +151,7 @@ function detectIntent(prompt: string) {
 }
 
 async function handleChat(prompt: string) {
+  const client = getClient();
   const route = detectIntent(prompt);
 
   if (!route) {
@@ -220,6 +221,7 @@ Rules:
 }
 
 async function handleDailyReport() {
+  const client = getClient();
   const reportData = await getDailyOperationsReportData();
 
   const response = await client.chat.completions.create({
@@ -253,6 +255,7 @@ Return a clean operational report.
 }
 
 async function handleRangeReport(range: string) {
+  const client = getClient();
   const reportData = await getOperationsReportByRange(range);
 
   const response = await client.chat.completions.create({
@@ -286,6 +289,7 @@ Return a clean operational report.
 }
 
 async function handlePatientReport(prompt: string) {
+  const client = getClient();
   const patientName = extractPatientName(prompt);
   const reportData = await getPatientSummary(patientName);
 
