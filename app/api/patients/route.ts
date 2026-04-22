@@ -162,6 +162,10 @@ export async function GET(req: Request) {
       take: 25,
       include: {
         appointments: {
+          where: {
+            // Only count completed appointments as a last visit
+            status: "COMPLETED",
+          },
           orderBy: {
             startTime: "desc",
           },
