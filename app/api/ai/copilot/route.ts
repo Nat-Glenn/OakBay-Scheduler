@@ -20,21 +20,6 @@ async function runTool(name: string, args: ToolCallArgs) {
     case "get_overdue_appointments":
       return await getOverdueAppointments();
 
-      case "get_flexible_query": {
-  const metric = typeof args.metric === "string" ? args.metric : "count";
-  const status = typeof args.status === "string" ? args.status : undefined;
-  const range = typeof args.range === "string" ? args.range : undefined;
-  const minAmount =
-    typeof args.minAmount === "number" ? args.minAmount : undefined;
-
-  return await getFlexibleClinicQuery({
-    metric,
-    status,
-    range,
-    minAmount,
-  });
-}
-
     case "get_operations_report_by_range": {
       const range = typeof args.range === "string" ? args.range : "daily";
       return await getOperationsReportByRange(range);
@@ -54,6 +39,21 @@ async function runTool(name: string, args: ToolCallArgs) {
 
     case "get_daily_operations_report_data":
       return await getDailyOperationsReportData();
+
+    case "get_flexible_query": {
+      const metric = typeof args.metric === "string" ? args.metric : "count";
+      const status = typeof args.status === "string" ? args.status : undefined;
+      const range = typeof args.range === "string" ? args.range : undefined;
+      const minAmount =
+        typeof args.minAmount === "number" ? args.minAmount : undefined;
+
+      return await getFlexibleClinicQuery({
+        metric,
+        status,
+        range,
+        minAmount,
+      });
+    }
 
     default:
       throw new Error(`Unknown tool: ${name}`);
@@ -163,37 +163,73 @@ function detectIntent(prompt: string) {
     };
   }
 
-  // FLEXIBLE QUERIES
-if (lower.includes("how many") && lower.includes("completed")) {
-  return {
-    tool: "get_flexible_query",
-    args: { metric: "completed", range: "monthly" },
-  };
-}
+  // Controlled flexible analytics
+  if (
+    lower.includes("how many") &&
+    lower.includes("completed") &&
+    lower.includes("month")
+  ) {
+    return {
+      tool: "get_flexible_query",
+      args: { metric: "completed", range: "monthly" },
+    };
+  }
 
-if (lower.includes("how many") && lower.includes("cancelled")) {
-  return {
-    tool: "get_flexible_query",
-    args: { metric: "cancelled", range: "monthly" },
-  };
-}
+  if (
+    lower.includes("how many") &&
+    lower.includes("completed") &&
+    lower.includes("year")
+  ) {
+    return {
+      tool: "get_flexible_query",
+      args: { metric: "completed", range: "yearly" },
+    };
+  }
 
-if (lower.includes("above") && lower.includes("$")) {
-  const match = prompt.match(/\$(\d+)/);
-  const amount = match ? Number(match[1]) : 0;
+  if (
+    lower.includes("how many") &&
+    lower.includes("cancelled") &&
+    lower.includes("month")
+  ) {
+    return {
+      tool: "get_flexible_query",
+      args: { metric: "cancelled", range: "monthly" },
+    };
+  }
 
-  return {
-    tool: "get_flexible_query",
-    args: { metric: "high_value", minAmount: amount },
-  };
-}
+  if (
+    lower.includes("how many") &&
+    lower.includes("cancelled") &&
+    lower.includes("year")
+  ) {
+    return {
+      tool: "get_flexible_query",
+      args: { metric: "cancelled", range: "yearly" },
+    };
+  }
 
-if (lower.includes("which practitioner")) {
-  return {
-    tool: "get_flexible_query",
-    args: { metric: "by_practitioner", range: "monthly" },
-  };
-}
+  if (
+    lower.includes("which practitioner") ||
+    lower.includes("busiest practitioner")
+  ) {
+    return {
+      tool: "get_flexible_query",
+      args: { metric: "by_practitioner", range: "monthly" },
+    };
+  }
+
+  if (
+    lower.includes("above $") ||
+    lower.includes("above$")
+  ) {
+    const match = prompt.match(/\$(\d+)/);
+    const amount = match ? Number(match[1]) : 0;
+
+    return {
+      tool: "get_flexible_query",
+      args: { metric: "high_value", minAmount: amount, range: "monthly" },
+    };
+  }
 
   return null;
 }

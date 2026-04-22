@@ -28,24 +28,21 @@ import { useMediaQuery } from "@/utils/UseMediaQuery";
 import Link from "next/link";
 
 export default function Summary() {
-  // AI Chat Assistant
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState([
-  {
-    role: "assistant",
-    content: "Hello! How can I help you manage your practice today?",
-    type: "text",
-  },
-]);
+    {
+      role: "assistant",
+      content: "Hello! How can I help you manage your practice today?",
+      type: "text",
+    },
+  ]);
 
-  // Summary API state
   const [summaryData, setSummaryData] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summaryError, setSummaryError] = useState("");
 
-  // Table filtering
   const [tableSearch, setTableSearch] = useState("");
 
   const small = useMediaQuery("(max-width: 768px)");
@@ -81,8 +78,8 @@ export default function Summary() {
   };
 
   const recentVisits = useMemo(() => {
-  return summaryData?.recentVisits || [];
-}, [summaryData]);
+    return summaryData?.recentVisits || [];
+  }, [summaryData]);
 
   const filteredVisits = useMemo(() => {
     return recentVisits.filter((visit) => {
@@ -94,215 +91,218 @@ export default function Summary() {
   }, [recentVisits, tableSearch]);
 
   async function handleSend(e) {
-  e.preventDefault();
-  const trimmed = query.trim();
-  if (!trimmed || isLoading) return;
+    e.preventDefault();
+    const trimmed = query.trim();
+    if (!trimmed || isLoading) return;
 
-  const nextMessages = [
-  ...messages,
-  { role: "user", content: trimmed, type: "text" },
-];
-  setMessages(nextMessages);
-  setQuery("");
-  setIsLoading(true);
+    const nextMessages = [
+      ...messages,
+      { role: "user", content: trimmed, type: "text" },
+    ];
+    setMessages(nextMessages);
+    setQuery("");
+    setIsLoading(true);
 
-  try {
-    const res = await fetch("/api/ai/copilot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mode: "chat",
-        prompt: trimmed,
-      }),
-    });
+    try {
+      const res = await fetch("/api/ai/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "chat",
+          prompt: trimmed,
+        }),
+      });
 
-    const data = await res.json();
-    console.log("AI RESPONSE:", data);
+      const data = await res.json();
 
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to get AI response");
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to get AI response");
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content:
+            data.reply ||
+            data.error ||
+            "Sorry, I couldn’t process that request.",
+          type: "text",
+        },
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Error occurred.",
+          type: "text",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content:
-          data.reply ||
-          data.error ||
-          "Sorry, I couldn’t process that request.",
-      },
-    ]);
-  } catch (error) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: "Error occurred.",
-      },
-    ]);
-  } finally {
-    setIsLoading(false);
   }
-}
 
   async function handleDailyReport() {
-  if (isLoading) return;
+    if (isLoading) return;
 
-  setIsLoading(true);
-  setMessages((prev) => [
-    ...prev,
-    {
-      role: "user",
-      content: "Generate today's daily operations report.",
-      type: "text",
-    },
-  ]);
-
-  try {
-    const res = await fetch("/api/ai/copilot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mode: "daily_report",
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to generate daily report");
-    }
-
+    setIsLoading(true);
     setMessages((prev) => [
       ...prev,
       {
-        role: "assistant",
-        type: "report",
-        reportKind: "daily",
-        report: data.report,
-      },
-    ]);
-  } catch (error) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: "Failed to generate daily report.",
+        role: "user",
+        content: "Generate today's daily operations report.",
         type: "text",
       },
     ]);
-  } finally {
-    setIsLoading(false);
+
+    try {
+      const res = await fetch("/api/ai/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "daily_report",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate daily report");
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          type: "report",
+          reportKind: "daily",
+          report: data.report,
+        },
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Failed to generate daily report.",
+          type: "text",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   }
-}
 
   async function handlePatientReport() {
-  const trimmed = query.trim();
-  if (!trimmed || isLoading) return;
+    const trimmed = query.trim();
+    if (!trimmed || isLoading) return;
 
-  setIsLoading(true);
-  setMessages((prev) => [
-    ...prev,
-    {
-      role: "user",
-      content: `Generate patient report: ${trimmed}`,
-      type: "text",
-    },
-  ]);
-  setQuery("");
-
-  try {
-    const res = await fetch("/api/ai/copilot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mode: "patient_report",
-        prompt: trimmed,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to generate patient report");
-    }
-
+    setIsLoading(true);
     setMessages((prev) => [
       ...prev,
       {
-        role: "assistant",
-        type: "report",
-        reportKind: "patient",
-        report: data.report,
-      },
-    ]);
-  } catch (error) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: "Failed to generate patient report.",
+        role: "user",
+        content: `Generate patient report: ${trimmed}`,
         type: "text",
       },
     ]);
-  } finally {
-    setIsLoading(false);
-  }
-}
+    setQuery("");
 
-async function handleRangeReport(range) {
-  if (isLoading) return;
+    try {
+      const res = await fetch("/api/ai/copilot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "patient_report",
+          prompt: trimmed,
+        }),
+      });
 
-  setIsLoading(true);
+      const data = await res.json();
 
-  setMessages((prev) => [
-    ...prev,
-    { role: "user", content: `Generate ${range} report`, type: "text" },
-  ]);
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate patient report");
+      }
 
-  try {
-    const res = await fetch("/api/ai/copilot", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        mode: "range_report",
-        range,
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(data.error || "Failed to generate report");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          type: "report",
+          reportKind: "patient",
+          report: data.report,
+        },
+      ]);
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Failed to generate patient report.",
+          type: "text",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
+  }
+
+  async function handleRangeReport(range) {
+    if (isLoading) return;
+
+    setIsLoading(true);
 
     setMessages((prev) => [
       ...prev,
       {
-        role: "assistant",
-        type: "report",
-        reportKind: "daily",
-        report: data.report,
-      },
-    ]);
-  } catch (err) {
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: "Failed to generate report.",
+        role: "user",
+        content: `Generate ${range} report`,
         type: "text",
       },
     ]);
-  } finally {
-    setIsLoading(false);
+
+    try {
+      const res = await fetch("/api/ai/copilot", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          mode: "range_report",
+          range,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Failed to generate report");
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          type: "report",
+          reportKind: "daily",
+          report: data.report,
+        },
+      ]);
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Failed to generate report.",
+          type: "text",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   }
-}
-
-
 
   function formatCurrency(amount) {
     return new Intl.NumberFormat("en-CA", {
@@ -324,19 +324,19 @@ async function handleRangeReport(range) {
   }
 
   function formatAiDate(dateValue) {
-  if (!dateValue) return "—";
+    if (!dateValue) return "—";
 
-  const date = new Date(dateValue);
-  if (Number.isNaN(date.getTime())) return String(dateValue);
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return String(dateValue);
 
-  return date.toLocaleString("en-CA", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
+    return date.toLocaleString("en-CA", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
 
   function normalizeStatus(status) {
     if (!status) return "Pending";
@@ -403,7 +403,6 @@ async function handleRangeReport(range) {
           </header>
         )}
 
-        {/* STAT CARDS */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 mt-4">
           <StatCard
             title="Total Patients"
@@ -431,9 +430,7 @@ async function handleRangeReport(range) {
           />
         </div>
 
-        {/* SECOND ROW */}
         <div className="pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* RECENT VISITS TABLE */}
           <Card className="lg:col-span-2 shadow-sm border-sidebar">
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between py-6 px-8 gap-4">
               <CardTitle className="text-xl font-bold">
@@ -513,7 +510,6 @@ async function handleRangeReport(range) {
             </CardContent>
           </Card>
 
-          {/* TODAY'S APPOINTMENTS */}
           <Card className="shadow-sm border-sidebar">
             <CardHeader className="py-6 px-8">
               <CardTitle className="text-xl font-bold flex items-center gap-2">
@@ -542,7 +538,6 @@ async function handleRangeReport(range) {
         </div>
       </div>
 
-      {/* AI CHAT ASSISTANT */}
       <div className="fixed bottom-8 right-8 flex flex-col items-end z-10">
         {isChatOpen && (
           <Card className="w-[380px] lg:w-[430px] h-[560px] max-h-[78vh] mb-2 shadow-2xl overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300 flex flex-col bg-background">
@@ -567,25 +562,25 @@ async function handleRangeReport(range) {
 
             <CardContent className="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
               {messages.map((message, i) => (
-  <div
-    key={i}
-    className={`p-4 rounded-2xl text-sm shadow-sm max-w-[85%] leading-6 ${
-      message.role === "user"
-        ? "bg-[#A0CE66] text-white self-end rounded-br-none whitespace-pre-wrap"
-        : "bg-slate-100 text-slate-700 self-start rounded-bl-none"
-    }`}
-  >
-    {message.type === "report" ? (
-      <ReportMessage
-        reportKind={message.reportKind}
-        report={message.report}
-        formatAiDate={formatAiDate}
-      />
-    ) : (
-      <div className="whitespace-pre-wrap">{message.content}</div>
-    )}
-  </div>
-))}
+                <div
+                  key={i}
+                  className={`p-4 rounded-2xl text-sm shadow-sm max-w-[85%] leading-6 ${
+                    message.role === "user"
+                      ? "bg-[#A0CE66] text-white self-end rounded-br-none whitespace-pre-wrap"
+                      : "bg-slate-100 text-slate-700 self-start rounded-bl-none"
+                  }`}
+                >
+                  {message.type === "report" ? (
+                    <ReportMessage
+                      reportKind={message.reportKind}
+                      report={message.report}
+                      formatAiDate={formatAiDate}
+                    />
+                  ) : (
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                  )}
+                </div>
+              ))}
               {isLoading && (
                 <div className="bg-slate-100 p-4 rounded-2xl text-base text-slate-500 self-start">
                   Clinic Copilot is working...
@@ -614,20 +609,22 @@ async function handleRangeReport(range) {
                 </Button>
 
                 <Button
-  size="sm"
-  variant="secondary"
-  onClick={() => handleRangeReport("monthly")}
->
-  Monthly Report
-</Button>
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleRangeReport("monthly")}
+                  disabled={isLoading}
+                >
+                  Monthly Report
+                </Button>
 
-<Button
-  size="sm"
-  variant="secondary"
-  onClick={() => handleRangeReport("yearly")}
->
-  Yearly Report
-</Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => handleRangeReport("yearly")}
+                  disabled={isLoading}
+                >
+                  Yearly Report
+                </Button>
               </div>
 
               <form className="flex gap-4 items-center" onSubmit={handleSend}>
