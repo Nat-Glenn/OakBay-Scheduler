@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { AppointmentStatus, ClinicRole, PrismaClient } from "@prisma/client";
 import { hashPassword } from "../lib/hash";
 import { encryptField } from "../lib/encrypt";
 
@@ -44,7 +44,7 @@ async function main() {
       email: "brad.pritchard@oakbay.com",
       phone: "403-555-1001",
       password: hashedPassword,
-      role: "Chiropractor",
+      role: ClinicRole.Chiropractor,
     },
   });
 
@@ -54,7 +54,7 @@ async function main() {
       email: "emily.carter@oakbay.com",
       phone: "403-555-1002",
       password: hashedPassword,
-      role: "Chiropractor",
+      role: ClinicRole.Chiropractor,
     },
   });
 
@@ -64,7 +64,7 @@ async function main() {
       email: "michael.reeves@oakbay.com",
       phone: "403-555-1003",
       password: hashedPassword,
-      role: "Chiropractor",
+      role: ClinicRole.Chiropractor,
     },
   });
 
@@ -74,7 +74,7 @@ async function main() {
       email: "nina.patel@oakbay.com",
       phone: "403-555-1004",
       password: hashedPassword,
-      role: "Chiropractor",
+      role: ClinicRole.Chiropractor,
     },
   });
 
@@ -84,7 +84,7 @@ async function main() {
       email: "sarah.collins@oakbay.com",
       phone: "403-555-2001",
       password: hashedPassword,
-      role: "Receptionist",
+      role: ClinicRole.Receptionist,
     },
   });
 
@@ -94,7 +94,7 @@ async function main() {
       email: "michelle.park@oakbay.com",
       phone: "403-555-2002",
       password: hashedPassword,
-      role: "Receptionist",
+      role: ClinicRole.Receptionist,
     },
   });
 
@@ -104,7 +104,7 @@ async function main() {
       email: "karen.hollis@oakbay.com",
       phone: "403-555-2003",
       password: hashedPassword,
-      role: "Receptionist",
+      role: ClinicRole.Receptionist,
     },
   });
 
@@ -169,7 +169,7 @@ async function main() {
   // =========================
   const appointments: Array<{
     id: number;
-    status: string;
+    status: AppointmentStatus;
   }> = [];
 
   async function addAppointment({
@@ -185,7 +185,7 @@ async function main() {
     patientId: number;
     providerId: number;
     createdByUserId: number;
-    status: string;
+    status: AppointmentStatus;
     type: string;
     startTime: Date;
     requestMessage?: string;
@@ -215,7 +215,7 @@ async function main() {
     patientId: patients[0].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Initial Consultation",
     startTime: makeDate(2024, 3, 12, 9, 0),
     requestMessage: "Initial visit for lower back pain.",
@@ -226,7 +226,7 @@ async function main() {
     patientId: patients[7].id,
     providerId: emily.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(2024, 4, 6, 10, 0),
     requestMessage: "Shoulder stiffness.",
@@ -237,7 +237,7 @@ async function main() {
     patientId: patients[10].id,
     providerId: brad.id,
     createdByUserId: michelle.id,
-    status: "CANCELLED",
+    status: AppointmentStatus.CANCELLED,
     type: "Follow-up",
     startTime: makeDate(2024, 6, 18, 14, 0),
     requestMessage: "Need to reschedule.",
@@ -247,7 +247,7 @@ async function main() {
     patientId: patients[14].id,
     providerId: nina.id,
     createdByUserId: karen.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(2024, 9, 10, 11, 0),
     requestMessage: "Relaxation massage.",
@@ -258,7 +258,7 @@ async function main() {
     patientId: patients[20].id,
     providerId: michael.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2024, 11, 21, 15, 0),
     requestMessage: "Routine check.",
@@ -270,7 +270,7 @@ async function main() {
     patientId: patients[11].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2025, 1, 8, 9, 30),
     requestMessage: "Routine adjustment.",
@@ -281,7 +281,7 @@ async function main() {
     patientId: patients[11].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "CANCELLED",
+    status: AppointmentStatus.CANCELLED,
     type: "Follow-up",
     startTime: makeDate(2025, 2, 2, 11, 0),
     requestMessage: "Could not attend.",
@@ -291,7 +291,7 @@ async function main() {
     patientId: patients[11].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2025, 3, 14, 10, 0),
     requestMessage: "Recurring adjustment.",
@@ -302,7 +302,7 @@ async function main() {
     patientId: patients[1].id,
     providerId: emily.id,
     createdByUserId: karen.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(2025, 4, 18, 13, 0),
     requestMessage: "Neck stiffness.",
@@ -313,7 +313,7 @@ async function main() {
     patientId: patients[2].id,
     providerId: brad.id,
     createdByUserId: michelle.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2025, 5, 9, 9, 0),
     requestMessage: "Maintenance visit.",
@@ -324,7 +324,7 @@ async function main() {
     patientId: patients[3].id,
     providerId: michael.id,
     createdByUserId: sarah.id,
-    status: "CANCELLED",
+    status: AppointmentStatus.CANCELLED,
     type: "Follow-up",
     startTime: makeDate(2025, 6, 11, 16, 0),
     requestMessage: "Travel conflict.",
@@ -334,7 +334,7 @@ async function main() {
     patientId: patients[4].id,
     providerId: emily.id,
     createdByUserId: michelle.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(2025, 7, 7, 12, 0),
     requestMessage: "Shoulder recovery.",
@@ -345,7 +345,7 @@ async function main() {
     patientId: patients[5].id,
     providerId: michael.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Follow-up",
     startTime: makeDate(2025, 8, 21, 14, 0),
     requestMessage: "Sports recovery check.",
@@ -356,7 +356,7 @@ async function main() {
     patientId: patients[8].id,
     providerId: brad.id,
     createdByUserId: karen.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2025, 9, 4, 10, 30),
     requestMessage: "Migraine-related tension.",
@@ -367,7 +367,7 @@ async function main() {
     patientId: patients[9].id,
     providerId: nina.id,
     createdByUserId: michelle.id,
-    status: "CANCELLED",
+    status: AppointmentStatus.CANCELLED,
     type: "Massage",
     startTime: makeDate(2025, 10, 15, 11, 30),
     requestMessage: "Family emergency.",
@@ -377,7 +377,7 @@ async function main() {
     patientId: patients[12].id,
     providerId: emily.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Follow-up",
     startTime: makeDate(2025, 11, 20, 15, 30),
     requestMessage: "Posture follow-up.",
@@ -388,7 +388,7 @@ async function main() {
     patientId: patients[13].id,
     providerId: michael.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Initial Consultation",
     startTime: makeDate(2025, 12, 12, 10, 0),
     requestMessage: "Neck pain from desk work.",
@@ -400,7 +400,7 @@ async function main() {
     patientId: patients[0].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2026, 1, 7, 9, 0),
     requestMessage: "Back pain flare-up.",
@@ -411,7 +411,7 @@ async function main() {
     patientId: patients[6].id,
     providerId: michael.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Initial Consultation",
     startTime: makeDate(2026, 1, 16, 11, 0),
     requestMessage: "First visit for chronic back pain.",
@@ -422,7 +422,7 @@ async function main() {
     patientId: patients[7].id,
     providerId: emily.id,
     createdByUserId: michelle.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(2026, 2, 5, 13, 0),
     requestMessage: "Shoulder tension.",
@@ -433,7 +433,7 @@ async function main() {
     patientId: patients[8].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2026, 2, 9, 15, 0),
     requestMessage: "Migraine tension management.",
@@ -444,7 +444,7 @@ async function main() {
     patientId: patients[10].id,
     providerId: brad.id,
     createdByUserId: karen.id,
-    status: "CANCELLED",
+    status: AppointmentStatus.CANCELLED,
     type: "Follow-up",
     startTime: makeDate(2026, 2, 20, 14, 0),
     requestMessage: "Need to postpone.",
@@ -454,7 +454,7 @@ async function main() {
     patientId: patients[11].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2026, 3, 3, 10, 0),
     requestMessage: "Routine adjustment.",
@@ -465,7 +465,7 @@ async function main() {
     patientId: patients[11].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "CANCELLED",
+    status: AppointmentStatus.CANCELLED,
     type: "Follow-up",
     startTime: makeDate(2026, 3, 12, 11, 0),
     requestMessage: "Unable to attend.",
@@ -475,7 +475,7 @@ async function main() {
     patientId: patients[11].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "CANCELLED",
+    status: AppointmentStatus.CANCELLED,
     type: "Follow-up",
     startTime: makeDate(2026, 3, 18, 11, 0),
     requestMessage: "Scheduling conflict.",
@@ -485,7 +485,7 @@ async function main() {
     patientId: patients[5].id,
     providerId: emily.id,
     createdByUserId: michelle.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(2026, 3, 20, 14, 30),
     requestMessage: "Sports recovery massage.",
@@ -496,7 +496,7 @@ async function main() {
     patientId: patients[18].id,
     providerId: michael.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2026, 4, 2, 10, 30),
     requestMessage: "Low back stiffness.",
@@ -507,7 +507,7 @@ async function main() {
     patientId: patients[19].id,
     providerId: nina.id,
     createdByUserId: karen.id,
-    status: "CANCELLED",
+    status: AppointmentStatus.CANCELLED,
     type: "Massage",
     startTime: makeDate(2026, 4, 4, 13, 15),
     requestMessage: "Patient unavailable.",
@@ -517,7 +517,7 @@ async function main() {
     patientId: patients[20].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Follow-up",
     startTime: makeDate(2026, 4, 8, 9, 45),
     requestMessage: "Routine follow-up.",
@@ -528,7 +528,7 @@ async function main() {
     patientId: patients[21].id,
     providerId: nina.id,
     createdByUserId: michelle.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(2026, 4, 10, 12, 0),
     requestMessage: "Prenatal wellness massage.",
@@ -539,7 +539,7 @@ async function main() {
     patientId: patients[22].id,
     providerId: michael.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(2026, 4, 14, 15, 15),
     requestMessage: "Lumbar pain flare-up.",
@@ -550,7 +550,7 @@ async function main() {
     patientId: patients[23].id,
     providerId: emily.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(2026, 4, 16, 11, 30),
     requestMessage: "Massage therapy follow-up.",
@@ -567,7 +567,7 @@ async function main() {
     patientId: patients[0].id,
     providerId: brad.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(y, m, d, 9, 0),
     requestMessage: "Back flare-up.",
@@ -578,7 +578,7 @@ async function main() {
     patientId: patients[7].id,
     providerId: emily.id,
     createdByUserId: sarah.id,
-    status: "COMPLETED",
+    status: AppointmentStatus.COMPLETED,
     type: "Massage",
     startTime: makeDate(y, m, d, 9, 15),
     requestMessage: "Shoulder tension after work.",
@@ -589,7 +589,7 @@ async function main() {
     patientId: patients[6].id,
     providerId: michael.id,
     createdByUserId: sarah.id,
-    status: "CHECKED_IN",
+    status: AppointmentStatus.CHECKED_IN,
     type: "Initial Consultation",
     startTime: makeDate(y, m, d, 10, 0),
     requestMessage: "First visit for chronic pain.",
@@ -600,7 +600,7 @@ async function main() {
     patientId: patients[10].id,
     providerId: brad.id,
     createdByUserId: michelle.id,
-    status: "CONFIRMED",
+    status: AppointmentStatus.CONFIRMED,
     type: "Chiropractic Adjustment",
     startTime: makeDate(y, m, d, 11, 0),
     requestMessage: "Sciatica follow-up.",
@@ -611,7 +611,7 @@ async function main() {
     patientId: patients[9].id,
     providerId: emily.id,
     createdByUserId: sarah.id,
-    status: "CONFIRMED",
+    status: AppointmentStatus.CONFIRMED,
     type: "Follow-up",
     startTime: makeDate(y, m, d, 14, 0),
     requestMessage: "Pain management review.",
@@ -622,7 +622,7 @@ async function main() {
     patientId: patients[14].id,
     providerId: nina.id,
     createdByUserId: karen.id,
-    status: "CONFIRMED",
+    status: AppointmentStatus.CONFIRMED,
     type: "Massage",
     startTime: makeDate(y, m, d, 15, 0),
     requestMessage: "Massage follow-up.",
@@ -635,7 +635,7 @@ async function main() {
   // PAYMENTS
   // =========================
   const completedAppointments = await prisma.appointment.findMany({
-    where: { status: "COMPLETED" },
+    where: { status: AppointmentStatus.COMPLETED },
     orderBy: { id: "asc" },
   });
 

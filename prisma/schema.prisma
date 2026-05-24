@@ -8,13 +8,26 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+enum ClinicRole {
+  Chiropractor
+  Receptionist
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+}
+
 model User {
   id                   Int           @id @default(autoincrement())
   name                 String
   email                String        @unique
   phone                String?
   password             String
-  role                 String
+  role                 ClinicRole
   createdAt            DateTime      @default(now())
   updatedAt            DateTime      @updatedAt
   providedAppointments Appointment[] @relation("ProviderAppointments")
@@ -40,8 +53,8 @@ model Patient {
 }
 
 model Appointment {
-  id               Int       @id @default(autoincrement())
-  status           String
+  id               Int                @id @default(autoincrement())
+  status           AppointmentStatus
   type             String
   startTime        DateTime
   endTime          DateTime

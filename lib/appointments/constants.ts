@@ -1,18 +1,12 @@
 /**
  * Appointment status and type constants shared by API routes and UI.
- * DB stores uppercase statuses; the scheduler UI uses lowercase labels.
+ * Status values are backed by the Prisma AppointmentStatus enum.
  */
 
-export const AppointmentStatus = {
-  REQUESTED: "REQUESTED",
-  CONFIRMED: "CONFIRMED",
-  CHECKED_IN: "CHECKED_IN",
-  COMPLETED: "COMPLETED",
-  CANCELLED: "CANCELLED",
-} as const;
+import { AppointmentStatus as DbAppointmentStatus } from "@prisma/client";
 
-export type AppointmentStatusValue =
-  (typeof AppointmentStatus)[keyof typeof AppointmentStatus];
+export const AppointmentStatus = DbAppointmentStatus;
+export type AppointmentStatusValue = DbAppointmentStatus;
 
 export const UiAppointmentStatus = {
   SCHEDULED: "scheduled",

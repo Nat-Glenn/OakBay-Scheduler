@@ -1,3 +1,4 @@
+import { AppointmentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 function startOfToday() {
@@ -394,7 +395,7 @@ export async function getFlexibleClinicQuery(query: FlexibleClinicQuery) {
 
   const where: {
     startTime: { gte: Date; lte: Date };
-    status?: string;
+    status?: AppointmentStatus;
   } = {
     startTime: {
       gte: start,
@@ -403,7 +404,12 @@ export async function getFlexibleClinicQuery(query: FlexibleClinicQuery) {
   };
 
   if (status) {
-    where.status = status;
+    const upper = status.toUpperCase();
+    if (
+      Object.values(AppointmentStatus).includes(upper as AppointmentStatus)
+    ) {
+      where.status = upper as AppointmentStatus;
+    }
   }
 
   const appointments = await prisma.appointment.findMany({

@@ -1,20 +1,23 @@
 /**
- * One-off: set legacy User.role `provider` to `Chiropractor`.
- * Run: npx dotenv -e .env.local -- npx tsx scripts/normalize-clinic-roles.ts
+ * Legacy one-off — role values are now a Prisma enum (ClinicRole).
+ * The enum migration already mapped `provider` → Chiropractor.
  */
 
 import { PrismaClient } from "@prisma/client";
-import { ClinicDbRole } from "../lib/auth/constants";
 
 const prisma = new PrismaClient();
 
 async function main() {
-  const result = await prisma.user.updateMany({
-    where: { role: "provider" },
-    data: { role: ClinicDbRole.CHIROPRACTOR },
+  const chiropractors = await prisma.user.count({
+    where: { role: "Chiropractor" },
+  });
+  const receptionists = await prisma.user.count({
+    where: { role: "Receptionist" },
   });
 
-  console.log(`Updated ${result.count} user(s) from provider → Chiropractor.`);
+  console.log(
+    `Clinic roles are normalized (${chiropractors} Chiropractor, ${receptionists} Receptionist). No changes made.`,
+  );
 }
 
 main()

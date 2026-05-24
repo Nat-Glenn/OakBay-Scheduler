@@ -5,7 +5,9 @@ import filter from "leo-profanity";
 import AppShell from "@/components/AppShell";
 import { apiFetch } from "@/utils/apiFetch";
 import { parseApiError } from "@/utils/parseApiError";
-import { Search, Plus, User, X, Pencil } from "lucide-react";
+import { Search, Plus, User, X, Pencil, Users, RefreshCw } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
+import TableListSkeleton from "@/components/TableListSkeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -60,6 +62,7 @@ export default function PatientProfiles() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const small = useMediaQuery("(max-width: 768px)");
 
   // Edit Modal State
@@ -160,7 +163,7 @@ export default function PatientProfiles() {
       }
     }
     loadPatients();
-  }, [searchTerm]);
+  }, [searchTerm, reloadKey]);
 
 
   function calculateAge(dobString) {
@@ -343,11 +346,39 @@ function getDisplayedPatient(patient) {
                   </TableHeader>
                   <TableBody>
                     {loading ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-8">Loading Patients</TableCell></TableRow>
+                      <TableListSkeleton rows={8} cols={6} />
                     ) : error ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-destructive">{error}</TableCell></TableRow>
+                      <TableRow>
+                        <TableCell colSpan={6} className="p-6">
+                          <div className="flex flex-col items-center gap-3 text-center">
+                            <p className="text-sm font-medium text-destructive">{error}</p>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="gap-2 font-bold"
+                              onClick={() => setReloadKey((k) => k + 1)}
+                            >
+                              <RefreshCw size={14} />
+                              Try again
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
                     ) : patients.length === 0 ? (
-                      <TableRow><TableCell colSpan={6} className="text-center py-8">No Patients Found</TableCell></TableRow>
+                      <TableRow>
+                        <TableCell colSpan={6} className="p-6">
+                          <EmptyState
+                            icon={Users}
+                            title="No patients found"
+                            description={
+                              searchTerm
+                                ? "Try a different name or patient ID."
+                                : "Add a patient to get started."
+                            }
+                          />
+                        </TableCell>
+                      </TableRow>
                     ) : (
                       patients.map((rawPatient) => {
                         const patient = getDisplayedPatient(rawPatient);

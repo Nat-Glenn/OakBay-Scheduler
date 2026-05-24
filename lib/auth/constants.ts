@@ -1,14 +1,10 @@
 /**
- * Canonical clinic staff roles stored on User.role in the database.
+ * Canonical clinic staff roles stored on User.role in the database (Prisma enum).
  */
 
-export const ClinicDbRole = {
-  CHIROPRACTOR: "Chiropractor",
-  RECEPTIONIST: "Receptionist",
-} as const;
+import { ClinicRole } from "@prisma/client";
 
-/** Roles shown on the scheduler (includes legacy `provider` until DB is normalized). */
-export const SCHEDULER_STAFF_ROLES = [
-  ClinicDbRole.CHIROPRACTOR,
-  "provider",
-] as const;
+export const ClinicDbRole = ClinicRole;
+
+/** Roles listed as bookable practitioners on the scheduler. */
+export const SCHEDULER_STAFF_ROLES = [ClinicRole.Chiropractor] as const;

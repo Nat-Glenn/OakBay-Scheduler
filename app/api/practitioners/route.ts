@@ -57,7 +57,7 @@ export const POST = withRoles([AppRole.ADMIN], async (req) => {
         name,
         email,
         phone: phone || null,
-        role: ClinicDbRole.CHIROPRACTOR,
+        role: ClinicDbRole.Chiropractor,
         password: hashedPassword,
       },
       select: {

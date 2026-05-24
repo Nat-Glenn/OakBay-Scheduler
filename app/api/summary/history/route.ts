@@ -1,13 +1,23 @@
+import { AppointmentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { serverError } from "@/lib/api";
 import { withAuthSimple } from "@/lib/withAuth";
+
+function parseStatusFilter(value: string): AppointmentStatus | undefined {
+  const upper = value.trim().toUpperCase();
+  if (!upper) return undefined;
+  return Object.values(AppointmentStatus).includes(upper as AppointmentStatus)
+    ? (upper as AppointmentStatus)
+    : undefined;
+}
 
 export const GET = withAuthSimple(async (req) => {
   try {
     const { searchParams } = new URL(req.url);
 
     const search = (searchParams.get("search") ?? "").trim();
-    const status = (searchParams.get("status") ?? "").trim();
+    const statusParam = (searchParams.get("status") ?? "").trim();
+    const statusFilter = parseStatusFilter(statusParam);
     const limit = Number(searchParams.get("limit") ?? "100");
 
     const visits = await prisma.appointment.findMany({
@@ -41,12 +51,7 @@ export const GET = withAuthSimple(async (req) => {
                 ],
               }
             : {},
-          status
-            ? {
-                // Convert to uppercase to match how statuses are stored in DB
-                status: status.toUpperCase(),
-              }
-            : {},
+          statusFilter ? { status: statusFilter } : {},
         ],
       },
       orderBy: {

@@ -1,8 +1,8 @@
 /**
  * Zod schemas for appointment API validation.
- * Used by route handlers; can be mirrored on the client later.
  */
 
+import { AppointmentStatus } from "@prisma/client";
 import { z } from "zod";
 import {
   ALLOWED_APPOINTMENT_STATUSES,
@@ -22,7 +22,7 @@ export const createAppointmentSchema = z.object({
 
 export const patchAppointmentSchema = z
   .object({
-    status: z.enum(ALLOWED_APPOINTMENT_STATUSES).optional(),
+    status: z.nativeEnum(AppointmentStatus).optional(),
     type: z.enum(ALLOWED_APPOINTMENT_TYPES).optional(),
     providerId: z.coerce.number().int().positive().nullable().optional(),
     startTime: z.coerce.date().optional(),
@@ -31,7 +31,19 @@ export const patchAppointmentSchema = z
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided",
-  });
+  })
+  .refine(
+    (data) => {
+      if (data.startTime && data.endTime) {
+        return data.endTime > data.startTime;
+      }
+      return true;
+    },
+    { message: "endTime must be after startTime", path: ["endTime"] },
+  );
 
 export type CreateAppointmentInput = z.infer<typeof createAppointmentSchema>;
 export type PatchAppointmentInput = z.infer<typeof patchAppointmentSchema>;
+
+/** Re-export for callers that validate status strings manually. */
+export { ALLOWED_APPOINTMENT_STATUSES };

@@ -13,7 +13,11 @@ import {
   ListFilter,
   Check,
   ChevronDown,
+  RefreshCw,
+  History,
 } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
+import TableListSkeleton from "@/components/TableListSkeleton";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -44,6 +48,7 @@ export default function SummaryHistoryPage() {
   const [historyData, setHistoryData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const [tableSearch, setTableSearch] = useState("");
   const [sortConfig, setSortConfig] = useState({
     key: "date",
@@ -70,7 +75,7 @@ export default function SummaryHistoryPage() {
     }
 
     loadHistory();
-  }, []);
+  }, [reloadKey]);
 
   const sortLabels = {
     patient: "Patient Name",
@@ -157,32 +162,6 @@ export default function SummaryHistoryPage() {
       .replace(/\b\w/g, (c) => c.toUpperCase());
   }
 
-  if (loading) {
-    return (
-      <AppShell title="Visit History">
-        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
-          <header className="hidden py-4 md:block">
-            <h1 className="text-3xl font-bold">Visit History</h1>
-          </header>
-          <div className="p-6">Loading history...</div>
-        </div>
-      </AppShell>
-    );
-  }
-
-  if (error) {
-    return (
-      <AppShell title="Visit History">
-        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
-          <header className="hidden py-4 md:block">
-            <h1 className="text-3xl font-bold">Visit History</h1>
-          </header>
-          <div className="p-6 text-red-500">{error}</div>
-        </div>
-      </AppShell>
-    );
-  }
-
   return (
     <AppShell title="Visit History">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4">
@@ -267,7 +246,27 @@ export default function SummaryHistoryPage() {
               </TableHeader>
 
               <TableBody>
-                {filteredHistory.length > 0 ? (
+                {loading ? (
+                  <TableListSkeleton rows={8} cols={6} />
+                ) : error ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="p-6">
+                      <div className="flex flex-col items-center gap-3 text-center">
+                        <p className="text-sm font-medium text-destructive">{error}</p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="gap-2 font-bold"
+                          onClick={() => setReloadKey((k) => k + 1)}
+                        >
+                          <RefreshCw size={14} />
+                          Try again
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ) : filteredHistory.length > 0 ? (
                   filteredHistory.map((visit) => (
                     <TableRow key={visit.id} className="border-border/50 hover:bg-border/30">
                       <TableCell className="font-medium py-4">
@@ -315,8 +314,16 @@ export default function SummaryHistoryPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No visit history found.
+                    <TableCell colSpan={6} className="p-6">
+                      <EmptyState
+                        icon={History}
+                        title="No visits found"
+                        description={
+                          tableSearch
+                            ? "Try a different search term."
+                            : "Completed and cancelled visits will appear here."
+                        }
+                      />
                     </TableCell>
                   </TableRow>
                 )}

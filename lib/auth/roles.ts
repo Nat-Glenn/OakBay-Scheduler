@@ -2,6 +2,8 @@
  * Normalized app roles for permissions. Maps from User.role + admin emails.
  */
 
+import { ClinicRole } from "@prisma/client";
+
 export const AppRole = {
   ADMIN: "admin",
   CHIROPRACTOR: "chiropractor",
@@ -29,11 +31,15 @@ export function normalizeDbRole(
 
   const value = String(dbRole ?? "").trim().toLowerCase();
 
-  if (value === "chiropractor" || value === "provider") {
+  if (
+    value === ClinicRole.Chiropractor.toLowerCase() ||
+    value === "chiropractor" ||
+    value === "provider"
+  ) {
     return AppRole.CHIROPRACTOR;
   }
 
-  if (value === "receptionist") {
+  if (value === ClinicRole.Receptionist.toLowerCase() || value === "receptionist") {
     return AppRole.RECEPTIONIST;
   }
 

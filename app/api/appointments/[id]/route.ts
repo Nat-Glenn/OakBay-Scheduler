@@ -1,3 +1,7 @@
+/**
+ * PATCH/DELETE single appointment — validated updates and cancellation emails.
+ */
+
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
 import { cleanField } from "@/lib/profanity";
@@ -5,9 +9,10 @@ import { sendCancellationEmail } from "@/lib/email";
 import { withAuth } from "@/lib/withAuth";
 import {
   ACTIVE_APPOINTMENT_STATUSES,
-  ALLOWED_APPOINTMENT_STATUSES,
   AppointmentStatus,
 } from "@/lib/appointments/constants";
+import { patchAppointmentSchema } from "@/lib/appointments/schemas";
+import { parseBody } from "@/lib/validation/parseBody";
 
 export const PATCH = withAuth(async (req, context) => {
   try {
@@ -19,58 +24,20 @@ export const PATCH = withAuth(async (req, context) => {
     }
 
     const body = await req.json();
+    const parsed = parseBody(patchAppointmentSchema, body);
+    if (!parsed.ok) return parsed.response;
 
-    const status = body.status
-      ? String(body.status).trim().toUpperCase()
-      : undefined;
+    const {
+      status,
+      type,
+      providerId,
+      startTime,
+      endTime,
+      adminNotes: rawAdminNotes,
+    } = parsed.data;
 
     const adminNotes =
-      body.adminNotes !== undefined
-        ? cleanField(String(body.adminNotes))
-        : undefined;
-
-    const type =
-      body.type !== undefined ? String(body.type).trim() : undefined;
-
-    const providerId =
-      body.providerId !== undefined && body.providerId !== null
-        ? Number(body.providerId)
-        : undefined;
-
-    const startTime =
-      body.startTime !== undefined && body.startTime !== null
-        ? new Date(body.startTime)
-        : undefined;
-
-    const endTime =
-      body.endTime !== undefined && body.endTime !== null
-        ? new Date(body.endTime)
-        : undefined;
-
-    if (
-      status &&
-      !(ALLOWED_APPOINTMENT_STATUSES as readonly string[]).includes(status)
-    ) {
-      return badRequest("Invalid status value", {
-        allowedStatuses: ALLOWED_APPOINTMENT_STATUSES,
-      });
-    }
-
-    if (providerId !== undefined && (!Number.isInteger(providerId) || providerId <= 0)) {
-      return badRequest("Invalid providerId", { providerId });
-    }
-
-    if (startTime !== undefined && Number.isNaN(startTime.getTime())) {
-      return badRequest("Invalid startTime");
-    }
-
-    if (endTime !== undefined && Number.isNaN(endTime.getTime())) {
-      return badRequest("Invalid endTime");
-    }
-
-    if (startTime && endTime && endTime <= startTime) {
-      return badRequest("endTime must be after startTime");
-    }
+      rawAdminNotes !== undefined ? cleanField(String(rawAdminNotes)) : undefined;
 
     const exists = await prisma.appointment.findUnique({
       where: { id },
@@ -79,7 +46,7 @@ export const PATCH = withAuth(async (req, context) => {
 
     if (!exists) return notFound("Appointment not found");
 
-    let slot: number | undefined = undefined;
+    let slot: number | undefined;
 
     if (providerId !== undefined && startTime !== undefined) {
       const existingAppointments = await prisma.appointment.findMany({
@@ -97,14 +64,13 @@ export const PATCH = withAuth(async (req, context) => {
       }
 
       const usedSlots = existingAppointments.map((appt) => appt.slot);
-      const allSlots = [1, 2, 3, 4];
-      slot = allSlots.find((s) => !usedSlots.includes(s));
+      slot = [1, 2, 3, 4].find((s) => !usedSlots.includes(s)) ?? 1;
     }
 
     const updated = await prisma.appointment.update({
       where: { id },
       data: {
-        ...(status ? { status } : {}),
+        ...(status !== undefined ? { status } : {}),
         ...(slot !== undefined ? { slot } : {}),
         ...(adminNotes !== undefined ? { adminNotes } : {}),
         ...(type !== undefined ? { type } : {}),
@@ -115,8 +81,6 @@ export const PATCH = withAuth(async (req, context) => {
       include: { patient: true, provider: true, payment: true },
     });
 
-    // Send cancellation email if appointment was cancelled
-    
     if (status === AppointmentStatus.CANCELLED && updated.patient?.email) {
       await sendCancellationEmail({
         to: updated.patient.email,
@@ -149,12 +113,8 @@ export const DELETE = withAuth(async (req, context) => {
 
     if (!appointment) return notFound("Appointment not found");
 
-    // Only send cancellation email if appointment was active — not if already
-    // COMPLETED or CANCELLED (patient already knows)
     if (
-      (ACTIVE_APPOINTMENT_STATUSES as readonly string[]).includes(
-        appointment.status,
-      ) &&
+      ACTIVE_APPOINTMENT_STATUSES.includes(appointment.status) &&
       appointment.patient?.email
     ) {
       sendCancellationEmail({
@@ -167,7 +127,6 @@ export const DELETE = withAuth(async (req, context) => {
       });
     }
 
-    // Delete payment first — FK constraint requires this before appointment delete
     await prisma.payment.deleteMany({
       where: { appointmentId: id },
     });
