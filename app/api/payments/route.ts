@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { parseNonEmptyString } from "@/lib/validate";
 import { ok, created, badRequest, notFound, conflict, serverError } from "@/lib/api";
 import { withAuthSimple } from "@/lib/withAuth";
+import { AppointmentStatus } from "@/lib/appointments/constants";
 
 export const GET = withAuthSimple(async (req) => {
     try {
@@ -74,8 +75,14 @@ export const POST = withAuthSimple(async (req) => {
         }
 
         // Cancelled appointment wont be checked out.
-        if (appointment.status === "CANCELLED") {
+        if (appointment.status === AppointmentStatus.CANCELLED) {
             return badRequest("Cannot record payment for a cancelled appointment");
+        }
+
+        if (appointment.status !== AppointmentStatus.CHECKED_IN) {
+            return badRequest(
+                "Appointment must be checked in before checkout",
+            );
         }
 
         // Prevent duplicate payments for the same appointment
@@ -111,7 +118,7 @@ export const POST = withAuthSimple(async (req) => {
             //Marks the appointment as completed once payment is recorded
             prisma.appointment.update({
                 where: { id: appointmentId },
-                data: { status: "COMPLETED" },
+                data: { status: AppointmentStatus.COMPLETED },
             }),
         ]);
 

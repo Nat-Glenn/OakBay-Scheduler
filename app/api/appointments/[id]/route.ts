@@ -11,6 +11,7 @@ import {
   ACTIVE_APPOINTMENT_STATUSES,
   AppointmentStatus,
 } from "@/lib/appointments/constants";
+import { isValidStatusTransition } from "@/lib/appointments/lifecycle";
 import { patchAppointmentSchema } from "@/lib/appointments/schemas";
 import { parseBody } from "@/lib/validation/parseBody";
 
@@ -39,12 +40,22 @@ export const PATCH = withAuth(async (req, context) => {
     const adminNotes =
       rawAdminNotes !== undefined ? cleanField(String(rawAdminNotes)) : undefined;
 
-    const exists = await prisma.appointment.findUnique({
+    const existing = await prisma.appointment.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, status: true },
     });
 
-    if (!exists) return notFound("Appointment not found");
+    if (!existing) return notFound("Appointment not found");
+
+    if (
+      status !== undefined &&
+      !isValidStatusTransition(existing.status, status)
+    ) {
+      return badRequest("Invalid status transition", {
+        from: existing.status,
+        to: status,
+      });
+    }
 
     let slot: number | undefined;
 

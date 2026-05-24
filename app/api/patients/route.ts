@@ -5,6 +5,8 @@ import { withAuthSimple } from "@/lib/withAuth";
 import { badRequest, serverError } from "@/lib/api";
 import { createPatientSchema } from "@/lib/patients/schemas";
 import { redactPatientForRole } from "@/lib/auth/redact";
+import { AppointmentStatus } from "@/lib/appointments/constants";
+import { syncOverdueAppointmentStatuses } from "@/lib/appointments/lifecycle";
 
 function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
   return {
@@ -63,6 +65,8 @@ export const POST = withAuthSimple(async (req, user) => {
 
 export const GET = withAuthSimple(async (req, user) => {
   try {
+    await syncOverdueAppointmentStatuses();
+
     const { searchParams } = new URL(req.url);
     const search = (searchParams.get("search") ?? "").trim();
 
@@ -84,7 +88,8 @@ export const GET = withAuthSimple(async (req, user) => {
       include: {
         appointments: {
           where: {
-            status: "COMPLETED",
+            status: AppointmentStatus.COMPLETED,
+            payment: { isNot: null },
           },
           orderBy: {
             startTime: "desc",
