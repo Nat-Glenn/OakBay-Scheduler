@@ -1,45 +1,15 @@
+/**
+ * Mobile navigation drawer — slides in from the left on small screens.
+ */
+
 "use client";
-import Link from "next/link";
-import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import {
-  GrMoney,
-  GrPower,
-  GrScorecard,
-  GrSettingsOption,
-  GrTask,
-  GrUser,
-  GrUserManager,
-} from "react-icons/gr";
-import { signOut } from "firebase/auth";
-import { auth } from "@/app/Login/Firebase/firebase";
-import { Menu } from "lucide-react";
+
+import { Menu as MenuIcon } from "lucide-react";
+import SidebarNav from "@/components/SidebarNav";
 import { useNavBar } from "@/utils/NavBarProvider";
 
-export default function MenuComp() {
+export default function MobileMenuDrawer() {
   const { handleClose, navState, setNavState } = useNavBar();
-  const router = useRouter();
-  const pathname = usePathname();
-
-  const handleSignOut = async () => {
-    try {
-      await signOut(auth);
-      router.replace("/Login");
-    } catch (err) {
-      console.log(err);
-      alert("Sign out failed.");
-    }
-  };
-
-  const CurrentPage = (href) => {
-    const isActive = pathname === href || pathname.startsWith(href + "/");
-
-    return `p-4 px-5 flex flex-row items-center gap-2 font-bold transition-all duration-200 ${
-      isActive
-        ? "bg-sidebar-button-primary hover:bg-sidebar-button-primary-foreground text-background shadow-inner border-r-4 border-[#A0CE66]"
-        : "text-foreground hover:text-background bg-background hover:bg-sidebar-button-primary-foreground"
-    }`;
-  };
 
   return (
     <div
@@ -49,87 +19,28 @@ export default function MenuComp() {
           setNavState("closed");
         }
       }}
-      className={`fixed inset-0 duration-200 flex items-start bg-gray-700/60 z-2 will-change-transform
-        ${
-          navState === "open" ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
+      className={`fixed inset-0 z-50 flex items-start bg-gray-700/60 duration-200 will-change-transform md:hidden ${
+        navState === "open" ? "opacity-100" : "opacity-0 pointer-events-none"
+      }`}
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className={`flex flex-col w-64 min-h-screen bg-background border-r border-white/5 shadow-2xl relative transform transition-transform
-          ${navState === "open" ? "translate-x-0" : "-translate-x-full"}`}
+        className={`relative flex min-h-screen w-72 max-w-[85vw] transform flex-col border-r border-white/5 bg-background shadow-2xl transition-transform ${
+          navState === "open" ? "translate-x-0" : "-translate-x-full"
+        }`}
       >
-        {/* Logo Section */}
-        <div className="flex flex-row self-center items-center py-2 px-2 w-full">
-          <Menu
-            onClick={handleClose}
-            size={40}
-            className="mr-auto hover:bg-muted-foreground/30 p-2 rounded-full cursor-pointer"
-          />
-          <Image src="/logo.png" alt="Logo" width={100} height={50} priority />
-          <div>&nbsp;</div>
-        </div>
-
-        {/* Navigation Links */}
-        <Link href="/" onClick={handleClose} className={CurrentPage("/")}>
-          <GrScorecard />
-          Appointments
-        </Link>
-
-        <Link
-          onClick={handleClose}
-          href="/Billing"
-          className={CurrentPage("/Billing")}
-        >
-          <GrMoney />
-          Billing
-        </Link>
-
-        <Link
-          onClick={handleClose}
-          href="/Practitioners"
-          className={CurrentPage("/Practitioners")}
-        >
-          <GrUserManager />
-          Practitioners
-        </Link>
-
-        <Link
-          href="/Patients"
-          onClick={handleClose}
-          className={CurrentPage("/Patients")}
-        >
-          <GrUser />
-          Patients
-        </Link>
-
-            <Link
-          onClick={handleClose}
-          href="/Summary"
-          className={CurrentPage("/Summary")}
-        >
-          <GrTask />
-          Summary
-        </Link>
-
-        <Link
-          href="/Settings"
-          onClick={handleClose}
-          className={CurrentPage("/Settings")}
-        >
-          <GrSettingsOption />
-          Settings
-        </Link>
-
-        {/* Sign Out Section */}
-        <div className="mt-auto flex flex-row text-white justify-between font-bold border-t border-white/5">
+        <div className="flex items-center justify-between border-b border-muted-foreground/20 px-3 py-2">
           <button
-            onClick={handleSignOut}
-            className="flex flex-1 flex-row items-center gap-2 p-4 px-5 bg-sidebar-button-primary hover:bg-sidebar-button-primary-foreground transition-all"
+            type="button"
+            aria-label="Close menu"
+            onClick={handleClose}
+            className="rounded-full p-2 hover:bg-muted"
           >
-            <GrPower />
-            Sign Out
+            <MenuIcon size={28} />
           </button>
+        </div>
+        <div className="min-h-0 flex-1">
+          <SidebarNav onNavigate={handleClose} />
         </div>
       </div>
     </div>

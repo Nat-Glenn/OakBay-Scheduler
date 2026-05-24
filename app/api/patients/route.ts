@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { hasProfanity, cleanField } from "@/lib/profanity";
 import { encryptField, decryptField } from "@/lib/encrypt";
-import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
 import { withAuthSimple } from "@/lib/withAuth";
+import { badRequest, serverError } from "@/lib/api";
+import { createPatientSchema } from "@/lib/patients/schemas";
+import { parseBody } from "@/lib/validation/parseBody";
 
 function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
   return {
@@ -14,108 +16,26 @@ function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
 export const POST = withAuthSimple(async (req) => {
   try {
     const body = await req.json();
-    const firstName = String(body.firstName ?? "").trim();
-    const lastName = String(body.lastName ?? "").trim();
-    const phone = String(body.phone ?? "").trim();
-    const email =
-      body.email !== undefined && body.email !== null
-        ? String(body.email).trim().toLowerCase()
-        : null;
-    const ahcNumber =
-      body.ahcNumber !== undefined && body.ahcNumber !== null
-        ? String(body.ahcNumber).trim()
-        : null;
-    const dob =
-      body.dob !== undefined && body.dob !== null
-        ? String(body.dob).trim()
-        : null;
+    const parsed = parseBody(createPatientSchema, body);
+    if (!parsed.ok) return parsed.response;
 
-    // Required fields validation — check these before profanity to give clear errors
-    if (!firstName || !lastName || !phone) {
-      return Response.json(
-        { error: "First name, last name, and phone are required" },
-        { status: 400 },
-      );
-    }
-
-    // Name: letters only, max 50 characters
-    if (!nameRegex.test(firstName)) {
-      return Response.json(
-        { error: "First name can only contain letters, spaces, hyphens, and apostrophes" },
-        { status: 400 }
-      );
-    }
-    if (firstName.length > 50) {
-      return Response.json(
-        { error: "First name cannot exceed 50 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (!nameRegex.test(lastName)) {
-      return Response.json(
-        { error: "Last name can only contain letters, spaces, hyphens, and apostrophes" },
-        { status: 400 }
-      );
-    }
-    if (lastName.length > 50) {
-      return Response.json(
-        { error: "Last name cannot exceed 50 characters" },
-        { status: 400 }
-      );
-    }
-
-    // Phone format validation
-    if (!phoneRegex.test(phone)) {
-      return Response.json(
-        { error: "Invalid phone number format" },
-        { status: 400 }
-      );
-    }
-
-    // Email format and length validation (optional field)
-    if (email) {
-      if (email.length > 254) {
-        return Response.json(
-          { error: "Email cannot exceed 254 characters" },
-          { status: 400 }
-        );
-      }
-      if (!emailRegex.test(email)) {
-        return Response.json(
-          { error: "Invalid email format" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Max year of birth must be at least 1 year ago — patient must be at least 1 year old
-    if (dob) {
-      const dobDate = new Date(dob);
-      const oneYearAgo = new Date();
-      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-      if (dobDate > oneYearAgo) {
-        return Response.json(
-          { error: "Date of birth must be at least 1 year ago" },
-          { status: 400 }
-        );
-      }
-    }
+    const {
+      firstName,
+      lastName,
+      phone,
+      email,
+      ahcNumber,
+      dob,
+      reminderOptIn,
+    } = parsed.data;
 
     const notes = cleanField(body.notes);
 
-    // Profanity in names is rejected
     if (hasProfanity(firstName)) {
-      return Response.json(
-        { error: "First name cannot contain inappropriate language" },
-        { status: 400 },
-      );
+      return badRequest("First name cannot contain inappropriate language");
     }
     if (hasProfanity(lastName)) {
-      return Response.json(
-        { error: "Last name cannot contain inappropriate language" },
-        { status: 400 },
-      );
+      return badRequest("Last name cannot contain inappropriate language");
     }
 
     const patient = await prisma.patient.create({
@@ -126,7 +46,7 @@ export const POST = withAuthSimple(async (req) => {
         email: email || null,
         ahcNumber: ahcNumber ? encryptField(ahcNumber) : null,
         dob: dob || null,
-        reminderOptIn: body.reminderOptIn ?? true,
+        reminderOptIn,
         notes,
       },
     });
@@ -134,10 +54,7 @@ export const POST = withAuthSimple(async (req) => {
     return Response.json(decryptPatient(patient), { status: 201 });
   } catch (err) {
     console.error(err);
-    return Response.json(
-      { error: "Failed to create patient" },
-      { status: 500 },
-    );
+    return serverError("Failed to create patient");
   }
 });
 
@@ -164,7 +81,6 @@ export const GET = withAuthSimple(async (req) => {
       include: {
         appointments: {
           where: {
-            // Only count completed appointments as a last visit
             status: "COMPLETED",
           },
           orderBy: {
@@ -192,6 +108,6 @@ export const GET = withAuthSimple(async (req) => {
     );
   } catch (err) {
     console.error(err);
-    return Response.json({ error: "Failed to fetch patients" }, { status: 500 });
+    return serverError("Failed to fetch patients");
   }
 });

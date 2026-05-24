@@ -1,5 +1,5 @@
 "use client";
-import NavBarComp from "@/components/NavBarComp";
+import AppShell from "@/components/AppShell";
 import { renderAppointment } from "@/components/RenderAppointment";
 import React from "react";
 import { useState, useEffect } from "react";
@@ -131,25 +131,22 @@ export default function Appointments() {
   }, [date]);
 
   return (
-    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
-      <NavBarComp />
-      <div className="flex flex-col min-h-0 px-4 pb-4">
-        <header className="flex flex-row gap-4 items-center py-4">
-          {!small && (
-            <div className="w-full flex flex-col">
-              <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
-            </div>
-          )}
+    <AppShell>
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
+        <header className="flex flex-row items-center gap-4 py-4">
+          <div className="hidden w-full flex-col md:flex">
+            <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
+          </div>
 
           <div
             className={`flex w-full flex-row ${small ? "justify-between" : "justify-end gap-4"}`}
           >
             <ChevronLeftIcon
-              className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+              className="hidden size-8 shrink-0 cursor-pointer rounded-full hover:bg-muted md:block"
               onClick={() => date && setDate(subDays(date, 1))}
             />
             <ChevronRightIcon
-              className="hidden cursor-pointer hover:bg-muted-foreground/30 rounded-full"
+              className="hidden size-8 shrink-0 cursor-pointer rounded-full hover:bg-muted md:block"
               onClick={() => date && setDate(addDays(date, 1))}
             />
             <DatePicker
@@ -297,6 +294,6 @@ export default function Appointments() {
           )}
         </div>
       </div>
-    </main>
+    </AppShell>
   );
 }

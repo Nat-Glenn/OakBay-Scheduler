@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import NavBarComp from "@/components/NavBarComp";
+import AppShell from "@/components/AppShell";
 import { apiFetch } from "@/utils/apiFetch";
 import { Search, Plus, MoreVertical, User, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -228,16 +228,12 @@ const updated = {
 
   return (
     <>
-      <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
-        <NavBarComp />
-
-        <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden">
+    <AppShell>
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 overflow-hidden">
           <header className="flex flex-row py-4">
-            {!small && (
-              <h1 className="text-3xl w-full font-bold text-foreground">
-                Practitioners
-              </h1>
-            )}
+            <h1 className="hidden text-3xl w-full font-bold text-foreground md:block">
+              Practitioners
+            </h1>
 
             <div className="flex flex-row justify-end gap-4 w-full">
               <div className="relative flex-1 max-w-md">
@@ -432,7 +428,7 @@ const updated = {
             </div>
           </div>
         </div>
-      </main>
+    </AppShell>
 
       <Dialog
         open={addOpen}

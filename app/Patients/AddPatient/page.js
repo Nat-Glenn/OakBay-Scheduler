@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import filter from "leo-profanity";
-import NavBarComp from "@/components/NavBarComp";
+import AppShell from "@/components/AppShell";
 import { ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -223,10 +223,8 @@ export default function AddPatientPage() {
   }
 
   return (
-    <main className="flex h-dvh flex-col w-full bg-background text-foreground">
-      <NavBarComp />
-
-      <div className="min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
+    <AppShell title="Add Patient">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
 
         {/* BREADCRUMB & TITLE */}
         <header className="py-4">
@@ -239,7 +237,7 @@ export default function AddPatientPage() {
               Back to Profiles
             </Link>
           </div>
-          <h1 className="text-3xl font-bold">Register New Patient</h1>
+          <h1 className="hidden text-3xl font-bold md:block">Register New Patient</h1>
         </header>
 
         <div className="flex justify-center">
@@ -382,6 +380,6 @@ export default function AddPatientPage() {
           </Card>
         </div>
       </div>
-    </main>
+    </AppShell>
   );
 }

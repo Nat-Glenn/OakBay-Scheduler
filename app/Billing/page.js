@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import NavBarComp from "@/components/NavBarComp";
+import AppShell from "@/components/AppShell";
 import { apiFetch } from "@/utils/apiFetch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, PencilLine, Plus, Search, User } from "lucide-react";
+import { CreditCard, PencilLine, Plus, Search, User, Users } from "lucide-react";
+import EmptyState from "@/components/EmptyState";
 import {
   Select,
   SelectContent,
@@ -290,16 +291,10 @@ export default function Billing() {
   }
 
   return (
-    <main className="flex flex-col h-dvh w-full bg-background overflow-hidden">
-      <NavBarComp />
-
-      <div className="flex flex-col min-h-0 px-4 pb-4">
-        <header className="flex flex-row gap-4 items-center py-4">
-          {!small && (
-            <div className="w-full flex flex-col">
-              <h1 className="text-3xl font-bold text-foreground">Billing</h1>
-            </div>
-          )}
+    <AppShell>
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 overflow-y-auto">
+        <header className="flex flex-row items-center gap-4 py-4">
+          <h1 className="hidden text-3xl font-bold text-foreground md:block">Billing</h1>
         </header>
         <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
           <Card>
@@ -323,17 +318,26 @@ export default function Billing() {
 
               <div className="max-h-80 space-y-2 overflow-y-auto">
                 {loadingPatients ? (
-                  <p className="text-sm text-muted-foreground">
-                    Loading patients...
-                  </p>
+                  <div className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-16 animate-pulse rounded-lg border bg-muted/40"
+                      />
+                    ))}
+                  </div>
                 ) : patientSearch.trim() === "" ? (
-                  <p className="text-sm text-muted-foreground">
-                    Start typing to search for a patient.
-                  </p>
+                  <EmptyState
+                    icon={Search}
+                    title="Search for a patient"
+                    description="Type a name, phone number, or patient ID to find someone."
+                  />
                 ) : patientResults.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No patients found
-                  </p>
+                  <EmptyState
+                    icon={Users}
+                    title="No patients found"
+                    description="Try a different spelling or search by phone."
+                  />
                 ) : (
                   patientResults.map((patient) => (
                     <button
@@ -379,9 +383,11 @@ export default function Billing() {
                     </div>
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Search for a patient to load their billing profile.
-                  </p>
+                  <EmptyState
+                    icon={User}
+                    title="Select a patient"
+                    description="Search and choose a patient to view their billing profile."
+                  />
                 )}
               </CardContent>
             </Card>
@@ -478,17 +484,26 @@ export default function Billing() {
 
               <CardContent className="space-y-3">
                 {!selectedPatient ? (
-                  <p className="text-sm text-muted-foreground">
-                    Select a patient to view their saved cards.
-                  </p>
+                  <EmptyState
+                    icon={CreditCard}
+                    title="No patient selected"
+                    description="Choose a patient to view or add cards on file."
+                  />
                 ) : loadingCards ? (
-                  <p className="text-sm text-muted-foreground">
-                    Loading cards...
-                  </p>
+                  <div className="space-y-2">
+                    {Array.from({ length: 2 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="h-20 animate-pulse rounded-xl border bg-muted/40"
+                      />
+                    ))}
+                  </div>
                 ) : cards.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    No cards on file for this patient.
-                  </p>
+                  <EmptyState
+                    icon={CreditCard}
+                    title="No cards on file"
+                    description="Add a payment card for this patient using New Card."
+                  />
                 ) : (
                   cards.map((card) => (
                     <div
@@ -582,6 +597,6 @@ export default function Billing() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </AppShell>
   );
 }

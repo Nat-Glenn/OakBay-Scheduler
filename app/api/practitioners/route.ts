@@ -1,7 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/hash";
-import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
 import { withAuthSimple } from "@/lib/withAuth";
+import { badRequest, conflict, serverError } from "@/lib/api";
+import { createPractitionerSchema } from "@/lib/practitioners/schemas";
+import { parseBody } from "@/lib/validation/parseBody";
 
 export const GET = withAuthSimple(async () => {
   try {
@@ -23,106 +25,47 @@ export const GET = withAuthSimple(async () => {
     return Response.json(practitioners);
   } catch (err) {
     console.error("Failed to fetch practitioners:", err);
-    return Response.json(
-      { error: "Failed to fetch practitioners" },
-      { status: 500 }
-    );
+    return serverError("Failed to fetch practitioners");
   }
 });
 
 export const POST = withAuthSimple(async (req) => {
-  try{
+  try {
     const body = await req.json();
+    const parsed = parseBody(createPractitionerSchema, body);
+    if (!parsed.ok) return parsed.response;
 
-    const name = String(body.name || "").trim();
-    const email = String(body.email || "").trim().toLowerCase();
-    const phone = String(body.phone || "").trim();
+    const { name, email, phone } = parsed.data;
 
-    if (!name) {
-      return Response.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!email) {
-      return Response.json(
-        { error: "Email is required" },
-        { status: 400 }
-      );
-    }
-
-    if (phone && !phoneRegex.test(phone)) {
-  return Response.json(
-    { error: "Invalid phone number format" },
-    { status: 400 }
-  );
-}
-
-    // Name: letters only, max 50 characters
-    if (!nameRegex.test(name)) {
-      return Response.json(
-        { error: "Name can only contain letters, spaces, hyphens, and apostrophes" },
-        { status: 400 }
-      );
-    }
-    if (name.length > 50) {
-      return Response.json(
-        { error: "Name cannot exceed 50 characters" },
-        { status: 400 }
-      );
-    }
-
-    // Email format and length validation
-    if (email.length > 254) {
-      return Response.json(
-        { error: "Email cannot exceed 254 characters" },
-        { status: 400 }
-      );
-    }
-    if (!emailRegex.test(email)) {
-      return Response.json(
-        { error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
-
-    const exisitngUser = await prisma.user.findUnique({
-      where : { email },
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
     });
 
-    if (exisitngUser) {
-      return Response.json(
-        { error: "A user with this email already exists" },
-        { status: 409 }
-      );
+    if (existingUser) {
+      return conflict("A user with this email already exists");
     }
-    
-    //hash the password before storing
+
     const hashedPassword = await hashPassword("temp123");
 
     const practitioner = await prisma.user.create({
-  data: {
-    name,
-    email,
-    phone: phone || null,
-    role: "provider",
-    password: hashedPassword,
-  },
-  select: {
-    id: true,
-    name: true,
-    email: true,
-    phone: true,
-  },
-});
+      data: {
+        name,
+        email,
+        phone: phone || null,
+        role: "provider",
+        password: hashedPassword,
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+      },
+    });
 
     return Response.json(practitioner, { status: 201 });
   } catch (err) {
     console.error("Failed to create practitioner:", err);
-    return Response.json(
-      { error: "Failed to create practitioner" },
-      { status: 500 }
-    );
+    return serverError("Failed to create practitioner");
   }
 });

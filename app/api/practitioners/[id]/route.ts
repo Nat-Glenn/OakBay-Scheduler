@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
-import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
 import { withAuth } from "@/lib/withAuth";
+import { patchPractitionerSchema } from "@/lib/practitioners/schemas";
+import { parseBody } from "@/lib/validation/parseBody";
 
 export const PATCH = withAuth(async (req, context) => {
   try {
@@ -13,40 +14,10 @@ export const PATCH = withAuth(async (req, context) => {
     }
 
     const body = await req.json();
+    const parsed = parseBody(patchPractitionerSchema, body);
+    if (!parsed.ok) return parsed.response;
 
-    const name =
-      body.name !== undefined ? String(body.name).trim() : undefined;
-
-    const email =
-      body.email !== undefined ? String(body.email).trim().toLowerCase() : undefined;
-
-    const phone =
-      body.phone !== undefined ? String(body.phone).trim() : undefined;
-
-    // Name: letters only, max 50 characters (only validate if field is being updated)
-    if (name !== undefined) {
-      if (!nameRegex.test(name)) {
-        return badRequest("Name can only contain letters, spaces, hyphens, and apostrophes");
-      }
-      if (name.length > 50) {
-        return badRequest("Name cannot exceed 50 characters");
-      }
-    }
-
-    // Phone format validation (only validate if field is being updated)
-    if (phone !== undefined && phone !== "" && !phoneRegex.test(phone)) {
-      return badRequest("Invalid phone number format");
-    }
-
-    // Email format and length validation (only validate if field is being updated)
-    if (email !== undefined) {
-      if (email.length > 254) {
-        return badRequest("Email cannot exceed 254 characters");
-      }
-      if (!emailRegex.test(email)) {
-        return badRequest("Invalid email format");
-      }
-    }
+    const { name, email, phone } = parsed.data;
 
     const existing = await prisma.user.findUnique({
       where: { id },
@@ -57,7 +28,6 @@ export const PATCH = withAuth(async (req, context) => {
       return notFound("Practitioner not found");
     }
 
-    // Check email isn't already taken by another user
     if (email && email !== existing.email) {
       const emailTaken = await prisma.user.findUnique({
         where: { email },
@@ -75,7 +45,6 @@ export const PATCH = withAuth(async (req, context) => {
         ...(email !== undefined ? { email } : {}),
         ...(phone !== undefined ? { phone: phone || null } : {}),
       },
-      
       select: {
         id: true,
         name: true,

@@ -1,15 +1,15 @@
 import { prisma } from "@/lib/prisma";
 import { badRequest, notFound, serverError } from "@/lib/api";
 import { encryptField, decryptField } from "@/lib/encrypt";
-import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
 import { withAuth } from "@/lib/withAuth";
+import { patchPatientSchema } from "@/lib/patients/schemas";
+import { parseBody } from "@/lib/validation/parseBody";
 
 export const GET = withAuth(async (_req, context) => {
   try {
     const { id: idStr } = await context.params;
     const patientId = Number(idStr);
 
-    // Validate the ID is a positive integer
     if (!Number.isInteger(patientId) || patientId <= 0) {
       return badRequest("Invalid patient id", { id: idStr });
     }
@@ -20,11 +20,10 @@ export const GET = withAuth(async (_req, context) => {
 
     if (!patient) return notFound("Patient not found");
 
-    // Decrypt ahcNumber before returning to frontend
     return Response.json({
-  ...patient,
-  ahcNumber: decryptField(patient.ahcNumber),
-});
+      ...patient,
+      ahcNumber: decryptField(patient.ahcNumber),
+    });
   } catch (err) {
     console.error(err);
     return serverError("Failed to load patient");
@@ -37,96 +36,15 @@ export const PATCH = withAuth(async (req, context) => {
     const patientId = Number(id);
 
     if (!Number.isInteger(patientId) || patientId <= 0) {
-      return Response.json({ error: "Invalid patient id" }, { status: 400 });
+      return badRequest("Invalid patient id");
     }
 
     const body = await req.json();
+    const parsed = parseBody(patchPatientSchema, body);
+    if (!parsed.ok) return parsed.response;
 
-    const firstName =
-      body.firstName !== undefined ? String(body.firstName).trim() : undefined;
-    const lastName =
-      body.lastName !== undefined ? String(body.lastName).trim() : undefined;
-    const phone =
-      body.phone !== undefined ? String(body.phone).trim() : undefined;
-    const email =
-      body.email !== undefined && body.email !== null
-        ? String(body.email).trim().toLowerCase()
-        : body.email === null
-          ? null
-          : undefined;
-    const ahcNumber =
-      body.ahcNumber !== undefined && body.ahcNumber !== null
-        ? String(body.ahcNumber).trim()
-        : body.ahcNumber === null
-          ? null
-          : undefined;
-    const dob =
-      body.dob !== undefined && body.dob !== null
-        ? String(body.dob).trim()
-        : body.dob === null
-          ? null
-          : undefined;
-    const notes =
-      body.notes !== undefined && body.notes !== null
-        ? String(body.notes).trim()
-        : body.notes === null
-          ? null
-          : undefined;
-
-    // Name: letters only, max 50 characters (only validate if field is being updated)
-    if (firstName !== undefined) {
-      if (!nameRegex.test(firstName)) {
-        return Response.json(
-          { error: "First name can only contain letters, spaces, hyphens, and apostrophes" },
-          { status: 400 }
-        );
-      }
-      if (firstName.length > 50) {
-        return Response.json(
-          { error: "First name cannot exceed 50 characters" },
-          { status: 400 }
-        );
-      }
-    }
-
-    if (lastName !== undefined) {
-      if (!nameRegex.test(lastName)) {
-        return Response.json(
-          { error: "Last name can only contain letters, spaces, hyphens, and apostrophes" },
-          { status: 400 }
-        );
-      }
-      if (lastName.length > 50) {
-        return Response.json(
-          { error: "Last name cannot exceed 50 characters" },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Phone format validation (only validate if field is being updated)
-    if (phone !== undefined && !phoneRegex.test(phone)) {
-      return Response.json(
-        { error: "Invalid phone number format" },
-        { status: 400 }
-      );
-    }
-
-    // Email format and length validation (only validate if field is being updated)
-    if (email !== undefined && email !== null) {
-      if (email.length > 254) {
-        return Response.json(
-          { error: "Email cannot exceed 254 characters" },
-          { status: 400 }
-        );
-      }
-      if (!emailRegex.test(email)) {
-        return Response.json(
-          { error: "Invalid email format" },
-          { status: 400 }
-        );
-      }
-    }
+    const { firstName, lastName, phone, email, ahcNumber, dob, notes, reminderOptIn } =
+      parsed.data;
 
     const updatedPatient = await prisma.patient.update({
       where: { id: patientId },
@@ -140,19 +58,16 @@ export const PATCH = withAuth(async (req, context) => {
           : {}),
         ...(dob !== undefined ? { dob: dob || null } : {}),
         ...(notes !== undefined ? { notes: notes || null } : {}),
-        ...(body.reminderOptIn !== undefined
-          ? { reminderOptIn: Boolean(body.reminderOptIn) }
-          : {}),
+        ...(reminderOptIn !== undefined ? { reminderOptIn } : {}),
       },
     });
 
-    // Decrypt ahcNumber before returning to frontend
     return Response.json({
       ...updatedPatient,
       ahcNumber: decryptField(updatedPatient.ahcNumber),
     });
   } catch (error) {
     console.error("PATCH /api/patients/[id] error:", error);
-    return Response.json({ error: "Failed to update patient" }, { status: 500 });
+    return serverError("Failed to update patient");
   }
 });

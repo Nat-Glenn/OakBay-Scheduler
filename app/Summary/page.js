@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import NavBarComp from "@/components/NavBarComp";
+import AppShell from "@/components/AppShell";
+import SummarySkeleton from "@/components/SummarySkeleton";
+import EmptyState from "@/components/EmptyState";
 import { apiFetch } from "@/utils/apiFetch";
 import {
   Users,
@@ -363,46 +365,39 @@ export default function Summary() {
 
   if (summaryLoading) {
     return (
-      <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
-        <NavBarComp />
-        <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
-          {!small && (
-            <header className="py-4">
-              <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-            </header>
-          )}
-          <div className="p-6 text-foreground">Loading summary...</div>
+      <AppShell title="Summary">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
+          <header className="hidden py-4 md:block">
+            <h1 className="text-3xl font-bold text-foreground">Summary</h1>
+          </header>
+          <SummarySkeleton />
         </div>
-      </main>
+      </AppShell>
     );
   }
 
   if (summaryError) {
     return (
-      <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
-        <NavBarComp />
-        <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
-          {!small && (
-            <header className="py-4">
-              <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-            </header>
-          )}
-          <div className="p-6 text-red-500">{summaryError}</div>
+      <AppShell title="Summary">
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
+          <header className="hidden py-4 md:block">
+            <h1 className="text-3xl font-bold text-foreground">Summary</h1>
+          </header>
+          <EmptyState
+            title="Could not load summary"
+            description={summaryError}
+          />
         </div>
-      </main>
+      </AppShell>
     );
   }
 
   return (
-    <main className="flex flex-col h-dvh w-full bg-background relative overflow-hidden">
-      <NavBarComp />
-
-      <div className="flex flex-col min-w-0 overflow-y-auto scrollbar-rounded px-4 pb-4">
-        {!small && (
-          <header className="py-4">
-            <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-          </header>
-        )}
+    <AppShell title="Summary">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
+        <header className="hidden py-4 md:block">
+          <h1 className="text-3xl font-bold text-foreground">Summary</h1>
+        </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 mt-4">
           <StatCard
@@ -498,11 +493,11 @@ export default function Summary() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell
-                        colSpan={4}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        No recent visits found.
+                      <TableCell colSpan={4} className="p-0">
+                        <EmptyState
+                          title="No recent visits"
+                          description="Completed appointments will appear here."
+                        />
                       </TableCell>
                     </TableRow>
                   )}
@@ -662,7 +657,7 @@ export default function Summary() {
           {isChatOpen ? <X size={28} /> : <MessageCircle size={28} />}
         </Button>
       </div>
-    </main>
+    </AppShell>
   );
 }
 

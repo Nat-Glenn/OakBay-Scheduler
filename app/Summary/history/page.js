@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import NavBarComp from "@/components/NavBarComp";
+import AppShell from "@/components/AppShell";
 import { apiFetch } from "@/utils/apiFetch";
 import Link from "next/link";
 import {
@@ -159,33 +159,33 @@ export default function SummaryHistoryPage() {
 
   if (loading) {
     return (
-      <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
-        <NavBarComp />
-        <div className="flex flex-col min-w-0 px-4 pb-4">
-          {!small && <header className="py-4"><h1 className="text-3xl font-bold">Visit History</h1></header>}
+      <AppShell title="Visit History">
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
+          <header className="hidden py-4 md:block">
+            <h1 className="text-3xl font-bold">Visit History</h1>
+          </header>
           <div className="p-6">Loading history...</div>
         </div>
-      </main>
+      </AppShell>
     );
   }
 
   if (error) {
     return (
-      <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
-        <NavBarComp />
-        <div className="flex flex-col min-w-0 px-4 pb-4">
-          {!small && <header className="py-4"><h1 className="text-3xl font-bold">Visit History</h1></header>}
+      <AppShell title="Visit History">
+        <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
+          <header className="hidden py-4 md:block">
+            <h1 className="text-3xl font-bold">Visit History</h1>
+          </header>
           <div className="p-6 text-red-500">{error}</div>
         </div>
-      </main>
+      </AppShell>
     );
   }
 
   return (
-    <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
-      <NavBarComp />
-
-      <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden flex-1">
+    <AppShell title="Visit History">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4">
 
         {/* Page Header */}
         <header className="flex flex-row py-4 items-center justify-between gap-4">
@@ -195,7 +195,7 @@ export default function SummaryHistoryPage() {
                 <ArrowLeft size={20} />
               </Button>
             </Link>
-            {!small && <h1 className="text-3xl font-bold">Visit History</h1>}
+            <h1 className="hidden text-3xl font-bold md:block">Visit History</h1>
           </div>
 
           <div className="flex items-center gap-2 flex-1 max-w-2xl justify-end">
@@ -325,6 +325,6 @@ export default function SummaryHistoryPage() {
           </div>
         </div>
       </div>
-    </main>
+    </AppShell>
   );
 }

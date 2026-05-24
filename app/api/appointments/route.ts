@@ -4,6 +4,7 @@ import { sendBookingConfirmationEmail } from "@/lib/email";
 import { withAuthSimple } from "@/lib/withAuth";
 import { AppointmentStatus } from "@/lib/appointments/constants";
 import { createAppointmentSchema } from "@/lib/appointments/schemas";
+import { parseBody } from "@/lib/validation/parseBody";
 import {
   getClinicDayBounds,
   parseClinicDateParam,
@@ -55,14 +56,9 @@ export const GET = withAuthSimple(async (req) => {
 export const POST = withAuthSimple(async (req) => {
   try {
     const body = await req.json();
-    const parsed = createAppointmentSchema.safeParse(body);
+    const parsed = parseBody(createAppointmentSchema, body);
 
-    if (!parsed.success) {
-      return Response.json(
-        { error: "Validation failed", details: parsed.error.flatten() },
-        { status: 400 },
-      );
-    }
+    if (!parsed.ok) return parsed.response;
 
     const {
       patientId,

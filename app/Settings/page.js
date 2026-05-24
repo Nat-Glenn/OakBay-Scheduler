@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import NavBarComp from "@/components/NavBarComp";
+import AppShell from "@/components/AppShell";
 // External logic for Firebase account linking
 import { connectGoogleAccount, disconnectGoogleAccount } from "./connectAccount";
 import { User, ShieldCheck, Lock, Link as LinkIcon, Check, Trash2, Camera } from "lucide-react";
@@ -136,12 +136,10 @@ export default function Settings() {
   };
 
   return (
-    <main className="flex flex-col min-h-screen w-full bg-background">
-      <NavBarComp />
-      
-      <div className="flex flex-col flex-1 px-4 md:px-8 pb-8">
+    <AppShell>
+      <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-8 md:px-8">
         <header className="py-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground">Settings</h1>
+          <h1 className="hidden text-2xl font-bold text-foreground md:block md:text-3xl">Settings</h1>
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
@@ -277,6 +275,6 @@ export default function Settings() {
 
         </div>
       </div>
-    </main>
+    </AppShell>
   );
 }

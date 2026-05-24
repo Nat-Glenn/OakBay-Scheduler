@@ -2,8 +2,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import filter from "leo-profanity"; 
-import NavBarComp from "@/components/NavBarComp";
+import AppShell from "@/components/AppShell";
 import { apiFetch } from "@/utils/apiFetch";
+import { parseApiError } from "@/utils/parseApiError";
 import { Search, Plus, User, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -144,7 +145,7 @@ export default function PatientProfiles() {
         const res = await apiFetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
         const data = await res.json();
         
-        if (!res.ok) throw new Error(data.error || "Failed to load patients");
+        if (!res.ok) throw new Error(parseApiError(data, "Failed to load patients"));
         
         setPatients(data);
 
@@ -278,7 +279,7 @@ function getDisplayedPatient(patient) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to update patient");
+      if (!res.ok) throw new Error(parseApiError(data, "Failed to update patient"));
 
       const refreshed = await apiFetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
       const refreshedData = await refreshed.json();
@@ -296,13 +297,10 @@ function getDisplayedPatient(patient) {
   }
 
   return (
-    <main className="flex flex-col h-dvh w-full bg-background text-foreground overflow-hidden">
-      <NavBarComp />
-      
-      <div className="flex flex-col min-w-0 px-4 pb-4 overflow-hidden">
-        {/* HEADER: Search and Add Button */}
+    <AppShell>
+      <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 overflow-hidden">
         <header className="flex flex-row py-4">
-          {!small && <h1 className="text-3xl w-full font-bold text-foreground">Patients</h1>}
+          <h1 className="hidden text-3xl w-full font-bold text-foreground md:block">Patients</h1>
           <div className="flex flex-row justify-end gap-4 w-full">
             <div className="relative flex-1 max-w-md">
               <InputGroup className="bg-input text-foreground">
@@ -474,6 +472,6 @@ function getDisplayedPatient(patient) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
+    </AppShell>
   );
 }
