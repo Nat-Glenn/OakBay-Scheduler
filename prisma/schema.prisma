@@ -19,6 +19,8 @@ model User {
   updatedAt            DateTime      @updatedAt
   providedAppointments Appointment[] @relation("ProviderAppointments")
   createdAppointments  Appointment[] @relation("CreatorAppointments")
+
+  @@index([role])
 }
 
 model Patient {
@@ -57,6 +59,11 @@ model Appointment {
   reminderSent     Boolean   @default(false)
   reminderSentAt   DateTime?
   payment          Payment?
+
+  @@index([startTime])
+  @@index([providerId, startTime])
+  @@index([patientId])
+  @@index([status, reminderSent])
 }
 
 model Payment {
