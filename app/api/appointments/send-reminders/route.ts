@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendReminderEmail } from "@/lib/email";
+import { withAuthSimple } from "@/lib/withAuth";
+import { SCHEDULABLE_APPOINTMENT_STATUSES } from "@/lib/appointments/constants";
 
-export async function POST() {
+export const POST = withAuthSimple(async () => {
   try {
     const now = new Date();
     const oneHourFromNow = new Date(now.getTime() + 60 * 60 * 1000);
@@ -19,7 +21,7 @@ export async function POST() {
         },
         reminderSent: false,
         status: {
-          in: ["REQUESTED", "CONFIRMED"],
+          in: [...SCHEDULABLE_APPOINTMENT_STATUSES],
         },
         patient: {
           email: {
@@ -73,4 +75,4 @@ export async function POST() {
       { status: 500 }
     );
   }
-}
+});

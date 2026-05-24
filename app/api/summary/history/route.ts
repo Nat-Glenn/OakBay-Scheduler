@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { serverError } from "@/lib/api";
+import { withAuthSimple } from "@/lib/withAuth";
 
-export async function GET(req: Request) {
+export const GET = withAuthSimple(async (req) => {
   try {
     const { searchParams } = new URL(req.url);
 
@@ -74,4 +75,4 @@ export async function GET(req: Request) {
     console.error("GET /api/summary/history error:", error);
     return serverError("Failed to load visit history");
   }
-}
+});

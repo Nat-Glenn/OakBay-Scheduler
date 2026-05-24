@@ -28,6 +28,8 @@ import {
 import { DatePicker } from "./DatePicker";
 import FormField from "@/components/FormField";
 import { Plus } from "lucide-react";
+import { apiFetch } from "@/utils/apiFetch";
+import { dbStatusToUi, APPOINTMENT_TYPE_OPTIONS, CLINIC_TIME_SLOT_OPTIONS } from "@/lib/appointments/status";
 
 export default function AddAppointment({
   appointments,
@@ -37,6 +39,7 @@ export default function AddAppointment({
   variant = "default",
   patientId = null,
   open,
+  onOpenChange,
 }) {
   const router = useRouter();
 
@@ -53,41 +56,23 @@ export default function AddAppointment({
   const [isOpen, setIsOpen] = useState(open ?? false);
     const [validationError, setValidationError] = useState("");
 
-  const types = [
-    { id: 1, name: "Chiropractic Adjustment" },
-    { id: 2, name: "Massage" },
-    { id: 3, name: "Intense Massage" },
-  ];
-  const time = [
-    { id: 1, name: "9:00" },
-    { id: 2, name: "9:15" },
-    { id: 3, name: "9:30" },
-    { id: 4, name: "9:45" },
-    { id: 5, name: "10:00" },
-    { id: 6, name: "10:15" },
-    { id: 7, name: "10:30" },
-    { id: 8, name: "10:45" },
-    { id: 9, name: "11:00" },
-    { id: 10, name: "11:15" },
-    { id: 11, name: "11:30" },
-    { id: 12, name: "11:45" },
-    { id: 13, name: "14:00" },
-    { id: 14, name: "14:15" },
-    { id: 15, name: "14:30" },
-    { id: 16, name: "14:45" },
-    { id: 17, name: "15:00" },
-    { id: 18, name: "15:15" },
-    { id: 19, name: "15:30" },
-    { id: 20, name: "15:45" },
-    { id: 21, name: "16:00" },
-    { id: 22, name: "16:15" },
-    { id: 23, name: "16:30" },
-    { id: 24, name: "16:45" },
-    { id: 25, name: "17:00" },
-    { id: 26, name: "17:15" },
-    { id: 27, name: "17:30" },
-    { id: 28, name: "17:45" },
-  ];
+  const types = APPOINTMENT_TYPE_OPTIONS;
+  const time = CLINIC_TIME_SLOT_OPTIONS;
+
+  useEffect(() => {
+    if (open !== undefined) setIsOpen(open);
+  }, [open]);
+
+  const handleOpenChange = (nextOpen) => {
+    setIsOpen(nextOpen);
+    onOpenChange?.(nextOpen);
+  };
+
+  useEffect(() => {
+    if (patientId) {
+      setSelectedPatientId(patientId);
+    }
+  }, [patientId]);
 
   useEffect(() => {
     async function loadPatient() {
@@ -99,11 +84,11 @@ export default function AddAppointment({
       }
 
       try {
-        const res = await fetch(`/api/patients/${patientId}`);
+        const res = await apiFetch(`/api/patients/${patientId}`);
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.Error || "Failed to load patient");
+          throw new Error(data.error || "Failed to load patient");
         }
 
         setPatient(data);
@@ -125,7 +110,7 @@ export default function AddAppointment({
       if (patientId) return;
 
       try {
-        const res = await fetch("/api/patients");
+        const res = await apiFetch("/api/patients");
         const data = await res.json();
 
         if (!res.ok) {
@@ -147,7 +132,7 @@ export default function AddAppointment({
   useEffect(() => {
     async function loadPractitioners() {
       try {
-        const res = await fetch("/api/practitioners");
+        const res = await apiFetch("/api/practitioners");
         const data = await res.json();
 
         if (!res.ok) {
@@ -262,7 +247,7 @@ end.setMinutes(end.getMinutes() + 15);
         (p) => p.name === formPractitioner,
       );
 
-      const res = await fetch("/api/appointments", {
+      const res = await apiFetch("/api/appointments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -273,12 +258,10 @@ end.setMinutes(end.getMinutes() + 15);
           type: formType,
           startTime: start.toISOString(),
           endTime: end.toISOString(),
-          status: "confirmed",
         }),
       });
 
       const data = await res.json();
-      console.log("Created appointment response:", data);
 
       if (!res.ok) {
         throw new Error(data.error || "Failed to create appointment");
@@ -301,7 +284,7 @@ end.setMinutes(end.getMinutes() + 15);
         time: formTime,
         slot: availableSlot,
         date: formattedDate,
-        status: data.status,
+        status: dbStatusToUi(data.status),
       };
       router.refresh();
       setAppointments((prev) => [...prev, newAppointment]);
@@ -323,7 +306,7 @@ end.setMinutes(end.getMinutes() + 15);
   };
 
   return (
-    <AlertDialog open={isOpen} onOpenChange={setIsOpen} className="bg-background">
+    <AlertDialog open={isOpen} onOpenChange={handleOpenChange} className="bg-background">
       <AlertDialogTrigger asChild>
         <Button
           className={`${variant === "icon" ? "flex items-center" : "flex"}`}

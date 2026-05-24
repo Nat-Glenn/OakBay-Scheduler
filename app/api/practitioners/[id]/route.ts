@@ -1,11 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
 import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
+import { withAuth } from "@/lib/withAuth";
 
-export async function PATCH(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export const PATCH = withAuth(async (req, context) => {
   try {
     const { id: idStr } = await context.params;
     const id = Number(idStr);
@@ -92,4 +90,4 @@ export async function PATCH(
     console.error("PATCH /api/practitioners/[id] error:", err);
     return serverError("Failed to update practitioner");
   }
-}
+});

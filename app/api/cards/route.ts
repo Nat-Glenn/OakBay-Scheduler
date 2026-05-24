@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { withAuthSimple } from "@/lib/withAuth";
 
 function normalizeLast4(value: unknown) {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -11,7 +12,7 @@ function parseOptionalInt(value: unknown) {
   return Number.isInteger(n) ? n : null;
 }
 
-export async function GET(req: Request) {
+export const GET = withAuthSimple(async (req) => {
   try {
     const { searchParams } = new URL(req.url);
     const patientIdParam = searchParams.get("patientId");
@@ -36,9 +37,9 @@ export async function GET(req: Request) {
     console.error("GET /api/cards error:", error);
     return Response.json({ error: "Failed to fetch cards" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req) => {
   try {
     const body = await req.json();
 
@@ -84,9 +85,9 @@ export async function POST(req: Request) {
     console.error("POST /api/cards error:", error);
     return Response.json({ error: "Failed to create card" }, { status: 500 });
   }
-}
+});
 
-export async function PATCH(req: Request) {
+export const PATCH = withAuthSimple(async (req) => {
   try {
     const body = await req.json();
 
@@ -132,9 +133,9 @@ export async function PATCH(req: Request) {
     console.error("PATCH /api/cards error:", error);
     return Response.json({ error: "Failed to update card" }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(req: Request) {
+export const DELETE = withAuthSimple(async (req) => {
   try {
     const { searchParams } = new URL(req.url);
     const idParam = searchParams.get("id");
@@ -162,4 +163,4 @@ export async function DELETE(req: Request) {
     console.error("DELETE /api/cards error:", error);
     return Response.json({ error: "Failed to delete card" }, { status: 500 });
   }
-}
+});

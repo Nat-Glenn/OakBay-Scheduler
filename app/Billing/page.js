@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import NavBarComp from "@/components/NavBarComp";
+import { apiFetch } from "@/utils/apiFetch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -103,7 +104,7 @@ export default function Billing() {
 
       try {
         setLoadingPatients(true);
-        const res = await fetch(
+        const res = await apiFetch(
           `/api/patients?search=${encodeURIComponent(patientSearch)}`,
         );
         const data = await res.json();
@@ -141,7 +142,7 @@ export default function Billing() {
 
       try {
         setLoadingCards(true);
-        const res = await fetch(`/api/cards?patientId=${selectedPatient.id}`);
+        const res = await apiFetch(`/api/cards?patientId=${selectedPatient.id}`);
         const data = await res.json();
 
         if (!res.ok) {
@@ -185,7 +186,7 @@ export default function Billing() {
     }
 
     try {
-      const res = await fetch("/api/cards", {
+      const res = await apiFetch("/api/cards", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -236,7 +237,7 @@ export default function Billing() {
     }
 
     try {
-      const res = await fetch("/api/cards", {
+      const res = await apiFetch("/api/cards", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -269,7 +270,7 @@ export default function Billing() {
     if (!selectedCard?.id) return;
 
     try {
-      const res = await fetch(`/api/cards?id=${selectedCard.id}`, {
+      const res = await apiFetch(`/api/cards?id=${selectedCard.id}`, {
         method: "DELETE",
       });
 

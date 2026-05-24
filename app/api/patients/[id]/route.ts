@@ -1,15 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { badRequest, notFound, serverError } from "@/lib/api";
-import { encryptField, decryptField } from "@/lib/encrypt"; // FIXED: added encryptField — was missing, PATCH crashes without it
+import { encryptField, decryptField } from "@/lib/encrypt";
 import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
+import { withAuth } from "@/lib/withAuth";
 
-// GET /api/patients/[id]
-// Returns a single patient by ID.
-// Called by AddAppointment.js when opening from a patient profile page.
-export async function GET(
-  _req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export const GET = withAuth(async (_req, context) => {
   try {
     const { id: idStr } = await context.params;
     const patientId = Number(idStr);
@@ -34,12 +29,9 @@ export async function GET(
     console.error(err);
     return serverError("Failed to load patient");
   }
-}
+});
 
-export async function PATCH(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export const PATCH = withAuth(async (req, context) => {
   try {
     const { id } = await context.params;
     const patientId = Number(id);
@@ -163,4 +155,4 @@ export async function PATCH(
     console.error("PATCH /api/patients/[id] error:", error);
     return Response.json({ error: "Failed to update patient" }, { status: 500 });
   }
-}
+});

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import filter from "leo-profanity"; 
 import NavBarComp from "@/components/NavBarComp";
+import { apiFetch } from "@/utils/apiFetch";
 import { Search, Plus, User, X, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -140,7 +141,7 @@ export default function PatientProfiles() {
       try {
         setLoading(true);
         setError("");
-        const res = await fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
+        const res = await apiFetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
         const data = await res.json();
         
         if (!res.ok) throw new Error(data.error || "Failed to load patients");
@@ -261,7 +262,7 @@ function getDisplayedPatient(patient) {
 
     try {
       setSaving(true);
-      const res = await fetch(`/api/patients/${selectedPatient.id}`, {
+      const res = await apiFetch(`/api/patients/${selectedPatient.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -279,7 +280,7 @@ function getDisplayedPatient(patient) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to update patient");
 
-      const refreshed = await fetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
+      const refreshed = await apiFetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
       const refreshedData = await refreshed.json();
       setPatients(refreshedData);
       const updated = refreshedData.find((p) => p.id === selectedPatient.id);
@@ -345,6 +346,8 @@ function getDisplayedPatient(patient) {
                   <TableBody>
                     {loading ? (
                       <TableRow><TableCell colSpan={6} className="text-center py-8">Loading Patients</TableCell></TableRow>
+                    ) : error ? (
+                      <TableRow><TableCell colSpan={6} className="text-center py-8 text-destructive">{error}</TableCell></TableRow>
                     ) : patients.length === 0 ? (
                       <TableRow><TableCell colSpan={6} className="text-center py-8">No Patients Found</TableCell></TableRow>
                     ) : (
@@ -400,7 +403,7 @@ function getDisplayedPatient(patient) {
                     </div>
                     <div className="pt-4 mt-auto space-y-2">
                       <Button variant="default" className="w-full font-bold" onClick={() => openEditModal(selectedPatient)}><Pencil size={14} className="mr-2" /> Edit Patient</Button>
-                      <Link href="/?fromPatient=true" className="block w-full"><Button variant="secondary" className="w-full font-bold">Schedule Appointment</Button></Link>
+                      <Link href={`/?fromPatient=true&patientId=${selectedPatient.id}`} className="block w-full"><Button variant="secondary" className="w-full font-bold">Schedule Appointment</Button></Link>
                     </div>
                   </CardContent>
                 </Card>

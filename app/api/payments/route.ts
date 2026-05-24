@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { parseNonEmptyString } from "@/lib/validate";
 import { ok, created, badRequest, notFound, conflict, serverError } from "@/lib/api";
+import { withAuthSimple } from "@/lib/withAuth";
 
-export async function GET(req: Request) {
+export const GET = withAuthSimple(async (req) => {
     try {
         const { searchParams } = new URL(req.url);
         const appointmentIdStr = searchParams.get("appointmentId");
@@ -36,11 +37,9 @@ export async function GET(req: Request) {
         console.error(err);
         return serverError("Failed to fetch payments");
     }
-}
+});
 
-// POST /api/payments
-//records a new payment and marks the appointment as COMPLETED.
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req) => {
     try {
         const body = await req.json();
 
@@ -121,4 +120,4 @@ export async function POST(req: Request) {
         console.error(err);
         return serverError("Failed to record payment");
     }
-}
+});

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { hasProfanity, cleanField } from "@/lib/profanity";
 import { encryptField, decryptField } from "@/lib/encrypt";
 import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
+import { withAuthSimple } from "@/lib/withAuth";
 
 function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
   return {
@@ -10,7 +11,7 @@ function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
   };
 }
 
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req) => {
   try {
     const body = await req.json();
     const firstName = String(body.firstName ?? "").trim();
@@ -138,9 +139,9 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
-}
+});
 
-export async function GET(req: Request) {
+export const GET = withAuthSimple(async (req) => {
   try {
     const { searchParams } = new URL(req.url);
     const search = (searchParams.get("search") ?? "").trim();
@@ -193,4 +194,4 @@ export async function GET(req: Request) {
     console.error(err);
     return Response.json({ error: "Failed to fetch patients" }, { status: 500 });
   }
-}
+});

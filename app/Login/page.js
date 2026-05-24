@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/input-group";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
+import { syncAuthSession } from "@/utils/authSession";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -40,12 +41,13 @@ export default function LoginPage() {
       setGoogleLoading(true);
 
       await signInWithGoogle();
+      await syncAuthSession();
 
       toast.success("Successfully signed in with Google!", {
         position: "top-right",
       });
 
-      router.push("/Home");
+      router.push("/");
     } catch (error) {
       if (error?.code === "auth/multi-factor-auth-required") {
         const resolver = getMultiFactorResolver(auth, error);
@@ -73,7 +75,8 @@ export default function LoginPage() {
         const message = error?.message || "";
 
         if (auth.currentUser) {
-          router.push("/Home");
+          await syncAuthSession();
+          router.push("/");
           return;
         }
 
@@ -122,6 +125,16 @@ export default function LoginPage() {
       if (!user.emailVerified) {
         await sendEmailVerification(user);
         setError("Please verify your email and login again.");
+        return;
+      }
+
+      try {
+        await syncAuthSession();
+      } catch (sessionErr) {
+        console.error("Session setup failed:", sessionErr);
+        setError(
+          "Signed in to Firebase, but the server session could not be created. Add FIREBASE_SERVICE_ACCOUNT_JSON to .env.local (Firebase Console → Project settings → Service accounts → Generate new private key), then restart npm run dev.",
+        );
         return;
       }
 

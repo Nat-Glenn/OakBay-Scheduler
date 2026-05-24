@@ -7,6 +7,8 @@ import {
 } from "@/components/ui/popover";
 import AppointmentButtons from "@/components/AppointmentButtons";
 import AppointmentInformation from "@/components/AppointmentInformation";
+import { formatPickerDateDMY } from "@/lib/appointments/clinicTime.js";
+import { ALL_STAFF } from "@/lib/appointments/status";
 
 export function getAvailableSlot(appointments, date, time, practitioner) {
   const usedSlots = appointments
@@ -22,7 +24,7 @@ export function getAvailableSlot(appointments, date, time, practitioner) {
 }
 
 export function formatDateDMY(date) {
-  return date.toLocaleDateString("en-GB"); // dd/mm/yyyy
+  return formatPickerDateDMY(date);
 }
 
 export function parseDMYToDate(dmy) {
@@ -42,13 +44,31 @@ export function renderAppointment(
   small,
 ) {
   const selectedDate = formatDateDMY(date);
-  const appointment = appointments.find(
-    (a) =>
-      a.time === hours &&
-      a.slot === slotNumber &&
-      a.practitioner === practitioner &&
-      a.date === selectedDate,
-  );
+
+  let appointment;
+
+  if (practitioner === ALL_STAFF) {
+    const atTime = appointments
+      .filter(
+        (a) =>
+          a.time === hours &&
+          a.date === selectedDate &&
+          a.status !== "cancelled",
+      )
+      .sort(
+        (a, b) =>
+          a.slot - b.slot || a.practitioner.localeCompare(b.practitioner),
+      );
+    appointment = atTime[slotNumber - 1];
+  } else {
+    appointment = appointments.find(
+      (a) =>
+        a.time === hours &&
+        a.slot === slotNumber &&
+        a.practitioner === practitioner &&
+        a.date === selectedDate,
+    );
+  }
 
   return (
     <div className="col-span-2 border border-foreground/20 bg-background text-center p-0.5">
@@ -59,6 +79,7 @@ export function renderAppointment(
               appointment={appointment}
               active={active}
               setActive={setActive}
+              showPractitioner={practitioner === ALL_STAFF}
             />
           </PopoverTrigger>
           <PopoverContent

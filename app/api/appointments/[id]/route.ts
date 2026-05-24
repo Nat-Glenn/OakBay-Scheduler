@@ -2,11 +2,14 @@ import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
 import { cleanField } from "@/lib/profanity";
 import { sendCancellationEmail } from "@/lib/email";
+import { withAuth } from "@/lib/withAuth";
+import {
+  ACTIVE_APPOINTMENT_STATUSES,
+  ALLOWED_APPOINTMENT_STATUSES,
+  AppointmentStatus,
+} from "@/lib/appointments/constants";
 
-export async function PATCH(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export const PATCH = withAuth(async (req, context) => {
   try {
     const { id: idStr } = await context.params;
     const id = Number(idStr);
@@ -44,16 +47,13 @@ export async function PATCH(
         ? new Date(body.endTime)
         : undefined;
 
-    const allowedStatuses = [
-      "REQUESTED",
-      "CONFIRMED",
-      "CHECKED_IN",
-      "COMPLETED",
-      "CANCELLED",
-    ];
-
-    if (status && !allowedStatuses.includes(status)) {
-      return badRequest("Invalid status value", { allowedStatuses });
+    if (
+      status &&
+      !(ALLOWED_APPOINTMENT_STATUSES as readonly string[]).includes(status)
+    ) {
+      return badRequest("Invalid status value", {
+        allowedStatuses: ALLOWED_APPOINTMENT_STATUSES,
+      });
     }
 
     if (providerId !== undefined && (!Number.isInteger(providerId) || providerId <= 0)) {
@@ -117,7 +117,7 @@ export async function PATCH(
 
     // Send cancellation email if appointment was cancelled
     
-    if (status === "CANCELLED" && updated.patient?.email) {
+    if (status === AppointmentStatus.CANCELLED && updated.patient?.email) {
       await sendCancellationEmail({
         to: updated.patient.email,
         patientName: `${updated.patient.firstName} ${updated.patient.lastName}`,
@@ -131,12 +131,9 @@ export async function PATCH(
     console.error(err);
     return serverError("Failed to update appointment");
   }
-}
+});
 
-export async function DELETE(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export const DELETE = withAuth(async (req, context) => {
   try {
     const { id: idStr } = await context.params;
     const id = Number(idStr);
@@ -154,9 +151,10 @@ export async function DELETE(
 
     // Only send cancellation email if appointment was active — not if already
     // COMPLETED or CANCELLED (patient already knows)
-    const activeStatuses = ["REQUESTED", "CONFIRMED", "CHECKED_IN"];
     if (
-      activeStatuses.includes(appointment.status) &&
+      (ACTIVE_APPOINTMENT_STATUSES as readonly string[]).includes(
+        appointment.status,
+      ) &&
       appointment.patient?.email
     ) {
       sendCancellationEmail({
@@ -183,4 +181,4 @@ export async function DELETE(
     console.error(err);
     return serverError("Failed to delete appointment");
   }
-}
+});

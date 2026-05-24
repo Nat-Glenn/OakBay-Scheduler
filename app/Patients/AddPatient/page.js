@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
+import { apiFetch } from "@/utils/apiFetch";
 
 // VALIDATION CONSTANTS
 const BLOCKED_WORDS = [
@@ -191,7 +192,7 @@ export default function AddPatientPage() {
     try {
       setSubmitting(true);
 
-      const res = await fetch("/api/patients", {
+      const res = await apiFetch("/api/patients", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

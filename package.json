@@ -11,6 +11,7 @@
   "dependencies": {
     "@azure/communication-email": "^1.1.0",
     "@base-ui/react": "^1.2.0",
+    "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^6.19.2",
     "bcryptjs": "^3.0.3",
     "class-variance-authority": "^0.7.1",
@@ -36,7 +37,8 @@
     "sentiment": "^5.0.2",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.4.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

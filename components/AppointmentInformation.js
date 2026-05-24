@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import {
@@ -7,6 +7,11 @@ import {
   getAvailableSlot,
   parseDMYToDate,
 } from "@/components/RenderAppointment";
+import { apiFetch } from "@/utils/apiFetch";
+import {
+  APPOINTMENT_TYPE_OPTIONS,
+  CLINIC_TIME_SLOT_OPTIONS,
+} from "@/lib/appointments/status";
 import {
   Item,
   ItemActions,
@@ -65,34 +70,31 @@ export default function AppointmentInformation({
   const [editTime, setEditTime] = useState("");
   const [editDate, setEditDate] = useState(null);
   const [search, setSearch] = useState("");
+  const [practitioners, setPractitioners] = useState([]);
   const small = useMediaQuery("(max-width: 768px)");
 
+  const types = APPOINTMENT_TYPE_OPTIONS;
+  const time = CLINIC_TIME_SLOT_OPTIONS;
+
+  useEffect(() => {
+    async function loadPractitioners() {
+      try {
+        const res = await apiFetch("/api/practitioners");
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load practitioners");
+        }
+        setPractitioners(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load practitioners for edit form.");
+      }
+    }
+
+    loadPractitioners();
+  }, []);
+
   const selectedAppointment = appointment || active;
-
-  const practitioners = [
-    { id: 1, name: "Brad Pritchard" },
-    { id: 2, name: "Kyle James" },
-    { id: 3, name: "Daniel Topala" },
-  ];
-
-  const types = [
-    { id: 1, name: "Chiropractic Adjustment" },
-    { id: 2, name: "Massage" },
-    { id: 3, name: "Intense Massage" },
-  ];
-
-  const time = [
-    { id: 1, name: "9:00" },
-    { id: 2, name: "9:15" },
-    { id: 3, name: "9:30" },
-    { id: 4, name: "9:45" },
-    { id: 5, name: "10:00" },
-    { id: 6, name: "10:15" },
-    { id: 7, name: "10:30" },
-    { id: 8, name: "10:45" },
-    { id: 9, name: "11:00" },
-    { id: 10, name: "11:15" },
-  ];
 
   const filteredArray = (type) => {
     if (type == "types") {
@@ -116,7 +118,7 @@ export default function AppointmentInformation({
     if (!selectedAppointment) return false;
 
     try {
-      const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+      const res = await apiFetch(`/api/appointments/${selectedAppointment.id}`, {
         method: "DELETE",
       });
 
@@ -218,7 +220,7 @@ if (editPractitioner !== selectedAppointment.practitioner) {
   endTime.setMinutes(endTime.getMinutes() + 15);
 
   try {
-    const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+    const res = await apiFetch(`/api/appointments/${selectedAppointment.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

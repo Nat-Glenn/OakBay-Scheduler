@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { serverError } from "@/lib/api";
+import { withAuthSimple } from "@/lib/withAuth";
 
-export async function GET() {
+export const GET = withAuthSimple(async () => {
   try {
     const now = new Date();
 
@@ -111,4 +112,4 @@ export async function GET() {
     console.error("GET /api/summary error:", err);
     return serverError("Failed to load summary data");
   }
-}
+});

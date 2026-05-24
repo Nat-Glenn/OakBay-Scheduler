@@ -13,6 +13,7 @@ import { Switch } from "./ui/switch";
 import { useDarkMode } from "@/utils/DarkModeProvider";
 import { usePathname } from "next/navigation";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
+import { isAuthSkippedClient } from "@/utils/authConfig";
 
 export default function NavBarComp() {
   const router = useRouter();
@@ -22,6 +23,8 @@ export default function NavBarComp() {
   const small = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
+    if (isAuthSkippedClient()) return;
+
     const unsub = onAuthStateChanged(auth, async (user) => {
       if (!user) {
         router.replace("/Login");

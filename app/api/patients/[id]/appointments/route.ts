@@ -1,10 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
+import { withAuth } from "@/lib/withAuth";
 
-export async function GET(
-  _req: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export const GET = withAuth(async (_req, context) => {
   try {
     const { id: idStr } = await context.params;
     const patientId = Number(idStr);
@@ -30,4 +28,4 @@ export async function GET(
     console.error(err);
     return serverError("Failed to load appointment history");
   }
-}
+});

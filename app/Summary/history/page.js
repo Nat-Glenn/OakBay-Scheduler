@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import NavBarComp from "@/components/NavBarComp";
+import { apiFetch } from "@/utils/apiFetch";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -55,7 +56,7 @@ export default function SummaryHistoryPage() {
         setLoading(true);
         setError("");
 
-        const res = await fetch("/api/summary/history", { cache: "no-store" });
+        const res = await apiFetch("/api/summary/history", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load history");
 
         const data = await res.json();

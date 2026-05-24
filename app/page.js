@@ -2,7 +2,7 @@
 import NavBarComp from "@/components/NavBarComp";
 import { renderAppointment } from "@/components/RenderAppointment";
 import React from "react";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/DatePicker";
 import {
@@ -19,75 +19,77 @@ import {
 } from "@/components/ui/dropdown-menu";
 import AddAppointment from "@/components/AddAppointment";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
-import { useSearchParams } from "next/navigation";
-import { calculateAge } from "@/utils/date";
+import { useSearchParams, useRouter } from "next/navigation";
+import { mapApiAppointmentToSchedulerRow } from "@/lib/appointments/mapSchedulerRow";
+import SchedulerSkeleton from "@/components/SchedulerSkeleton";
+import { apiFetch } from "@/utils/apiFetch";
+import { parseApiError } from "@/utils/parseApiError";
+import { CLINIC_TIME_SLOTS, ALL_STAFF } from "@/lib/appointments/status";
+
+import { formatPickerDateForApi } from "@/lib/appointments/clinicTime.js";
 
 export default function Appointments() {
-  const time = [
-    "9:00",
-    "9:15",
-    "9:30",
-    "9:45",
-    "10:00",
-    "10:15",
-    "10:30",
-    "10:45",
-    "11:00",
-    "11:15",
-    "11:30",
-    "11:45",
-    "14:00",
-    "14:15",
-    "14:30",
-    "14:45",
-    "15:00",
-    "15:15",
-    "15:30",
-    "15:45",
-    "16:00",
-    "16:15",
-    "16:30",
-    "16:45",
-    "17:00",
-    "17,15",
-    "17:30",
-    "17:45",
-  ];
-
   const [appointments, setAppointments] = useState([]);
   const [practitioners, setPractitioners] = useState([]);
   const [date, setDate] = useState(new Date());
   const [practitioner, setPractitioner] = useState("");
   const [active, setActive] = useState(null);
+  const [loadingAppointments, setLoadingAppointments] = useState(true);
+  const [appointmentsError, setAppointmentsError] = useState("");
+  const [practitionersError, setPractitionersError] = useState("");
   const small = useMediaQuery("(max-width: 768px)");
   const searchParams = useSearchParams();
+  const router = useRouter();
   const fromPatient = searchParams.get("fromPatient");
+  const patientIdParam = searchParams.get("patientId");
+  const [prefillPatientId, setPrefillPatientId] = useState(null);
+  const [bookingDialogOpen, setBookingDialogOpen] = useState(false);
 
-  function formatDateForApi(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
+  useEffect(() => {
+    if (fromPatient !== "true") return;
+
+    const id = patientIdParam ? Number(patientIdParam) : null;
+    if (!Number.isInteger(id)) return;
+
+    setPrefillPatientId(id);
+    setBookingDialogOpen(true);
+    router.replace("/", { scroll: false });
+  }, [fromPatient, patientIdParam, router]);
+
+  const activeAppointments = appointments.filter(
+    (appt) => appt.status !== "cancelled",
+  );
+
+  const visibleAppointments =
+    practitioner === ALL_STAFF
+      ? activeAppointments
+      : activeAppointments.filter((appt) => appt.practitioner === practitioner);
 
   useEffect(() => {
     async function loadPractitioners() {
+      setPractitionersError("");
       try {
-        const res = await fetch("/api/practitioners");
+        const res = await apiFetch("/api/practitioners");
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.error || "Failed to load practitioners");
+          throw new Error(
+            parseApiError(data, "Failed to load practitioners"),
+          );
         }
 
         const names = data.map((p) => p.name);
-        setPractitioners(names);
+        setPractitioners([ALL_STAFF, ...names]);
 
         if (names.length > 0) {
-          setPractitioner((prev) => prev || names[0]);
+          setPractitioner((prev) => prev || ALL_STAFF);
         }
       } catch (err) {
         console.error("Failed to load practitioners:", err);
+        setPractitionersError(
+          err.message ||
+            "Could not load practitioners. Check DATABASE_URL in .env.local and restart npm run dev.",
+        );
       }
     }
 
@@ -96,55 +98,32 @@ export default function Appointments() {
 
   useEffect(() => {
     async function loadAppointments() {
+      setLoadingAppointments(true);
+      setAppointmentsError("");
+
       try {
-        const dateStr = formatDateForApi(date);
-        const res = await fetch(`/api/appointments?date=${dateStr}`);
+        const dateStr = formatPickerDateForApi(date);
+        const res = await apiFetch(`/api/appointments?date=${dateStr}`);
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.error || "Failed to load appointments");
+          throw new Error(parseApiError(data, "Failed to load appointments"));
         }
 
-        const mappedAppointments = data.map((appt, index) => {
-          const start = new Date(appt.startTime);
-
-          const hours = start.getHours();
-          const minutes = String(start.getMinutes()).padStart(2, "0");
-          const displayHour = `${hours}:${minutes}`;
-
-          return {
-            id: appt.id,
-            name: appt.patient
-              ? `${appt.patient.firstName ?? ""} ${appt.patient.lastName ?? ""}`.trim()
-              : "Unknown Patient",
-            dob: appt.patient?.dob || "—",
-            age: calculateAge(appt.patient?.dob) || "—",
-            email: appt.patient?.email || "—",
-            phone: appt.patient?.phone || "—",
-            type: appt.type || "—",
-            practitioner: appt.provider?.name || "Unassigned",
-            time: displayHour,
-            slot: appt.slot || 1,
-            date: date.toLocaleDateString("en-GB"), //DD/MM/YYYY format
-            status:
-              appt.status?.toUpperCase() === "REQUESTED"
-                ? "scheduled"
-                : appt.status?.toUpperCase() === "CONFIRMED"
-                  ? "scheduled"
-                  : appt.status?.toUpperCase() === "CHECKED_IN"
-                    ? "checked-in"
-                    : appt.status?.toUpperCase() === "COMPLETED"
-                      ? "checked-out"
-                      : appt.status?.toUpperCase() === "CANCELLED"
-                        ? "cancelled"
-                        : appt.status?.toLowerCase() || "scheduled",
-          };
-        });
+        const mappedAppointments = data.map((appt) =>
+          mapApiAppointmentToSchedulerRow(appt),
+        );
 
         setAppointments(mappedAppointments);
       } catch (err) {
         console.error("Failed to load appointments:", err);
         setAppointments([]);
+        setAppointmentsError(
+          err.message ||
+            "Could not load appointments. Check DATABASE_URL in .env.local and restart npm run dev.",
+        );
+      } finally {
+        setLoadingAppointments(false);
       }
     }
 
@@ -184,7 +163,7 @@ export default function Appointments() {
                   variant="secondary"
                   className="flex cursor-pointer text-white"
                 >
-                  {`Dr. ${practitioner}`}
+                  {practitioner === ALL_STAFF ? ALL_STAFF : `Dr. ${practitioner}`}
                   <ChevronDownIcon />
                 </Button>
               </DropdownMenuTrigger>
@@ -206,83 +185,116 @@ export default function Appointments() {
               date={date}
               setDate={setDate}
               variant={small ? "icon" : "default"}
-              open={fromPatient}
+              patientId={prefillPatientId}
+              open={bookingDialogOpen}
+              onOpenChange={(nextOpen) => {
+                setBookingDialogOpen(nextOpen);
+                if (!nextOpen) setPrefillPatientId(null);
+              }}
             />
           </div>
         </header>
-        <div className="flex flex-row flex-1 min-h-0">
-          <div className="w-full flex-1 grid grid-cols-10 overflow-y-auto min-h-0 rounded-lg border border-border scrollbar-rounded">
-            <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-foreground/20">
-              Time
-            </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20">
-              Slot 1
-            </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20">
-              Slot 2
-            </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20">
-              Slot 3
-            </div>
-            <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20">
-              Slot 4
-            </div>
-            {time.map((hours) => (
-              <React.Fragment key={hours}>
-                <div
-                  className="col-span-2 text-center text-foreground border-foreground/20 border font-mono py-3"
-                  key={hours.key}
-                >
-                  {hours}
-                </div>
 
-                {renderAppointment(
-                  hours,
-                  1,
-                  practitioner,
-                  date,
-                  active,
-                  setActive,
-                  appointments,
-                  setAppointments,
-                  small,
-                )}
-                {renderAppointment(
-                  hours,
-                  2,
-                  practitioner,
-                  date,
-                  active,
-                  setActive,
-                  appointments,
-                  setAppointments,
-                  small,
-                )}
-                {renderAppointment(
-                  hours,
-                  3,
-                  practitioner,
-                  date,
-                  active,
-                  setActive,
-                  appointments,
-                  setAppointments,
-                  small,
-                )}
-                {renderAppointment(
-                  hours,
-                  4,
-                  practitioner,
-                  date,
-                  active,
-                  setActive,
-                  appointments,
-                  setAppointments,
-                  small,
-                )}
-              </React.Fragment>
-            ))}
+        {(appointmentsError || practitionersError) && (
+          <div className="text-sm text-destructive text-center pb-2 space-y-1">
+            {practitionersError && <p>{practitionersError}</p>}
+            {appointmentsError && <p>{appointmentsError}</p>}
           </div>
+        )}
+
+        {!loadingAppointments && !appointmentsError && (
+          <p className="text-sm text-muted-foreground text-center pb-2">
+            {activeAppointments.length === 0
+              ? "No appointments scheduled for this day."
+              : practitioner === ALL_STAFF
+                ? `${activeAppointments.length} appointment${activeAppointments.length === 1 ? "" : "s"} for this day (all staff).`
+                : `${activeAppointments.length} total · showing ${visibleAppointments.length} for ${practitioner}. Switch to "${ALL_STAFF}" to see everyone.`}
+          </p>
+        )}
+
+        {!loadingAppointments &&
+          !appointmentsError &&
+          activeAppointments.length > 0 &&
+          visibleAppointments.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center pb-2">
+              No appointments for {practitioner} on this day. Try &quot;{ALL_STAFF}&quot; or pick a date with data (e.g. Apr 16 or May 24, 2026).
+            </p>
+          )}
+
+        <div className="flex flex-row flex-1 min-h-0">
+          {loadingAppointments ? (
+            <SchedulerSkeleton />
+          ) : (
+            <div className="w-full flex-1 grid grid-cols-10 overflow-y-auto min-h-0 rounded-lg border border-border scrollbar-rounded">
+              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-foreground/20 z-10">
+                Time
+              </div>
+              <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20 z-10">
+                Slot 1
+              </div>
+              <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20 z-10">
+                Slot 2
+              </div>
+              <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20 z-10">
+                Slot 3
+              </div>
+              <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20 z-10">
+                Slot 4
+              </div>
+              {CLINIC_TIME_SLOTS.map((hours) => (
+                <React.Fragment key={hours}>
+                  <div className="col-span-2 text-center text-foreground border-foreground/20 border font-mono py-3">
+                    {hours}
+                  </div>
+
+                  {renderAppointment(
+                    hours,
+                    1,
+                    practitioner,
+                    date,
+                    active,
+                    setActive,
+                    appointments,
+                    setAppointments,
+                    small,
+                  )}
+                  {renderAppointment(
+                    hours,
+                    2,
+                    practitioner,
+                    date,
+                    active,
+                    setActive,
+                    appointments,
+                    setAppointments,
+                    small,
+                  )}
+                  {renderAppointment(
+                    hours,
+                    3,
+                    practitioner,
+                    date,
+                    active,
+                    setActive,
+                    appointments,
+                    setAppointments,
+                    small,
+                  )}
+                  {renderAppointment(
+                    hours,
+                    4,
+                    practitioner,
+                    date,
+                    active,
+                    setActive,
+                    appointments,
+                    setAppointments,
+                    small,
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </main>

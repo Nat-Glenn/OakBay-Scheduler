@@ -13,6 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import FormField from "./FormField";
+import { apiFetch } from "@/utils/apiFetch";
 
 export default function AppointmentButtons({
   // Props coming into the component
@@ -65,7 +66,7 @@ export default function AppointmentButtons({
 
     try {
       // Request to backend
-      const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+      const res = await apiFetch(`/api/appointments/${selectedAppointment.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -129,7 +130,7 @@ export default function AppointmentButtons({
     }
 
     try {
-      const res = await fetch("/api/payments", {
+      const res = await apiFetch("/api/payments", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

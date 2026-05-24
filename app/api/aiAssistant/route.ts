@@ -1,5 +1,6 @@
 import { readdir, readFile } from "fs/promises";
 import path from "path";
+import { withAuthSimple } from "@/lib/withAuth";
 
 const ROOT = process.cwd();
 
@@ -159,7 +160,7 @@ function formatHistory(messages: Array<{ role?: string; content?: string }>) {
     .join("\n");
 }
 
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req) => {
   try {
     const body = await req.json();
     const message = String(body.message ?? "").trim();
@@ -244,4 +245,4 @@ FINAL ANSWER:
       { status: 500 }
     );
   }
-}
+});

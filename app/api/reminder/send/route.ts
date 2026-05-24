@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { ok, serverError } from "@/lib/api";
 import { sendReminderEmail } from "@/lib/email";
+import { withAuthSimple } from "@/lib/withAuth";
+import { SCHEDULABLE_APPOINTMENT_STATUSES } from "@/lib/appointments/constants";
 
-export async function POST() {
+export const POST = withAuthSimple(async () => {
     try {
         // Get current time and calculate 24 hours from now
         // 24 * 60 * 60 * 1000 = 24 hours in milliseconds
@@ -20,7 +22,7 @@ export async function POST() {
                 },
                 // Only active appointments — not completed or cancelled
                 status: {
-                    in: ["REQUESTED", "CONFIRMED"],
+                    in: [...SCHEDULABLE_APPOINTMENT_STATUSES],
                 },
                 // Haven't already sent a reminder for this appointment
                 reminderSent: false,
@@ -90,4 +92,4 @@ export async function POST() {
         console.error(err);
         return serverError("Failed to send reminders");
     }
-}
+});

@@ -1,58 +1,48 @@
 import { prisma } from "@/lib/prisma";
-import { cleanField, hasUnsafeLanguage } from "@/lib/profanity"; //safety + profanity tools
+import { cleanField, hasUnsafeLanguage } from "@/lib/profanity";
 import { sendBookingConfirmationEmail } from "@/lib/email";
+import { withAuthSimple } from "@/lib/withAuth";
+import { AppointmentStatus } from "@/lib/appointments/constants";
+import { createAppointmentSchema } from "@/lib/appointments/schemas";
+import {
+  getClinicDayBounds,
+  parseClinicDateParam,
+} from "@/lib/appointments/clinicTime";
+import { syncOverdueAppointmentStatuses } from "@/lib/appointments/lifecycle";
 
-function startOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0);
-}
+const appointmentInclude = {
+  patient: true,
+  provider: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+    },
+  },
+  payment: true,
+};
 
-function endOfDay(d: Date) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
-}
-
-export async function GET() {
+export const GET = withAuthSimple(async (req) => {
   try {
-    // Auto-complete overdue checked-in appointments
-await prisma.appointment.updateMany({
-  where: {
-    status: "CHECKED_IN",
-    endTime: {
-      lt: new Date(),
-    },
-  },
-  data: {
-    status: "COMPLETED",
-  },
-});
+    await syncOverdueAppointmentStatuses();
 
-// Auto-cancel overdue requested appointments
-await prisma.appointment.updateMany({
-  where: {
-    status: {
-      in: ["REQUESTED", "CONFIRMED"],
-    },
-    endTime: {
-      lt: new Date(),
-    },
-  },
-  data: {
-    status: "CANCELLED",
-  },
-});
+    const { searchParams } = new URL(req.url);
+    const dayParts = parseClinicDateParam(searchParams.get("date"));
+
+    const where = dayParts
+      ? {
+          startTime: {
+            gte: getClinicDayBounds(dayParts).start,
+            lte: getClinicDayBounds(dayParts).end,
+          },
+        }
+      : undefined;
 
     const appointments = await prisma.appointment.findMany({
-      include: {
-        patient: true,
-        provider: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-          },
-        },
-        payment: true,
-      },
+      where,
+      include: appointmentInclude,
+      orderBy: [{ startTime: "asc" }, { slot: "asc" }],
     });
 
     return Response.json(appointments);
@@ -60,87 +50,61 @@ await prisma.appointment.updateMany({
     console.error(err);
     return Response.json({ error: "Failed to fetch appointments" }, { status: 500 });
   }
-}
+});
 
-function isValidDate(d: Date) {
-  return !Number.isNaN(d.getTime());
-}
-
-
-
-
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req) => {
   try {
     const body = await req.json();
+    const parsed = createAppointmentSchema.safeParse(body);
 
-    // Required fields
-    const patientId = Number(body.patientId);
-    const type = String(body.type ?? "").trim();
-    const startTime = new Date(body.startTime);
-    const endTime = new Date(body.endTime);
-
-    if (!patientId || !type || !isValidDate(startTime) || !isValidDate(endTime)) {
+    if (!parsed.success) {
       return Response.json(
-        { error: "Missing or invalid fields (patientId, type, startTime, endTime)" },
-        { status: 400 }
+        { error: "Validation failed", details: parsed.error.flatten() },
+        { status: 400 },
       );
     }
+
+    const {
+      patientId,
+      type,
+      startTime,
+      endTime,
+      providerId = null,
+      createdByUserId = null,
+    } = parsed.data;
 
     const now = new Date();
 
-if (startTime <= now) {
-  return Response.json(
-    { error: "Cannot create an appointment for a time that has already passed." },
-    { status: 400 }
-  );
-}
-
-    // Validate appointment type against allowed list
-    const allowedTypes = [
-      "Chiropractic Adjustment",
-      "Massage",
-      "Intense Massage",
-      "Initial Consultation",
-      "Follow-up",
-      "Adjustment",
-    ];
-    if (!allowedTypes.includes(type)) {
+    if (startTime <= now) {
       return Response.json(
-        { error: "Invalid appointment type", accepted: allowedTypes },
-        { status: 400 }
+        { error: "Cannot create an appointment for a time that has already passed." },
+        { status: 400 },
       );
     }
 
-    // Optional fields
-    const providerId = body.providerId ? Number(body.providerId) : null;
-    const createdByUserId = body.createdByUserId ? Number(body.createdByUserId) : null;
-
-    // Clean user input text instead of rejecting.
     const requestMessage = cleanField(body.requestMessage);
     const adminNotes = cleanField(body.adminNotes);
 
-    // Blocks unsafe or harmful language BEFORE saving to database
     if (
       hasUnsafeLanguage(body.requestMessage) ||
       hasUnsafeLanguage(body.adminNotes)
     ) {
       return Response.json(
         { error: "Unsafe or threatening language is not allowed" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    // Max length validation on notes fields
     if (requestMessage && requestMessage.length > 500) {
       return Response.json(
         { error: "Request message cannot exceed 500 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     if (adminNotes && adminNotes.length > 500) {
       return Response.json(
         { error: "Admin notes cannot exceed 500 characters" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -148,28 +112,20 @@ if (startTime <= now) {
 
     if (providerId) {
       const existingAppointments = await prisma.appointment.findMany({
-        where: {
-          providerId,
-          startTime,
-        },
-        orderBy: {
-          slot: "asc",
-        },
-        select: {
-          slot: true,
-        },
+        where: { providerId, startTime },
+        orderBy: { slot: "asc" },
+        select: { slot: true },
       });
 
       if (existingAppointments.length >= 4) {
         return Response.json(
           { error: "All 4 slots for this time have been booked." },
-          { status: 409 }
+          { status: 409 },
         );
       }
 
       const usedSlots = existingAppointments.map((appt) => appt.slot);
-      const allSlots = [1, 2, 3, 4];
-      slot = allSlots.find((s) => !usedSlots.includes(s)) || 1;
+      slot = [1, 2, 3, 4].find((s) => !usedSlots.includes(s)) || 1;
     }
 
     const patient = await prisma.patient.findUnique({ where: { id: patientId } });
@@ -181,7 +137,7 @@ if (startTime <= now) {
       data: {
         patientId,
         type,
-        status: "REQUESTED", // default
+        status: AppointmentStatus.REQUESTED,
         startTime,
         endTime,
         slot,
@@ -190,37 +146,23 @@ if (startTime <= now) {
         requestMessage,
         adminNotes,
       },
-      include: {
-        patient: true,
-
-        // Return safe provider info only (no password)
-        provider: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            role: true,
-          },
-        },
-
-        payment: true,
-      },
+      include: appointmentInclude,
     });
 
     if (appointment.patient?.email) {
-  sendBookingConfirmationEmail({
-    to: appointment.patient.email,
-    patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
-    appointmentType: appointment.type,
-    startTime: appointment.startTime,
-  }).catch((error) => {
-    console.error("Failed to send booking confirmation email:", error);
-  });
-}
+      sendBookingConfirmationEmail({
+        to: appointment.patient.email,
+        patientName: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
+        appointmentType: appointment.type,
+        startTime: appointment.startTime,
+      }).catch((error) => {
+        console.error("Failed to send booking confirmation email:", error);
+      });
+    }
 
     return Response.json(appointment, { status: 201 });
   } catch (err) {
     console.error(err);
     return Response.json({ error: "Failed to create appointment" }, { status: 500 });
   }
-}
+});

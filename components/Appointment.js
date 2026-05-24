@@ -1,6 +1,11 @@
 "use client";
 
-export default function Appointment({ appointment, active, setActive }) {
+export default function Appointment({
+  appointment,
+  active,
+  setActive,
+  showPractitioner = false,
+}) {
   const manageActive = (appointment) => {
     if (active?.id === appointment.id) {
       setActive(null);
@@ -48,8 +53,15 @@ export default function Appointment({ appointment, active, setActive }) {
         {appointment.name}
       </p>
       <p className={`${getStatusText(appointment.status)} font-medium text-xs`}>
-        {`${appointment.time} AM`}
+        {appointment.time}
       </p>
+      {showPractitioner && (
+        <p
+          className={`${getStatusText(appointment.status)} font-medium text-xs truncate`}
+        >
+          {appointment.practitioner}
+        </p>
+      )}
       <p className={`${getStatusText(appointment.status)} font-medium text-xs`}>
         {appointment.type}
       </p>

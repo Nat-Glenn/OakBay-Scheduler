@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useEffect } from "react";
 import NavBarComp from "@/components/NavBarComp";
+import { apiFetch } from "@/utils/apiFetch";
 import {
   Users,
   DollarSign,
@@ -53,7 +54,7 @@ export default function Summary() {
         setSummaryLoading(true);
         setSummaryError("");
 
-        const res = await fetch("/api/summary", { cache: "no-store" });
+        const res = await apiFetch("/api/summary", { cache: "no-store" });
         if (!res.ok) throw new Error("Failed to load summary");
 
         const data = await res.json();
@@ -104,7 +105,7 @@ export default function Summary() {
     setIsLoading(true);
 
     try {
-      const res = await fetch("/api/ai/copilot", {
+      const res = await apiFetch("/api/ai/copilot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -158,7 +159,7 @@ export default function Summary() {
     ]);
 
     try {
-      const res = await fetch("/api/ai/copilot", {
+      const res = await apiFetch("/api/ai/copilot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -211,7 +212,7 @@ export default function Summary() {
     setQuery("");
 
     try {
-      const res = await fetch("/api/ai/copilot", {
+      const res = await apiFetch("/api/ai/copilot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -264,7 +265,7 @@ export default function Summary() {
     ]);
 
     try {
-      const res = await fetch("/api/ai/copilot", {
+      const res = await apiFetch("/api/ai/copilot", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

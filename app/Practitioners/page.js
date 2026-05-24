@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import NavBarComp from "@/components/NavBarComp";
+import { apiFetch } from "@/utils/apiFetch";
 import { Search, Plus, MoreVertical, User, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -66,7 +67,7 @@ export default function Practitioners() {
   useEffect(() => {
     async function loadPractitioners() {
       try {
-        const res = await fetch("/api/practitioners");
+        const res = await apiFetch("/api/practitioners");
         const data = await res.json();
 
         if (!res.ok) {
@@ -113,7 +114,7 @@ export default function Practitioners() {
     }
 
     try {
-      const res = await fetch("/api/practitioners", {
+      const res = await apiFetch("/api/practitioners", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -175,7 +176,7 @@ export default function Practitioners() {
     }
 
     try {
-      const res = await fetch(`/api/practitioners/${selectedPractitioner.id}`, {
+      const res = await apiFetch(`/api/practitioners/${selectedPractitioner.id}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

@@ -4,8 +4,9 @@ import {
   getPractitionerDailySummary,
   getDailyOperationsReportData,
 } from "@/lib/ai/tools";
+import { withAuthSimple } from "@/lib/withAuth";
 
-export async function GET() {
+export const GET = withAuthSimple(async () => {
   try {
     const overdue = await getOverdueAppointments();
     const daily = await getDailyOperationsReportData();
@@ -22,4 +23,4 @@ export async function GET() {
     console.error(err);
     return Response.json({ error: "Failed to test tools" }, { status: 500 });
   }
-}
+});

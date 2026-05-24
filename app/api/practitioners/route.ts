@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/hash";
 import { nameRegex, emailRegex, phoneRegex } from "@/lib/validate";
+import { withAuthSimple } from "@/lib/withAuth";
 
-export async function GET() {
+export const GET = withAuthSimple(async () => {
   try {
     const practitioners = await prisma.user.findMany({
       where: {
@@ -27,9 +28,9 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req) => {
   try{
     const body = await req.json();
 
@@ -124,4 +125,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+});
