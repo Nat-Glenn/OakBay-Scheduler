@@ -63,7 +63,36 @@ export function formatClinicClockTime(value: Date | string): string {
   const hour = Number(parts.find((p) => p.type === "hour")?.value ?? 0);
   const minute = parts.find((p) => p.type === "minute")?.value ?? "00";
 
-  return `${hour}:${minute.padStart(2, "0")}`;
+  return `${String(hour).padStart(2, "0")}:${minute.padStart(2, "0")}`;
+}
+
+/**
+ * YYYY-MM-DD from a date-only field (ProviderShift.shiftDate).
+ * Uses UTC calendar parts — do not apply clinic TZ (avoids off-by-one day).
+ */
+export function formatDateOnlyIso(value: Date | string): string {
+  const date = new Date(value);
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/** YYYY-MM-DD in clinic timezone (instants, appointments). */
+export function formatClinicDateIso(value: Date | string): string {
+  const date = new Date(value);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: CLINIC_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((p) => p.type === "year")?.value ?? "0000";
+  const month = parts.find((p) => p.type === "month")?.value ?? "01";
+  const day = parts.find((p) => p.type === "day")?.value ?? "01";
+
+  return `${year}-${month}-${day}`;
 }
 
 /** dd/mm/yyyy in clinic timezone for grid matching. */

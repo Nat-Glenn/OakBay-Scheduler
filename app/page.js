@@ -2,7 +2,7 @@
 import AppShell from "@/components/AppShell";
 import { renderAppointment } from "@/components/RenderAppointment";
 import React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { DatePicker } from "@/components/DatePicker";
 import {
@@ -32,6 +32,8 @@ import { parseApiError } from "@/utils/parseApiError";
 import { CLINIC_TIME_SLOTS, ALL_STAFF } from "@/lib/appointments/status";
 
 import { formatPickerDateForApi } from "@/lib/appointments/clinicTime.js";
+import InOfficeBanner from "@/components/InOfficeBanner";
+import { formatShiftRange } from "@/lib/shifts/clientUtils";
 
 export default function Appointments() {
   const [appointments, setAppointments] = useState([]);
@@ -43,6 +45,7 @@ export default function Appointments() {
   const [appointmentsError, setAppointmentsError] = useState("");
   const [practitionersError, setPractitionersError] = useState("");
   const [reloadKey, setReloadKey] = useState(0);
+  const [dayShifts, setDayShifts] = useState([]);
   const small = useMediaQuery("(max-width: 768px)");
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -128,6 +131,35 @@ export default function Appointments() {
     loadAppointments();
   }, [date, reloadKey]);
 
+  useEffect(() => {
+    async function loadDayShifts() {
+      try {
+        const dateStr = formatPickerDateForApi(date);
+        const res = await apiFetch(`/api/shifts/day?date=${dateStr}`);
+        const data = await res.json();
+        if (res.ok) {
+          setDayShifts(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error("Failed to load day shifts:", err);
+        setDayShifts([]);
+      }
+    }
+
+    loadDayShifts();
+  }, [date, reloadKey]);
+
+  const dateStrForShifts = formatPickerDateForApi(date);
+  const workingNamesForBooking = useMemo(() => {
+    const names = new Set();
+    for (const shift of dayShifts) {
+      names.add(shift.provider.name);
+    }
+    return names;
+  }, [dayShifts]);
+
+  const scheduleEnforcedForDay = dayShifts.length > 0;
+
   const headerDescription = isToday(date)
     ? "Today's clinic schedule"
     : undefined;
@@ -186,16 +218,56 @@ export default function Appointments() {
                     <ChevronDownIcon />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-auto" align="center">
-                  {practitioners.map((p) => (
-                    <DropdownMenuItem
-                      className="text-foreground"
-                      key={p}
-                      onClick={() => setPractitioner(p)}
-                    >
-                      {p}
-                    </DropdownMenuItem>
-                  ))}
+                <DropdownMenuContent className="min-w-[14rem]" align="center">
+                  {practitioners.map((p) => {
+                    if (p === ALL_STAFF) {
+                      return (
+                        <DropdownMenuItem
+                          key={p}
+                          className="font-medium text-foreground"
+                          onClick={() => setPractitioner(p)}
+                        >
+                          {p}
+                        </DropdownMenuItem>
+                      );
+                    }
+
+                    const shift = dayShifts.find((s) => s.provider.name === p);
+                    const onShift =
+                      !scheduleEnforcedForDay || Boolean(shift);
+
+                    return (
+                      <DropdownMenuItem
+                        key={p}
+                        className="flex flex-col items-start gap-0.5 py-2 text-foreground"
+                        onClick={() => setPractitioner(p)}
+                      >
+                        <span className="flex flex-wrap items-center gap-2 font-medium">
+                          Dr. {p}
+                          {scheduleEnforcedForDay ? (
+                            onShift ? (
+                              <span className="rounded-md bg-status-checked-in/35 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-status-checked-in-foreground">
+                                On shift
+                              </span>
+                            ) : (
+                              <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                                Off
+                              </span>
+                            )
+                          ) : null}
+                        </span>
+                        {shift ? (
+                          <span className="text-xs text-muted-foreground">
+                            {formatShiftRange(shift)}
+                          </span>
+                        ) : scheduleEnforcedForDay ? (
+                          <span className="text-xs text-muted-foreground">
+                            Not scheduled today
+                          </span>
+                        ) : null}
+                      </DropdownMenuItem>
+                    );
+                  })}
                 </DropdownMenuContent>
               </DropdownMenu>
               <AddAppointment
@@ -203,6 +275,8 @@ export default function Appointments() {
                 setAppointments={setAppointments}
                 date={date}
                 setDate={setDate}
+                dayShifts={dayShifts}
+                scheduleEnforced={dayShifts.length > 0}
                 variant={small ? "icon" : "default"}
                 patientId={prefillPatientId}
                 open={bookingDialogOpen}
@@ -216,6 +290,17 @@ export default function Appointments() {
         />
 
         <SchedulerLegend />
+
+        <InOfficeBanner className="mb-3" />
+
+        {dayShifts.length > 0 &&
+        workingNamesForBooking.size > 0 &&
+        !practitionersError ? (
+          <p className="mb-2 text-center text-xs text-muted-foreground">
+            On shift this day:{" "}
+            {[...workingNamesForBooking].join(", ")}
+          </p>
+        ) : null}
 
         {(practitionersError || appointmentsError) && (
           <LoadErrorPanel

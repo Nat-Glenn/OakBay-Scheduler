@@ -12,6 +12,11 @@ import {
   APPOINTMENT_TYPE_OPTIONS,
   CLINIC_TIME_SLOT_OPTIONS,
 } from "@/lib/appointments/status";
+import { formatPickerDateForApi } from "@/lib/appointments/clinicTime.js";
+import {
+  buildPractitionerDropdownItems,
+  getWorkingProviderNamesForSlot,
+} from "@/lib/shifts/clientUtils";
 import {
   Item,
   ItemActions,
@@ -71,6 +76,7 @@ export default function AppointmentInformation({
   const [editDate, setEditDate] = useState(null);
   const [search, setSearch] = useState("");
   const [practitioners, setPractitioners] = useState([]);
+  const [dayShifts, setDayShifts] = useState([]);
   const small = useMediaQuery("(max-width: 768px)");
 
   const types = APPOINTMENT_TYPE_OPTIONS;
@@ -94,7 +100,45 @@ export default function AppointmentInformation({
     loadPractitioners();
   }, []);
 
+  useEffect(() => {
+    async function loadDayShifts() {
+      if (!editDate) {
+        setDayShifts([]);
+        return;
+      }
+      try {
+        const dateStr = formatPickerDateForApi(editDate);
+        const res = await apiFetch(`/api/shifts/day?date=${dateStr}`);
+        const data = await res.json();
+        if (res.ok) {
+          setDayShifts(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error(err);
+        setDayShifts([]);
+      }
+    }
+
+    loadDayShifts();
+  }, [editDate]);
+
   const selectedAppointment = appointment || active;
+  const scheduleEnforced = dayShifts.length > 0;
+  const editDateIso = editDate ? formatPickerDateForApi(editDate) : null;
+
+  useEffect(() => {
+    if (!scheduleEnforced || !editTime || !editPractitioner || !editDateIso) {
+      return;
+    }
+    const working = getWorkingProviderNamesForSlot(
+      dayShifts,
+      editDateIso,
+      editTime,
+    );
+    if (!working.has(editPractitioner)) {
+      setEditPractitioner("");
+    }
+  }, [scheduleEnforced, editTime, editPractitioner, dayShifts, editDateIso]);
 
   const filteredArray = (type) => {
     if (type == "types") {
@@ -103,9 +147,14 @@ export default function AppointmentInformation({
       );
     }
     if (type == "practitioners") {
-      return practitioners.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()),
-      );
+      return buildPractitionerDropdownItems({
+        practitioners,
+        dayShifts,
+        scheduleEnforced,
+        dateIso: editDateIso ?? "",
+        clockTime: editTime || null,
+        search,
+      });
     }
     if (type == "time") {
       return time.filter((c) =>
@@ -170,6 +219,9 @@ export default function AppointmentInformation({
   }
 
   const formattedDate = formatDateDMY(editDate);
+  const workingAtTime = scheduleEnforced
+    ? getWorkingProviderNamesForSlot(dayShifts, editDateIso, editTime)
+    : null;
 
   let slotToUse = active.slot;
 
@@ -177,17 +229,31 @@ export default function AppointmentInformation({
     editTime !== active.time ||
     editPractitioner !== selectedAppointment.practitioner
   ) {
+    if (
+      scheduleEnforced &&
+      editPractitioner &&
+      workingAtTime &&
+      !workingAtTime.has(editPractitioner)
+    ) {
+      toast.warning(
+        "This chiropractor is not scheduled to work at this time.",
+        { position: "top-right" },
+      );
+      return false;
+    }
+
     const availableSlot = getAvailableSlot(
       appointments.filter((a) => a.id !== selectedAppointment.id),
       formattedDate,
       editTime,
       editPractitioner,
       selectedAppointment.patientId,
+      workingAtTime,
     );
 
     if (!availableSlot) {
       toast.warning(
-        "No available slot for this time (clinic full, or this patient/chiropractor is already booked).",
+        "No available slot for this time (clinic full, off shift, or already booked).",
         {
         position: "top-right",
       });

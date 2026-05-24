@@ -18,6 +18,95 @@ import { Input } from "./ui/input";
 import { useRef } from "react";
 import { toast } from "sonner";
 
+function PractitionerDropdownOption({ item, displayText, setItemSearch, setSearch }) {
+  const handleSelect = (event) => {
+    if (item.disabled) {
+      event.preventDefault();
+      toast.warning("This chiropractor is not on shift for the selected time.", {
+        position: "top-right",
+      });
+      return;
+    }
+    setItemSearch(item.name);
+    if (setSearch) setSearch("");
+  };
+
+  return (
+    <DropdownMenuItem
+      key={item.id}
+      disabled={item.disabled}
+      onSelect={handleSelect}
+      className={`flex items-start gap-2 py-2 ${
+        item.disabled
+          ? "cursor-not-allowed opacity-60"
+          : "text-foreground"
+      }`}
+    >
+      <Check
+        className={
+          displayText === item.name
+            ? "mt-0.5 shrink-0 text-foreground opacity-100"
+            : "mt-0.5 shrink-0 text-foreground opacity-0"
+        }
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex flex-wrap items-center gap-2 font-medium">
+          {item.name}
+          {item.onShift === true ? (
+            <span className="rounded-md bg-status-checked-in/35 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-status-checked-in-foreground">
+              On shift
+            </span>
+          ) : null}
+          {item.onShift === false ? (
+            <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Off
+            </span>
+          ) : null}
+        </span>
+        {item.meta ? (
+          <span className="text-xs leading-snug text-muted-foreground">
+            {item.meta}
+          </span>
+        ) : null}
+      </div>
+    </DropdownMenuItem>
+  );
+}
+
+function renderDropdownOptions(itemsArray, displayText, setItemSearch, setSearch) {
+  const hasShiftMeta = itemsArray.some((item) => item.onShift !== undefined);
+
+  return itemsArray.map((item) =>
+    hasShiftMeta ? (
+      <PractitionerDropdownOption
+        key={item.id}
+        item={item}
+        displayText={displayText}
+        setItemSearch={setItemSearch}
+        setSearch={setSearch}
+      />
+    ) : (
+      <DropdownMenuItem
+        key={item.id}
+        onSelect={() => {
+          setItemSearch(item.name);
+          if (setSearch) setSearch("");
+        }}
+        className="text-foreground"
+      >
+        <Check
+          className={
+            displayText === item.name
+              ? "mr-2 text-foreground opacity-100"
+              : "mr-2 text-foreground opacity-0"
+          }
+        />
+        {item.name}
+      </DropdownMenuItem>
+    ),
+  );
+}
+
 export default function FormField({
   fieldLabel,
   displayText,
@@ -107,25 +196,12 @@ export default function FormField({
                 {emptyText}
               </div>
             ) : (
-              itemsArray.map((item) => (
-                <DropdownMenuItem
-                  key={item.id}
-                  onSelect={() => {
-                    setItemSearch(item.name);
-                    setSearch(""); // reset search
-                  }}
-                  className="text-foreground"
-                >
-                  <Check
-                    className={
-                      displayText === item.name
-                        ? "mr-2 text-foreground opacity-100"
-                        : "mr-2 text-foreground opacity-0"
-                    }
-                  />
-                  {item.name}
-                </DropdownMenuItem>
-              ))
+              renderDropdownOptions(
+                itemsArray,
+                displayText,
+                setItemSearch,
+                setSearch,
+              )
             )}
           </DropdownMenuContent>
         </DropdownMenu>
@@ -188,24 +264,7 @@ export default function FormField({
                 {emptyText}
               </div>
             ) : (
-              itemsArray.map((item) => (
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setItemSearch(item.name);
-                  }}
-                  key={item.id}
-                  className="text-foreground"
-                >
-                  <Check
-                    className={
-                      displayText === item.name
-                        ? "mr-2 text-foreground opacity-100"
-                        : "mr-2 text-foreground opacity-0"
-                    }
-                  />
-                  {item.name}
-                </DropdownMenuItem>
-              ))
+              renderDropdownOptions(itemsArray, displayText, setItemSearch)
             )}
           </DropdownMenuContent>
         </DropdownMenu>

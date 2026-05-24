@@ -9,6 +9,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  GrCalendar,
   GrMoney,
   GrPower,
   GrScorecard,
@@ -28,6 +29,7 @@ import { useSessionUser } from "@/utils/useSessionUser";
 
 const NAV_ICONS = {
   "/": GrScorecard,
+  "/StaffSchedule": GrCalendar,
   "/Billing": GrMoney,
   "/Practitioners": GrUserManager,
   "/Patients": GrUser,

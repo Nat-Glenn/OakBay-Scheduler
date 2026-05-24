@@ -27,7 +27,16 @@ export function getAvailableSlot(
   time,
   practitioner,
   patientId = null,
+  workingProviderNames = null,
 ) {
+  if (
+    workingProviderNames &&
+    practitioner &&
+    !workingProviderNames.has(practitioner)
+  ) {
+    return null;
+  }
+
   const atTime = appointments.filter(
     (a) =>
       a.date === date &&

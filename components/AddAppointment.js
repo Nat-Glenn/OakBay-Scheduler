@@ -30,12 +30,19 @@ import FormField from "@/components/FormField";
 import { Plus } from "lucide-react";
 import { apiFetch } from "@/utils/apiFetch";
 import { dbStatusToUi, APPOINTMENT_TYPE_OPTIONS, CLINIC_TIME_SLOT_OPTIONS } from "@/lib/appointments/status";
+import { formatPickerDateForApi } from "@/lib/appointments/clinicTime.js";
+import {
+  buildPractitionerDropdownItems,
+  getWorkingProviderNamesForSlot,
+} from "@/lib/shifts/clientUtils";
 
 export default function AddAppointment({
   appointments,
   setAppointments,
   date,
   setDate,
+  dayShifts = [],
+  scheduleEnforced = false,
   variant = "default",
   patientId = null,
   open,
@@ -151,6 +158,26 @@ export default function AddAppointment({
     loadPractitioners();
   }, []);
 
+  const dateIso = formatPickerDateForApi(date);
+
+  useEffect(() => {
+    if (!scheduleEnforced || !formTime || !formPractitioner) return;
+    const working = getWorkingProviderNamesForSlot(
+      dayShifts,
+      dateIso,
+      formTime,
+    );
+    if (!working.has(formPractitioner)) {
+      setFormPractitioner("");
+    }
+  }, [
+    scheduleEnforced,
+    formTime,
+    formPractitioner,
+    dayShifts,
+    dateIso,
+  ]);
+
   const filteredArray = (type) => {
     if (type === "customers") {
       return patients
@@ -174,9 +201,14 @@ export default function AddAppointment({
     }
 
     if (type === "practitioners") {
-      return practitioners.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()),
-      );
+      return buildPractitionerDropdownItems({
+        practitioners,
+        dayShifts,
+        scheduleEnforced,
+        dateIso,
+        clockTime: formTime || null,
+        search,
+      });
     }
     if (type === "time") {
       return time.filter((c) =>
@@ -212,6 +244,21 @@ export default function AddAppointment({
     }
 
     const formattedDate = formatDateDMY(date);
+    const workingAtTime = scheduleEnforced
+      ? getWorkingProviderNamesForSlot(dayShifts, dateIso, formTime)
+      : null;
+
+    if (
+      scheduleEnforced &&
+      formPractitioner &&
+      workingAtTime &&
+      !workingAtTime.has(formPractitioner)
+    ) {
+      setValidationError(
+        "This chiropractor is not scheduled to work at this time. Check the staff schedule.",
+      );
+      return false;
+    }
 
     const availableSlot = getAvailableSlot(
       appointments,
@@ -219,11 +266,14 @@ export default function AddAppointment({
       formTime,
       formPractitioner,
       finalPatientId,
+      workingAtTime,
     );
 
     if (!availableSlot) {
       setValidationError(
-        "No available slot for this time (clinic full, or this patient/chiropractor is already booked).",
+        scheduleEnforced && workingAtTime?.size === 0
+          ? "No chiropractors are on shift at this time."
+          : "No available slot for this time (clinic full, off shift, or already booked).",
       );
       return false;
     }

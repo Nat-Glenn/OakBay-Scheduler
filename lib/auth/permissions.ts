@@ -14,6 +14,7 @@ const ALL_STAFF: AppRoleValue[] = [
 const ROUTE_ROLES: Record<string, AppRoleValue[]> = {
   "/": ALL_STAFF,
   "/Billing": ALL_STAFF,
+  "/StaffSchedule": ALL_STAFF,
   "/Practitioners": [AppRole.ADMIN],
   "/Patients": ALL_STAFF,
   "/Patients/AddPatient": ALL_STAFF,
@@ -39,6 +40,10 @@ export function canAccessRoute(pathname: string, role: AppRoleValue): boolean {
 }
 
 export function canManagePractitioners(role: AppRoleValue): boolean {
+  return role === AppRole.ADMIN;
+}
+
+export function canManageStaffSchedule(role: AppRoleValue): boolean {
   return role === AppRole.ADMIN;
 }
 

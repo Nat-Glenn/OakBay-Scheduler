@@ -5,6 +5,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { findPatientOverlap, findProviderOverlap } from "@/lib/appointments";
+import { isProviderScheduledForRange } from "@/lib/shifts/availability";
 import {
   AppointmentStatus,
   type AppointmentStatusValue,
@@ -63,6 +64,19 @@ export async function validateClinicSlotBooking(opts: {
     return {
       ok: false,
       error: "Please assign a chiropractor for this appointment.",
+    };
+  }
+
+  const onShift = await isProviderScheduledForRange({
+    providerId,
+    startTime,
+    endTime,
+  });
+
+  if (!onShift) {
+    return {
+      ok: false,
+      error: "This chiropractor is not scheduled to work at this time.",
     };
   }
 
