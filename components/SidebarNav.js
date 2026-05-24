@@ -22,7 +22,8 @@ import { auth } from "@/app/Login/Firebase/firebase";
 import { Moon, Sun } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/utils/DarkModeProvider";
-import { isNavActive, NAV_ITEMS } from "@/lib/navigation";
+import { isNavActive, NAV_ITEMS, filterNavItems } from "@/lib/navigation";
+import { useSessionUser } from "@/utils/useSessionUser";
 
 const NAV_ICONS = {
   "/": GrScorecard,
@@ -54,6 +55,8 @@ function ThemeToggle() {
 export default function SidebarNav({ onNavigate, showThemeToggle = true }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { session } = useSessionUser();
+  const navItems = filterNavItems(session?.allowedRoutes);
 
   const handleSignOut = async () => {
     try {
@@ -84,7 +87,7 @@ export default function SidebarNav({ onNavigate, showThemeToggle = true }) {
       </div>
 
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto py-4">
-        {NAV_ITEMS.map(({ href, label }) => {
+        {navItems.map(({ href, label }) => {
           const Icon = NAV_ICONS[href];
           return (
             <Link
@@ -103,6 +106,15 @@ export default function SidebarNav({ onNavigate, showThemeToggle = true }) {
       {showThemeToggle ? (
         <div className="border-t border-muted-foreground/20">
           <ThemeToggle />
+        </div>
+      ) : null}
+
+      {session ? (
+        <div className="border-t border-muted-foreground/20 px-4 py-3">
+          <p className="truncate text-sm font-semibold text-foreground">
+            {session.name}
+          </p>
+          <p className="text-xs text-muted-foreground">{session.roleLabel}</p>
         </div>
       ) : null}
 

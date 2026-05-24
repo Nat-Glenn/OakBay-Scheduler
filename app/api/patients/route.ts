@@ -4,7 +4,7 @@ import { encryptField, decryptField } from "@/lib/encrypt";
 import { withAuthSimple } from "@/lib/withAuth";
 import { badRequest, serverError } from "@/lib/api";
 import { createPatientSchema } from "@/lib/patients/schemas";
-import { parseBody } from "@/lib/validation/parseBody";
+import { redactPatientForRole } from "@/lib/auth/redact";
 
 function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
   return {
@@ -13,7 +13,7 @@ function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
   };
 }
 
-export const POST = withAuthSimple(async (req) => {
+export const POST = withAuthSimple(async (req, user) => {
   try {
     const body = await req.json();
     const parsed = parseBody(createPatientSchema, body);
@@ -51,14 +51,17 @@ export const POST = withAuthSimple(async (req) => {
       },
     });
 
-    return Response.json(decryptPatient(patient), { status: 201 });
+    return Response.json(
+      redactPatientForRole(decryptPatient(patient), user.role),
+      { status: 201 },
+    );
   } catch (err) {
     console.error(err);
     return serverError("Failed to create patient");
   }
 });
 
-export const GET = withAuthSimple(async (req) => {
+export const GET = withAuthSimple(async (req, user) => {
   try {
     const { searchParams } = new URL(req.url);
     const search = (searchParams.get("search") ?? "").trim();
@@ -98,7 +101,7 @@ export const GET = withAuthSimple(async (req) => {
       patients.map((patient) => {
         const decryptedPatient = decryptPatient(patient);
         return {
-          ...decryptedPatient,
+          ...redactPatientForRole(decryptedPatient, user.role),
           lastVisit:
             patient.appointments.length > 0
               ? patient.appointments[0].startTime

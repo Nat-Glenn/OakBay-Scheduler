@@ -1,15 +1,20 @@
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/hash";
-import { withAuthSimple } from "@/lib/withAuth";
+import { withAuthSimple, withRoles } from "@/lib/withAuth";
+import { AppRole } from "@/lib/auth/roles";
 import { badRequest, conflict, serverError } from "@/lib/api";
 import { createPractitionerSchema } from "@/lib/practitioners/schemas";
 import { parseBody } from "@/lib/validation/parseBody";
+import {
+  ClinicDbRole,
+  SCHEDULER_STAFF_ROLES,
+} from "@/lib/auth/constants";
 
 export const GET = withAuthSimple(async () => {
   try {
     const practitioners = await prisma.user.findMany({
       where: {
-        role: { in: ["Chiropractor", "provider"] },
+        role: { in: [...SCHEDULER_STAFF_ROLES] },
       },
       select: {
         id: true,
@@ -29,7 +34,7 @@ export const GET = withAuthSimple(async () => {
   }
 });
 
-export const POST = withAuthSimple(async (req) => {
+export const POST = withRoles([AppRole.ADMIN], async (req) => {
   try {
     const body = await req.json();
     const parsed = parseBody(createPractitionerSchema, body);
@@ -52,7 +57,7 @@ export const POST = withAuthSimple(async (req) => {
         name,
         email,
         phone: phone || null,
-        role: "provider",
+        role: ClinicDbRole.CHIROPRACTOR,
         password: hashedPassword,
       },
       select: {

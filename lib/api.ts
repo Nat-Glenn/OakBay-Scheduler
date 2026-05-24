@@ -18,6 +18,10 @@ export function conflict(error: string, details?: unknown) {
   return Response.json({ error, details }, { status: 409 });
 }
 
+export function forbidden(error: string) {
+  return Response.json({ error }, { status: 403 });
+}
+
 export function serverError(error: string) {
   return Response.json({ error }, { status: 500 });
 }

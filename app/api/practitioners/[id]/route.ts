@@ -1,10 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { ok, badRequest, notFound, serverError } from "@/lib/api";
+import { ok, badRequest, notFound, serverError, forbidden } from "@/lib/api";
 import { withAuth } from "@/lib/withAuth";
+import { AppRole } from "@/lib/auth/roles";
 import { patchPractitionerSchema } from "@/lib/practitioners/schemas";
 import { parseBody } from "@/lib/validation/parseBody";
 
-export const PATCH = withAuth(async (req, context) => {
+export const PATCH = withAuth(async (req, context, user) => {
+  if (user.role !== AppRole.ADMIN) {
+    return forbidden("You do not have permission to manage practitioners.");
+  }
+
   try {
     const { id: idStr } = await context.params;
     const id = Number(idStr);

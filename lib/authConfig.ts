@@ -4,10 +4,23 @@
  */
 
 export function isAuthSkipped(): boolean {
-  // Only honor this flag in local dev — never set NEXT_PUBLIC_SKIP_AUTH in production.
   if (process.env.NODE_ENV === "production") {
     return false;
   }
 
   return process.env.NEXT_PUBLIC_SKIP_AUTH?.trim().toLowerCase() === "true";
+}
+
+/**
+ * Map any Firebase sign-in (e.g. personal Gmail) to Brad Pritchard admin until
+ * real clinic emails exist on User rows. Dev only.
+ */
+export function shouldImpersonateAdmin(): boolean {
+  if (process.env.NODE_ENV === "production") {
+    return false;
+  }
+
+  return (
+    process.env.NEXT_PUBLIC_IMPERSONATE_ADMIN?.trim().toLowerCase() === "true"
+  );
 }

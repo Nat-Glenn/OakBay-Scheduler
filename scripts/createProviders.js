@@ -8,13 +8,13 @@ async function main() {
       name: "Brad Pritchard",
       email: "testing@oakbay.local",
       password: "password123",
-      role: "provider",
+      role: "Chiropractor",
     },
     {
       name: "Tyler Vickerson",
       email: "testing2@oakbay.local",
       password: "password123",
-      role: "provider",
+      role: "Chiropractor",
     },
   ];
 

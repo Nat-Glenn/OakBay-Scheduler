@@ -54,7 +54,7 @@ async function main() {
       email: "emily.carter@oakbay.com",
       phone: "403-555-1002",
       password: hashedPassword,
-      role: "provider",
+      role: "Chiropractor",
     },
   });
 
@@ -64,7 +64,7 @@ async function main() {
       email: "michael.reeves@oakbay.com",
       phone: "403-555-1003",
       password: hashedPassword,
-      role: "provider",
+      role: "Chiropractor",
     },
   });
 
@@ -74,7 +74,7 @@ async function main() {
       email: "nina.patel@oakbay.com",
       phone: "403-555-1004",
       password: hashedPassword,
-      role: "provider",
+      role: "Chiropractor",
     },
   });
 

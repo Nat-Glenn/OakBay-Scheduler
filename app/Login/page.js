@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   signInWithEmailAndPassword,
   sendEmailVerification,
@@ -24,6 +24,7 @@ import {
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
 import { syncAuthSession } from "@/utils/authSession";
+import { isAuthSkippedClient } from "@/utils/authConfig";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -34,6 +35,12 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   const router = useRouter();
+
+  useEffect(() => {
+    if (isAuthSkippedClient()) {
+      router.replace("/");
+    }
+  }, [router]);
 
   const handleGoogleSignIn = async () => {
     setError("");

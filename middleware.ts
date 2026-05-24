@@ -29,7 +29,11 @@ function isPublicApi(pathname: string) {
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (isAuthSkipped()) {
+  const skipAuth =
+    process.env.NODE_ENV !== "production" &&
+    process.env.NEXT_PUBLIC_SKIP_AUTH?.trim().toLowerCase() === "true";
+
+  if (skipAuth || isAuthSkipped()) {
     if (pathname === "/Login" || pathname.startsWith("/Login/")) {
       return NextResponse.redirect(new URL("/", request.url));
     }

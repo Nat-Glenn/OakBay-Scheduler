@@ -17,6 +17,8 @@ import { useNavBar } from "@/utils/NavBarProvider";
 import { useDarkMode } from "@/utils/DarkModeProvider";
 import { getPageTitle } from "@/lib/navigation";
 import { isAuthSkippedClient } from "@/utils/authConfig";
+import { useSessionUser } from "@/utils/useSessionUser";
+import { canAccessRoute } from "@/lib/auth/permissions";
 
 function MobileTopBar({ title, onOpenMenu }) {
   const { boolDark, handleBool } = useDarkMode();
@@ -45,6 +47,7 @@ export default function AppShell({ children, title }) {
   const pathname = usePathname();
   const pageTitle = title ?? getPageTitle(pathname);
   const { navState, handleOpen } = useNavBar();
+  const { session, loading: sessionLoading } = useSessionUser();
 
   useEffect(() => {
     if (isAuthSkippedClient()) return;
@@ -63,6 +66,13 @@ export default function AppShell({ children, title }) {
 
     return () => unsub();
   }, [router]);
+
+  useEffect(() => {
+    if (sessionLoading || !session?.role) return;
+    if (!canAccessRoute(pathname, session.role)) {
+      router.replace("/");
+    }
+  }, [pathname, session, sessionLoading, router]);
 
   return (
     <main className="flex h-dvh w-full overflow-hidden bg-background text-foreground">
