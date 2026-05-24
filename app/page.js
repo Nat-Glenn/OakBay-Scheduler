@@ -9,8 +9,9 @@ import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
+  CalendarDays,
 } from "lucide-react";
-import { addDays, subDays } from "date-fns";
+import { addDays, isToday, subDays } from "date-fns";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,6 +23,10 @@ import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { useSearchParams, useRouter } from "next/navigation";
 import { mapApiAppointmentToSchedulerRow } from "@/lib/appointments/mapSchedulerRow";
 import SchedulerSkeleton from "@/components/SchedulerSkeleton";
+import PageHeader from "@/components/PageHeader";
+import SchedulerLegend from "@/components/SchedulerLegend";
+import EmptyState from "@/components/EmptyState";
+import LoadErrorPanel from "@/components/LoadErrorPanel";
 import { apiFetch } from "@/utils/apiFetch";
 import { parseApiError } from "@/utils/parseApiError";
 import { CLINIC_TIME_SLOTS, ALL_STAFF } from "@/lib/appointments/status";
@@ -37,6 +42,7 @@ export default function Appointments() {
   const [loadingAppointments, setLoadingAppointments] = useState(true);
   const [appointmentsError, setAppointmentsError] = useState("");
   const [practitionersError, setPractitionersError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
   const small = useMediaQuery("(max-width: 768px)");
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -87,14 +93,13 @@ export default function Appointments() {
       } catch (err) {
         console.error("Failed to load practitioners:", err);
         setPractitionersError(
-          err.message ||
-            "Could not load practitioners. Check DATABASE_URL in .env.local and restart npm run dev.",
+          err.message || "Could not load practitioners.",
         );
       }
     }
 
     loadPractitioners();
-  }, []);
+  }, [reloadKey]);
 
   useEffect(() => {
     async function loadAppointments() {
@@ -110,137 +115,164 @@ export default function Appointments() {
           throw new Error(parseApiError(data, "Failed to load appointments"));
         }
 
-        const mappedAppointments = data.map((appt) =>
-          mapApiAppointmentToSchedulerRow(appt),
-        );
-
-        setAppointments(mappedAppointments);
+        setAppointments(data.map(mapApiAppointmentToSchedulerRow));
       } catch (err) {
         console.error("Failed to load appointments:", err);
+        setAppointmentsError(err.message || "Failed to load appointments.");
         setAppointments([]);
-        setAppointmentsError(
-          err.message ||
-            "Could not load appointments. Check DATABASE_URL in .env.local and restart npm run dev.",
-        );
       } finally {
         setLoadingAppointments(false);
       }
     }
 
     loadAppointments();
-  }, [date]);
+  }, [date, reloadKey]);
+
+  const headerDescription = isToday(date)
+    ? "Today's clinic schedule"
+    : undefined;
+
+  const scheduleSummary =
+    !loadingAppointments && !appointmentsError
+      ? activeAppointments.length === 0
+        ? "No appointments scheduled for this day."
+        : practitioner === ALL_STAFF
+          ? `${activeAppointments.length} appointment${activeAppointments.length === 1 ? "" : "s"} (all staff).`
+          : `${visibleAppointments.length} of ${activeAppointments.length} shown for ${practitioner}.`
+      : null;
 
   return (
-    <AppShell>
+    <AppShell title="Scheduler">
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4">
-        <header className="flex flex-row items-center gap-4 py-4">
-          <div className="hidden w-full flex-col md:flex">
-            <h1 className="text-3xl font-bold text-foreground">Scheduler</h1>
-          </div>
-
-          <div
-            className={`flex w-full flex-row ${small ? "justify-between" : "justify-end gap-4"}`}
-          >
-            <ChevronLeftIcon
-              className="hidden size-8 shrink-0 cursor-pointer rounded-full hover:bg-muted md:block"
-              onClick={() => date && setDate(subDays(date, 1))}
-            />
-            <ChevronRightIcon
-              className="hidden size-8 shrink-0 cursor-pointer rounded-full hover:bg-muted md:block"
-              onClick={() => date && setDate(addDays(date, 1))}
-            />
-            <DatePicker
-              date={date}
-              setDate={setDate}
-              variant={small ? "icon" : ""}
-            />
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="secondary"
-                  className="flex cursor-pointer text-white"
-                >
-                  {practitioner === ALL_STAFF ? ALL_STAFF : `Dr. ${practitioner}`}
-                  <ChevronDownIcon />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-auto" align="center">
-                {practitioners.map((p) => (
-                  <DropdownMenuItem
-                    className="text-foreground"
-                    key={p}
-                    onClick={() => setPractitioner(p)}
+        <PageHeader
+          title="Scheduler"
+          description={headerDescription}
+          actions={
+            <>
+              <ChevronLeftIcon
+                className="hidden size-8 shrink-0 cursor-pointer rounded-full p-1 hover:bg-muted md:block"
+                aria-label="Previous day"
+                onClick={() => date && setDate(subDays(date, 1))}
+              />
+              <ChevronRightIcon
+                className="hidden size-8 shrink-0 cursor-pointer rounded-full p-1 hover:bg-muted md:block"
+                aria-label="Next day"
+                onClick={() => date && setDate(addDays(date, 1))}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="hidden font-semibold md:inline-flex"
+                onClick={() => setDate(new Date())}
+                disabled={isToday(date)}
+              >
+                Today
+              </Button>
+              <DatePicker
+                date={date}
+                setDate={setDate}
+                variant={small ? "icon" : ""}
+              />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    className="flex cursor-pointer text-white"
                   >
-                    {p}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <AddAppointment
-              appointments={appointments}
-              setAppointments={setAppointments}
-              date={date}
-              setDate={setDate}
-              variant={small ? "icon" : "default"}
-              patientId={prefillPatientId}
-              open={bookingDialogOpen}
-              onOpenChange={(nextOpen) => {
-                setBookingDialogOpen(nextOpen);
-                if (!nextOpen) setPrefillPatientId(null);
-              }}
-            />
-          </div>
-        </header>
+                    {practitioner === ALL_STAFF
+                      ? ALL_STAFF
+                      : `Dr. ${practitioner}`}
+                    <ChevronDownIcon />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-auto" align="center">
+                  {practitioners.map((p) => (
+                    <DropdownMenuItem
+                      className="text-foreground"
+                      key={p}
+                      onClick={() => setPractitioner(p)}
+                    >
+                      {p}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <AddAppointment
+                appointments={appointments}
+                setAppointments={setAppointments}
+                date={date}
+                setDate={setDate}
+                variant={small ? "icon" : "default"}
+                patientId={prefillPatientId}
+                open={bookingDialogOpen}
+                onOpenChange={(nextOpen) => {
+                  setBookingDialogOpen(nextOpen);
+                  if (!nextOpen) setPrefillPatientId(null);
+                }}
+              />
+            </>
+          }
+        />
 
-        {(appointmentsError || practitionersError) && (
-          <div className="text-sm text-destructive text-center pb-2 space-y-1">
-            {practitionersError && <p>{practitionersError}</p>}
-            {appointmentsError && <p>{appointmentsError}</p>}
-          </div>
+        <SchedulerLegend />
+
+        {(practitionersError || appointmentsError) && (
+          <LoadErrorPanel
+            message={[practitionersError, appointmentsError]
+              .filter(Boolean)
+              .join(" ")}
+            onRetry={() => setReloadKey((k) => k + 1)}
+          />
         )}
 
-        {!loadingAppointments && !appointmentsError && (
-          <p className="text-sm text-muted-foreground text-center pb-2">
-            {activeAppointments.length === 0
-              ? "No appointments scheduled for this day."
-              : practitioner === ALL_STAFF
-                ? `${activeAppointments.length} appointment${activeAppointments.length === 1 ? "" : "s"} for this day (all staff).`
-                : `${activeAppointments.length} total · showing ${visibleAppointments.length} for ${practitioner}. Switch to "${ALL_STAFF}" to see everyone.`}
+        {scheduleSummary && !practitionersError && !appointmentsError ? (
+          <p className="pb-2 text-center text-sm text-muted-foreground">
+            {scheduleSummary}
           </p>
-        )}
+        ) : null}
 
         {!loadingAppointments &&
           !appointmentsError &&
           activeAppointments.length > 0 &&
           visibleAppointments.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center pb-2">
-              No appointments for {practitioner} on this day. Try &quot;{ALL_STAFF}&quot; or pick a date with data (e.g. Apr 16 or May 24, 2026).
+            <p className="pb-2 text-center text-sm text-muted-foreground">
+              No appointments for {practitioner} on this day. Switch to &quot;
+              {ALL_STAFF}&quot; to see all providers.
             </p>
           )}
 
-        <div className="flex flex-row flex-1 min-h-0">
+        <div className="flex min-h-0 flex-1 flex-row">
           {loadingAppointments ? (
             <SchedulerSkeleton />
+          ) : appointmentsError ? null : activeAppointments.length === 0 ? (
+            <div className="flex flex-1 items-center justify-center rounded-lg border border-border bg-dropdown/50">
+              <EmptyState
+                icon={CalendarDays}
+                title="No appointments this day"
+                description="Use Add Appointment to book a visit, or choose another date."
+              />
+            </div>
           ) : (
-            <div className="w-full flex-1 grid grid-cols-10 overflow-y-auto min-h-0 rounded-lg border border-border scrollbar-rounded">
-              <div className="col-span-2 font-bold text-center border sticky top-0 bg-input border-foreground/20 z-10">
+            <div className="grid min-h-0 w-full flex-1 grid-cols-10 overflow-y-auto rounded-lg border border-border scrollbar-rounded">
+              <div className="sticky top-0 z-10 col-span-2 border border-foreground/20 bg-input text-center font-bold">
                 Time
               </div>
-              <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20 z-10">
+              <div className="sticky top-0 z-10 col-span-2 border border-foreground/20 bg-input text-center font-medium text-foreground">
                 Slot 1
               </div>
-              <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20 z-10">
+              <div className="sticky top-0 z-10 col-span-2 border border-foreground/20 bg-input text-center font-medium text-foreground">
                 Slot 2
               </div>
-              <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20 z-10">
+              <div className="sticky top-0 z-10 col-span-2 border border-foreground/20 bg-input text-center font-medium text-foreground">
                 Slot 3
               </div>
-              <div className="col-span-2 font-medium text-foreground text-center border sticky top-0 bg-input border-foreground/20 z-10">
+              <div className="sticky top-0 z-10 col-span-2 border border-foreground/20 bg-input text-center font-medium text-foreground">
                 Slot 4
               </div>
               {CLINIC_TIME_SLOTS.map((hours) => (
                 <React.Fragment key={hours}>
-                  <div className="col-span-2 text-center text-foreground border-foreground/20 border font-mono py-3">
+                  <div className="col-span-2 border border-foreground/20 py-3 text-center font-mono text-foreground">
                     {hours}
                   </div>
 

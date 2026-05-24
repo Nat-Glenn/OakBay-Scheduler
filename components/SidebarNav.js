@@ -19,6 +19,7 @@ import {
 } from "react-icons/gr";
 import { signOut } from "firebase/auth";
 import { auth } from "@/app/Login/Firebase/firebase";
+import { toast } from "sonner";
 import { Moon, Sun } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/utils/DarkModeProvider";
@@ -64,7 +65,7 @@ export default function SidebarNav({ onNavigate, showThemeToggle = true }) {
       router.replace("/Login");
     } catch (err) {
       console.error(err);
-      alert("Sign out failed.");
+      toast.error("Sign out failed. Please try again.");
     }
   };
 

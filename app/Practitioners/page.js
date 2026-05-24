@@ -2,7 +2,11 @@
 import Link from "next/link";
 import AppShell from "@/components/AppShell";
 import { apiFetch } from "@/utils/apiFetch";
-import { Search, Plus, MoreVertical, User, X } from "lucide-react";
+import { Search, Plus, MoreVertical, User, X, UserCog } from "lucide-react";
+import PageHeader from "@/components/PageHeader";
+import EmptyState from "@/components/EmptyState";
+import TableListSkeleton from "@/components/TableListSkeleton";
+import { parseApiError } from "@/utils/parseApiError";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,6 +61,10 @@ export default function Practitioners() {
   const [editEmail, setEditEmail] = useState("");
   const [editPhone, setEditPhone] = useState("");
 
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState("");
+  const [reloadKey, setReloadKey] = useState(0);
+
   const small = useMediaQuery("(max-width: 768px)");
 
   function isValidEmail(value) {
@@ -67,11 +75,13 @@ export default function Practitioners() {
   useEffect(() => {
     async function loadPractitioners() {
       try {
+        setLoading(true);
+        setLoadError("");
         const res = await apiFetch("/api/practitioners");
         const data = await res.json();
 
         if (!res.ok) {
-          throw new Error(data.error || "Failed to load practitioners");
+          throw new Error(parseApiError(data, "Failed to load practitioners"));
         }
 
         const mappedPractitioners = data.map((p) => ({
@@ -84,15 +94,15 @@ export default function Practitioners() {
         setPractitioners(mappedPractitioners);
       } catch (err) {
         console.error("Failed to load practitioners:", err);
-        toast.error("Failed to load practitioners.", {
-          position: "top-right",
-        });
+        setLoadError(err.message || "Failed to load practitioners.");
         setPractitioners([]);
+      } finally {
+        setLoading(false);
       }
     }
 
     loadPractitioners();
-  }, []);
+  }, [reloadKey]);
 
   const filteredPractitioners = practitioners.filter(
     (p) =>
@@ -228,46 +238,44 @@ const updated = {
 
   return (
     <>
-    <AppShell>
+    <AppShell title="Practitioners">
         <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 overflow-hidden">
-          <header className="flex flex-row py-4">
-            <h1 className="hidden text-3xl w-full font-bold text-foreground md:block">
-              Practitioners
-            </h1>
-
-            <div className="flex flex-row justify-end gap-4 w-full">
-              <div className="relative flex-1 max-w-md">
-                <InputGroup className="bg-input border-foreground text-foreground placeholder:text-muted-foreground ">
-                  <InputGroupInput
-                    placeholder="Search by name or ID..."
-                    className="border-foreground border-y focus-visible:ring-ring"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <InputGroupAddon>
-                    <Search size={18} />
-                  </InputGroupAddon>
-                  <InputGroupAddon align="inline-end">
-                    <InputGroupButton onClick={() => setSearchTerm("")}>
-                      <X />
-                    </InputGroupButton>
-                  </InputGroupAddon>
-                </InputGroup>
-              </div>
-
-              <Button
-                onClick={() => setAddOpen(true)}
-                className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2 shadow-lg shadow-[#A0CE66]/10"
-              >
-                <Plus size={18} />
-                {small ? "" : "Add Practitioner"}
-              </Button>
-            </div>
-          </header>
+          <PageHeader
+            title="Practitioners"
+            description="Chiropractors who appear on the scheduler"
+            actions={
+              <>
+                <div className="relative max-w-md flex-1">
+                  <InputGroup className="bg-input text-foreground">
+                    <InputGroupInput
+                      placeholder="Search by name or ID..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <InputGroupAddon>
+                      <Search size={18} />
+                    </InputGroupAddon>
+                    <InputGroupAddon align="inline-end">
+                      <InputGroupButton onClick={() => setSearchTerm("")}>
+                        <X />
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                </div>
+                <Button
+                  onClick={() => setAddOpen(true)}
+                  className="gap-2 bg-button-primary font-semibold text-white hover:bg-button-primary-foreground"
+                >
+                  <Plus size={18} />
+                  {small ? "" : "Add Practitioner"}
+                </Button>
+              </>
+            }
+          />
 
           <div className="flex flex-col min-h-0">
             <div className="flex flex-col md:flex-row gap-4 min-h-0">
-              <div className="rounded-xl border border-foreground bg-dropdown flex flex-1 flex-col min-h-0">
+              <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-border bg-dropdown">
                 <div className="min-h-0 overflow-y-auto scrollbar-rounded rounded-xl">
                   <Table>
                     <TableHeader className="bg-input border-b border-foreground">
@@ -283,7 +291,42 @@ const updated = {
                     </TableHeader>
 
                     <TableBody>
-                      {filteredPractitioners.map((p) => (
+                      {loading ? (
+                        <TableListSkeleton rows={6} cols={5} />
+                      ) : loadError ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="p-6">
+                            <div className="flex flex-col items-center gap-3 text-center">
+                              <p className="text-sm font-medium text-destructive">
+                                {loadError}
+                              </p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setReloadKey((k) => k + 1)}
+                              >
+                                Try again
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ) : filteredPractitioners.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="p-6">
+                            <EmptyState
+                              icon={UserCog}
+                              title="No practitioners found"
+                              description={
+                                searchTerm
+                                  ? "Try a different name or ID."
+                                  : "Add a practitioner to show them on the scheduler."
+                              }
+                            />
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                      filteredPractitioners.map((p) => (
                         <TableRow
                           key={p.id}
                           className={`cursor-pointer border-foreground/30 transition-colors ${
@@ -353,17 +396,6 @@ const updated = {
                           </TableCell>
                         </TableRow>
                       ))}
-
-                      {filteredPractitioners.length === 0 && (
-                        <TableRow>
-                          <TableCell
-                            colSpan={5}
-                            className="text-center text-muted-foreground py-8"
-                          >
-                            No practitioners found.
-                          </TableCell>
-                        </TableRow>
-                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -399,7 +431,7 @@ const updated = {
 
                     <CardContent className="space-y-4 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
                       <div className="space-y-4">
-                        <h3 className="text-title text-xs font-black uppercase tracking-widest">
+                        <h3 className="text-title text-xs font-semibold uppercase tracking-wide">
                           Personal Information
                         </h3>
                         <div className="grid gap-4 text-sm">

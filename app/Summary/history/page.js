@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import TableListSkeleton from "@/components/TableListSkeleton";
+import PageHeader from "@/components/PageHeader";
+import { getHistoryStatusBadgeClasses } from "@/lib/ui/appointmentStatusStyles";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -166,18 +168,18 @@ export default function SummaryHistoryPage() {
     <AppShell title="Visit History">
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden px-4 pb-4">
 
-        {/* Page Header */}
-        <header className="flex flex-row py-4 items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
+        <PageHeader
+          title="Visit History"
+          description="Past visits, status, and payments"
+          leading={
             <Link href="/Summary">
-              <Button variant="ghost" size="icon" className="rounded-full">
+              <Button variant="ghost" size="icon" className="rounded-full" aria-label="Back to summary">
                 <ArrowLeft size={20} />
               </Button>
             </Link>
-            <h1 className="hidden text-3xl font-bold md:block">Visit History</h1>
-          </div>
-
-          <div className="flex items-center gap-2 flex-1 max-w-2xl justify-end">
+          }
+          actions={
+          <div className="flex max-w-2xl flex-1 items-center justify-end gap-2">
             <InputGroup className="bg-input border-border max-w-md">
               <InputGroupInput
                 placeholder="Search..."
@@ -228,7 +230,8 @@ export default function SummaryHistoryPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-        </header>
+          }
+        />
 
         {/* Data Table */}
         <div className="rounded-xl border border-border bg-dropdown flex flex-1 flex-col min-h-0 overflow-hidden shadow-sm">
@@ -291,19 +294,7 @@ export default function SummaryHistoryPage() {
                       <TableCell className="font-medium">{visit.type || "—"}</TableCell>
                       <TableCell className="text-center">
                         <span
-                          className={`text-sm py-1.5 rounded-full font-semibold inline-flex items-center justify-center w-24 ${
-                            normalizeStatus(visit.status) === "Completed"
-                              ? "bg-[#a0ce66] text-primary"
-                              : normalizeStatus(visit.status) === "Confirmed"
-                                ? "bg-blue-500 text-white"
-                                : normalizeStatus(visit.status) === "Cancelled"
-                                  ? "bg-red-100 text-red-600"
-                                  : normalizeStatus(visit.status) === "In Progress"
-                                    ? "bg-blue-100 text-blue-700"
-                                    : normalizeStatus(visit.status) === "Requested"
-                                      ? "bg-yellow-100 text-yellow-700"
-                                      : "bg-yellow-100 text-red-600"
-                          }`}
+                          className={`inline-flex w-24 items-center justify-center rounded-full py-1.5 text-sm font-semibold ${getHistoryStatusBadgeClasses(normalizeStatus(visit.status))}`}
                         >
                           {normalizeStatus(visit.status)}
                         </span>

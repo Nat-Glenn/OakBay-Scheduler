@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel, FieldSet } from "@/components/ui/field";
 import FormField from "@/components/FormField";
+import PageHeader from "@/components/PageHeader";
+import FieldError from "@/components/FieldError";
 import { apiFetch } from "@/utils/apiFetch";
 
 // VALIDATION CONSTANTS
@@ -226,19 +228,19 @@ export default function AddPatientPage() {
     <AppShell title="Add Patient">
       <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
 
-        {/* BREADCRUMB & TITLE */}
-        <header className="py-4">
-          <div className="flex items-center gap-4">
+        <PageHeader
+          title="Register New Patient"
+          description="Add a new patient to the clinic directory"
+          leading={
             <Link
               href="/Patients"
-              className="flex items-center text-ring hover:text-ring/60 font-medium"
+              className="flex items-center text-sm font-medium text-ring hover:text-ring/80"
             >
-              <ChevronLeft size={20} />
-              Back to Profiles
+              <ChevronLeft size={20} aria-hidden />
+              <span className="sr-only md:not-sr-only md:ml-1">Patients</span>
             </Link>
-          </div>
-          <h1 className="hidden text-3xl font-bold md:block">Register New Patient</h1>
-        </header>
+          }
+        />
 
         <div className="flex justify-center">
           <Card className="w-full h-full max-w-2xl bg-dropdown border-foreground">
@@ -347,18 +349,14 @@ export default function AddPatientPage() {
                     </Field>
 
                     {/* ALERT AREA */}
-                    {error && (
-                      <p className="pt-4 text-sm text-red-500 font-bold uppercase italic">
-                        {error}
-                      </p>
-                    )}
+                    <FieldError message={error} className="pt-2" />
 
-                    {/* FORM ACTIONS */}
                     <div className="flex gap-4 pt-6">
                       <Link href="/Patients" className="flex-1">
                         <Button
                           type="button"
-                          className="bg-destructive hover:bg-destructive/60 w-full text-white font-bold"
+                          variant="outline"
+                          className="w-full font-semibold"
                         >
                           Cancel
                         </Button>

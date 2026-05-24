@@ -8,6 +8,8 @@ import { parseApiError } from "@/utils/parseApiError";
 import { Search, Plus, User, X, Pencil, Users, RefreshCw } from "lucide-react";
 import EmptyState from "@/components/EmptyState";
 import TableListSkeleton from "@/components/TableListSkeleton";
+import PageHeader from "@/components/PageHeader";
+import FieldError from "@/components/FieldError";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -300,38 +302,44 @@ function getDisplayedPatient(patient) {
   }
 
   return (
-    <AppShell>
+    <AppShell title="Patients">
       <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 overflow-hidden">
-        <header className="flex flex-row py-4">
-          <h1 className="hidden text-3xl w-full font-bold text-foreground md:block">Patients</h1>
-          <div className="flex flex-row justify-end gap-4 w-full">
-            <div className="relative flex-1 max-w-md">
-              <InputGroup className="bg-input text-foreground">
-                <InputGroupInput
-                  placeholder="Search by name or ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-                <InputGroupAddon><Search size={18} /></InputGroupAddon>
-                <InputGroupAddon align="inline-end">
-                  <InputGroupButton onClick={() => setSearchTerm("")}><X /></InputGroupButton>
-                </InputGroupAddon>
-              </InputGroup>
-            </div>
-            <Link href="/Patients/AddPatient">
-              <Button className="bg-button-primary hover:bg-button-primary-foreground text-white font-bold gap-2">
-                <Plus size={18} />{!small && "Add Patient"}
-              </Button>
-            </Link>
-          </div>
-        </header>
+        <PageHeader
+          title="Patients"
+          description="Search and manage patient profiles"
+          actions={
+            <>
+              <div className="relative max-w-md flex-1">
+                <InputGroup className="bg-input text-foreground">
+                  <InputGroupInput
+                    placeholder="Search by name or ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <InputGroupAddon><Search size={18} /></InputGroupAddon>
+                  <InputGroupAddon align="inline-end">
+                    <InputGroupButton onClick={() => setSearchTerm("")}>
+                      <X />
+                    </InputGroupButton>
+                  </InputGroupAddon>
+                </InputGroup>
+              </div>
+              <Link href="/Patients/AddPatient">
+                <Button className="gap-2 bg-button-primary font-semibold text-white hover:bg-button-primary-foreground">
+                  <Plus size={18} />
+                  {!small && "Add Patient"}
+                </Button>
+              </Link>
+            </>
+          }
+        />
 
         {/* MAIN CONTENT AREA */}
         <div className="flex flex-col min-h-0">
           <div className="flex flex-col md:flex-row gap-4 min-h-0">
             
             {/* PATIENTS TABLE */}
-            <div className="rounded-xl border border-foreground bg-dropdown flex flex-1 flex-col min-h-0">
+            <div className="flex min-h-0 flex-1 flex-col rounded-xl border border-border bg-dropdown">
               <div className="min-h-0 overflow-y-auto scrollbar-rounded rounded-xl">
                 <Table>
                   <TableHeader className="bg-input border-b border-foreground">
@@ -423,7 +431,9 @@ function getDisplayedPatient(patient) {
                   </CardHeader>
                   <CardContent className="space-y-4 pt-4 overflow-y-auto flex-1 scrollbar-rounded">
                     <div className="space-y-4">
-                      <h3 className="text-xs font-black uppercase text-muted-foreground">Personal Information</h3>
+                      <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        Personal Information
+                      </h3>
                       <div className="grid gap-4 text-sm">
                         <div className="flex justify-between"><span className="text-muted-foreground font-bold">DOB</span><span>{selectedPatient.dob !== "—" ? `${formatDobDisplay(selectedPatient.dob)} (${selectedPatient.age})` : "—"}</span></div>
                         <div className="flex justify-between"><span className="text-muted-foreground font-bold">Email</span><span className="truncate ml-4">{selectedPatient.email || "—"}</span></div>
@@ -445,7 +455,9 @@ function getDisplayedPatient(patient) {
       {/* EDIT PATIENT MODAL */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
         <DialogContent className="bg-background border-foreground text-foreground max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle className="text-lg font-black uppercase tracking-tight">Edit Patient</DialogTitle></DialogHeader>
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">Edit Patient</DialogTitle>
+          </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-2 gap-3">
               <FormField fieldLabel="First Name" name="firstName" value={editForm.firstName} onChange={handleEditChange} maxLength={30} variant="add" />
@@ -489,11 +501,7 @@ function getDisplayedPatient(patient) {
               />
             </Field>
 
-            {validationError && (
-              <p className="text-sm text-red-500 font-bold uppercase italic animate-pulse">
-                {validationError}
-              </p>
-            )}
+            <FieldError message={validationError} className="pt-1" />
           </div>
           <DialogFooter className="gap-2 pt-4 border-t border-foreground/20">
             <DialogClose asChild><Button variant="outline" className="font-bold">Cancel</Button></DialogClose>

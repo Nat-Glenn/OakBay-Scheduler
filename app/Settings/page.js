@@ -15,6 +15,7 @@ import { setPendingMfa } from "@/app/Login/TwoFactor/mfaStore";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { sendAdminPasswordReset } from "./resetpassword";
+import PageHeader from "@/components/PageHeader";
 
 export default function Settings() {
   /* STATE MANAGEMENT*/
@@ -136,11 +137,12 @@ export default function Settings() {
   };
 
   return (
-    <AppShell>
+    <AppShell title="Settings">
       <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-8 md:px-8">
-        <header className="py-6">
-          <h1 className="hidden text-2xl font-bold text-foreground md:block md:text-3xl">Settings</h1>
-        </header>
+        <PageHeader
+          title="Settings"
+          description="Profile, security, and connected accounts"
+        />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
           
@@ -164,7 +166,7 @@ export default function Settings() {
                   </div>
                 </div>
                 <div className="flex flex-col">
-                  <CardTitle className="text-lg uppercase font-black tracking-tight leading-none truncate max-w-[150px] lg:max-w-none">
+                  <CardTitle className="truncate max-w-[150px] text-lg font-semibold leading-none lg:max-w-none">
                     {userName}
                   </CardTitle>
                   <span className="text-[10px] text-button-primary uppercase font-bold tracking-widest mt-1">
@@ -210,7 +212,7 @@ export default function Settings() {
                   <ShieldCheck className="text-button-primary" size={28} />
                 </div>
                 <div className="flex flex-col">
-                  <CardTitle className="text-lg uppercase font-black tracking-tight leading-none">
+                  <CardTitle className="text-lg font-semibold leading-none">
                     Security & Access
                   </CardTitle>
                   <span className="text-[10px] text-button-primary uppercase font-bold tracking-widest mt-1">

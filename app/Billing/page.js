@@ -26,7 +26,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import FormField from "@/components/FormField";
+import PageHeader from "@/components/PageHeader";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
+import { toast } from "sonner";
 
 function maskCard(last4) {
   const digits =
@@ -182,7 +184,7 @@ export default function Billing() {
     const { expMonth, expYear } = parseExpiry(exp);
 
     if (!brand || last4.length !== 4) {
-      alert("Please enter a valid card brand and number.");
+      toast.error("Please enter a valid card brand and number.");
       return;
     }
 
@@ -212,9 +214,10 @@ export default function Billing() {
       setNumber("");
       setExp("");
       setIsAddOpen(false);
+      toast.success("Card saved.");
     } catch (err) {
       console.error(err);
-      alert(err.message || "Failed to save card");
+      toast.error(err.message || "Failed to save card");
     }
   }
 
@@ -233,7 +236,7 @@ export default function Billing() {
     const { expMonth, expYear } = parseExpiry(manageExp);
 
     if (!manageBrand || cleanLast4.length !== 4) {
-      alert("Please enter valid card details.");
+      toast.error("Please enter valid card details.");
       return;
     }
 
@@ -261,9 +264,10 @@ export default function Billing() {
       setCards((prev) => prev.map((c) => (c.id === data.id ? data : c)));
       setIsManageOpen(false);
       setSelectedCard(null);
+      toast.success("Card updated.");
     } catch (err) {
       console.error(err);
-      alert(err.message || "Failed to update card");
+      toast.error(err.message || "Failed to update card");
     }
   }
 
@@ -284,18 +288,20 @@ export default function Billing() {
       setCards((prev) => prev.filter((c) => c.id !== selectedCard.id));
       setIsManageOpen(false);
       setSelectedCard(null);
+      toast.success("Card removed.");
     } catch (err) {
       console.error(err);
-      alert(err.message || "Failed to delete card");
+      toast.error(err.message || "Failed to delete card");
     }
   }
 
   return (
-    <AppShell>
-      <div className="flex min-h-0 flex-1 flex-col px-4 pb-4 overflow-y-auto">
-        <header className="flex flex-row items-center gap-4 py-4">
-          <h1 className="hidden text-3xl font-bold text-foreground md:block">Billing</h1>
-        </header>
+    <AppShell title="Billing">
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
+        <PageHeader
+          title="Billing"
+          description="Store payment cards on file for patients"
+        />
         <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
           <Card>
             <CardHeader>
