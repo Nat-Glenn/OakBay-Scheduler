@@ -4,6 +4,7 @@ import { encryptField, decryptField } from "@/lib/encrypt";
 import { withAuthSimple } from "@/lib/withAuth";
 import { badRequest, serverError } from "@/lib/api";
 import { createPatientSchema } from "@/lib/patients/schemas";
+import { parseBody } from "@/lib/validation/parseBody";
 import { redactPatientForRole } from "@/lib/auth/redact";
 import { AppointmentStatus } from "@/lib/appointments/constants";
 import { syncOverdueAppointmentStatuses } from "@/lib/appointments/lifecycle";

@@ -3,6 +3,7 @@ import { badRequest, notFound, serverError } from "@/lib/api";
 import { encryptField, decryptField } from "@/lib/encrypt";
 import { withAuth } from "@/lib/withAuth";
 import { patchPatientSchema } from "@/lib/patients/schemas";
+import { parseBody } from "@/lib/validation/parseBody";
 import { redactPatientForRole } from "@/lib/auth/redact";
 
 export const GET = withAuth(async (_req, context, user) => {

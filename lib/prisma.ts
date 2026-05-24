@@ -35,10 +35,8 @@ function createPrismaClient(): PrismaClient {
   const databaseUrl = process.env.DATABASE_URL ?? "";
   warnNeonConnectionUrl(databaseUrl);
 
-  const log =
-    process.env.NODE_ENV === "development"
-      ? (["error", "warn"] as const)
-      : (["error"] as const);
+  const log: ("error" | "warn")[] =
+    process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"];
 
   if (isNeonDatabaseUrl(databaseUrl)) {
     const adapter = new PrismaNeon({ connectionString: databaseUrl });

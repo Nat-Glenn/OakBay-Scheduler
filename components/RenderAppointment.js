@@ -10,17 +10,48 @@ import AppointmentInformation from "@/components/AppointmentInformation";
 import { formatPickerDateDMY } from "@/lib/appointments/clinicTime.js";
 import { ALL_STAFF } from "@/lib/appointments/status";
 
-export function getAvailableSlot(appointments, date, time, practitioner) {
-  const usedSlots = appointments
-    .filter(
-      (a) =>
-        a.date === date && a.time === time && a.practitioner === practitioner,
-    )
-    .map((a) => a.slot);
+const SLOT_BLOCKING_UI_STATUSES = new Set([
+  "requested",
+  "confirmed",
+  "checked-in",
+]);
 
-  const allSlots = [1, 2, 3, 4];
+function isBlockingAppointment(appointment) {
+  return SLOT_BLOCKING_UI_STATUSES.has(appointment.status);
+}
 
-  return allSlots.find((slot) => !usedSlots.includes(slot)) || null;
+/** Next clinic slot (1–4) at date/time for a DC; optional patientId avoids double-booking same patient. */
+export function getAvailableSlot(
+  appointments,
+  date,
+  time,
+  practitioner,
+  patientId = null,
+) {
+  const atTime = appointments.filter(
+    (a) =>
+      a.date === date &&
+      a.time === time &&
+      isBlockingAppointment(a),
+  );
+
+  if (atTime.length >= 4) {
+    return null;
+  }
+
+  if (atTime.some((a) => a.practitioner === practitioner)) {
+    return null;
+  }
+
+  if (
+    patientId != null &&
+    atTime.some((a) => a.patientId === patientId)
+  ) {
+    return null;
+  }
+
+  const usedSlots = atTime.map((a) => a.slot);
+  return [1, 2, 3, 4].find((slot) => !usedSlots.includes(slot)) ?? null;
 }
 
 export function formatDateDMY(date) {

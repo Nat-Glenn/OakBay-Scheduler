@@ -182,10 +182,13 @@ export default function AppointmentInformation({
       formattedDate,
       editTime,
       editPractitioner,
+      selectedAppointment.patientId,
     );
 
     if (!availableSlot) {
-      toast.warning("No available slots for this time.", {
+      toast.warning(
+        "No available slot for this time (clinic full, or this patient/chiropractor is already booked).",
+        {
         position: "top-right",
       });
       return false;

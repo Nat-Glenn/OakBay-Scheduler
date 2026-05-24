@@ -10,6 +10,7 @@ import {
   parseClinicDateParam,
 } from "@/lib/appointments/clinicTime";
 import { syncOverdueAppointmentStatuses } from "@/lib/appointments/lifecycle";
+import { reserveClinicSlot } from "@/lib/appointments/clinicSlots";
 
 const appointmentInclude = {
   patient: true,
@@ -104,25 +105,18 @@ export const POST = withAuthSimple(async (req) => {
       );
     }
 
-    let slot = 1;
+    const slotReservation = await reserveClinicSlot({
+      startTime,
+      endTime,
+      patientId,
+      providerId,
+    });
 
-    if (providerId) {
-      const existingAppointments = await prisma.appointment.findMany({
-        where: { providerId, startTime },
-        orderBy: { slot: "asc" },
-        select: { slot: true },
-      });
-
-      if (existingAppointments.length >= 4) {
-        return Response.json(
-          { error: "All 4 slots for this time have been booked." },
-          { status: 409 },
-        );
-      }
-
-      const usedSlots = existingAppointments.map((appt) => appt.slot);
-      slot = [1, 2, 3, 4].find((s) => !usedSlots.includes(s)) || 1;
+    if (!slotReservation.ok) {
+      return Response.json({ error: slotReservation.error }, { status: 409 });
     }
+
+    const slot = slotReservation.slot;
 
     const patient = await prisma.patient.findUnique({ where: { id: patientId } });
     if (!patient) {

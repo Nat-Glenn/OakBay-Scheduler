@@ -395,7 +395,7 @@ const updated = {
                             </DropdownMenu>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )))}
                     </TableBody>
                   </Table>
                 </div>

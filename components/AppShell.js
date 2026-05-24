@@ -84,7 +84,7 @@ export default function AppShell({ children, title }) {
         <MobileTopBar title={pageTitle} onOpenMenu={handleOpen} />
         {navState !== "closed" ? <MobileMenuDrawer /> : null}
 
-        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-hidden">
+        <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-hidden text-foreground">
           {children}
         </div>
       </div>

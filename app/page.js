@@ -178,7 +178,7 @@ export default function Appointments() {
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="secondary"
-                    className="flex cursor-pointer text-white"
+                    className="flex cursor-pointer font-semibold text-secondary-foreground"
                   >
                     {practitioner === ALL_STAFF
                       ? ALL_STAFF

@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 function StatSkeleton() {
   return (
-    <Card className="border-sidebar shadow-sm">
+    <Card className="border-border shadow-sm">
       <CardContent className="space-y-3 p-6">
         <div className="h-4 w-24 animate-pulse rounded bg-muted" />
         <div className="h-8 w-32 animate-pulse rounded bg-muted" />
@@ -26,7 +26,7 @@ export default function SummarySkeleton() {
         <StatSkeleton />
       </div>
 
-      <Card className="border-sidebar shadow-sm">
+      <Card className="border-border shadow-sm">
         <CardHeader className="px-8 py-6">
           <div className="h-6 w-48 animate-pulse rounded bg-muted" />
         </CardHeader>

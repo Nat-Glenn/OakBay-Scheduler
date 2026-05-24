@@ -6,6 +6,7 @@
 import { prisma } from "@/lib/prisma";
 import {
   AppointmentStatus,
+  type AppointmentStatusValue,
   SCHEDULABLE_APPOINTMENT_STATUSES,
 } from "@/lib/appointments/constants";
 
@@ -32,8 +33,8 @@ export function getLocalDayBounds(date: Date) {
 
 /** Whether a status change is allowed by clinic workflow rules. */
 export function isValidStatusTransition(
-  from: AppointmentStatus,
-  to: AppointmentStatus,
+  from: AppointmentStatusValue,
+  to: AppointmentStatusValue,
 ): boolean {
   if (from === to) return true;
 

@@ -14,6 +14,7 @@ import {
 import { isValidStatusTransition } from "@/lib/appointments/lifecycle";
 import { patchAppointmentSchema } from "@/lib/appointments/schemas";
 import { parseBody } from "@/lib/validation/parseBody";
+import { reserveClinicSlot } from "@/lib/appointments/clinicSlots";
 
 export const PATCH = withAuth(async (req, context) => {
   try {
@@ -42,7 +43,15 @@ export const PATCH = withAuth(async (req, context) => {
 
     const existing = await prisma.appointment.findUnique({
       where: { id },
-      select: { id: true, status: true },
+      select: {
+        id: true,
+        status: true,
+        patientId: true,
+        providerId: true,
+        startTime: true,
+        endTime: true,
+        slot: true,
+      },
     });
 
     if (!existing) return notFound("Appointment not found");
@@ -57,25 +66,34 @@ export const PATCH = withAuth(async (req, context) => {
       });
     }
 
+    const nextStartTime = startTime ?? existing.startTime;
+    const nextEndTime = endTime ?? existing.endTime;
+    const nextProviderId =
+      providerId !== undefined ? providerId : existing.providerId;
+
+    const scheduleChanged =
+      (startTime !== undefined &&
+        startTime.getTime() !== existing.startTime.getTime()) ||
+      (endTime !== undefined &&
+        endTime.getTime() !== existing.endTime.getTime()) ||
+      (providerId !== undefined && providerId !== existing.providerId);
+
     let slot: number | undefined;
 
-    if (providerId !== undefined && startTime !== undefined) {
-      const existingAppointments = await prisma.appointment.findMany({
-        where: {
-          providerId,
-          startTime,
-          NOT: { id },
-        },
-        orderBy: { slot: "asc" },
-        select: { slot: true },
+    if (scheduleChanged) {
+      const slotReservation = await reserveClinicSlot({
+        startTime: nextStartTime,
+        endTime: nextEndTime,
+        patientId: existing.patientId,
+        providerId: nextProviderId,
+        excludeAppointmentId: id,
       });
 
-      if (existingAppointments.length >= 4) {
-        return badRequest("All 4 slots for this time have been booked.");
+      if (!slotReservation.ok) {
+        return badRequest(slotReservation.error);
       }
 
-      const usedSlots = existingAppointments.map((appt) => appt.slot);
-      slot = [1, 2, 3, 4].find((s) => !usedSlots.includes(s)) ?? 1;
+      slot = slotReservation.slot;
     }
 
     const updated = await prisma.appointment.update({

@@ -28,16 +28,22 @@ export default function Appointment({
         if (appointment === active) return;
         manageActive(appointment);
       }}
-      className={`${cellClass} flex h-full w-full cursor-pointer flex-col gap-0.5 overflow-hidden rounded-lg p-1.5 text-left text-ellipsis hover:opacity-90`}
+      className={`${cellClass} flex h-full min-h-[3.25rem] w-full cursor-pointer flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-black/10 p-1.5 text-left shadow-sm dark:border-white/10 [&_p]:text-inherit`}
     >
-      <p className="truncate text-sm font-semibold">{appointment.name}</p>
-      <p className="text-xs font-medium opacity-90">{appointment.time}</p>
+      <p className="truncate text-sm font-semibold leading-tight">
+        {appointment.name}
+      </p>
+      <p className="truncate text-xs font-medium leading-tight">
+        {appointment.time}
+      </p>
       {showPractitioner ? (
-        <p className="truncate text-xs font-medium opacity-90">
+        <p className="truncate text-xs font-medium leading-tight">
           {appointment.practitioner}
         </p>
       ) : null}
-      <p className="truncate text-xs font-medium opacity-90">{appointment.type}</p>
+      <p className="truncate text-xs font-medium leading-tight">
+        {appointment.type}
+      </p>
     </div>
   );
 }

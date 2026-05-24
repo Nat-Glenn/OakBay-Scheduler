@@ -218,10 +218,13 @@ export default function AddAppointment({
       formattedDate,
       formTime,
       formPractitioner,
+      finalPatientId,
     );
 
     if (!availableSlot) {
-      setValidationError("All slots for this hour have been booked.");
+      setValidationError(
+        "No available slot for this time (clinic full, or this patient/chiropractor is already booked).",
+      );
       return false;
     }
 

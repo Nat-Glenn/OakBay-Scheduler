@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/table";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import Link from "next/link";
+import { getHistoryStatusBadgeClasses } from "@/lib/ui/appointmentStatusStyles";
 
 export default function Summary() {
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -427,13 +428,13 @@ export default function Summary() {
         </div>
 
         <div className="pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="lg:col-span-2 shadow-sm border-sidebar">
+          <Card className="lg:col-span-2 border-border shadow-sm">
             <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between py-6 px-8 gap-4">
               <CardTitle className="text-xl font-bold">
                 Recent Patient Visits
               </CardTitle>
               <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-                <div className="relative flex-1 md:flex-none w-full md:w-48 border border-sidebar dark:border-foreground rounded-md overflow-hidden">
+                <div className="relative w-full overflow-hidden rounded-md border border-border md:w-48">
                   <Search
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
                     size={14}
@@ -460,12 +461,16 @@ export default function Summary() {
               <Table className="text-base min-w-[500px]">
                 <TableHeader>
                   <TableRow className="hover:bg-transparent border-b">
-                    <TableHead className="py-4 text-primary/50">
+                    <TableHead className="py-4 font-semibold text-muted-foreground">
                       Patient
                     </TableHead>
-                    <TableHead className="py-4 text-primary/50">Date</TableHead>
-                    <TableHead className="py-4 text-primary/50">Type</TableHead>
-                    <TableHead className="py-4 text-primary/50 text-center">
+                    <TableHead className="py-4 font-semibold text-muted-foreground">
+                      Date
+                    </TableHead>
+                    <TableHead className="py-4 font-semibold text-muted-foreground">
+                      Type
+                    </TableHead>
+                    <TableHead className="py-4 text-center font-semibold text-muted-foreground">
                       Status
                     </TableHead>
                   </TableRow>
@@ -506,7 +511,7 @@ export default function Summary() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm border-sidebar">
+          <Card className="border-border shadow-sm">
             <CardHeader className="py-6 px-8">
               <CardTitle className="text-xl font-bold flex items-center gap-2">
                 <Calendar size={20} className="text-button-primary" />
@@ -515,7 +520,7 @@ export default function Summary() {
             </CardHeader>
             <CardContent className="px-8 pb-8">
               <div className="flex flex-col gap-4">
-                <div className="flex justify-between items-center p-4 rounded-xl bg-primary/5 border border-sidebar">
+                <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-4">
                   <span className="text-muted-foreground font-medium">
                     Scheduled
                   </span>
@@ -537,33 +542,33 @@ export default function Summary() {
       <div className="fixed bottom-8 right-8 flex flex-col items-end z-10">
         {isChatOpen && (
           <Card className="w-[380px] lg:w-[430px] h-[560px] max-h-[78vh] mb-2 shadow-2xl overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300 flex flex-col bg-background">
-            <CardHeader className="bg-sidebar text-white font-bold p-5 flex flex-row items-center justify-between space-y-0">
+            <CardHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 bg-button-primary p-5 text-white">
               <div className="flex flex-col">
-                <CardTitle className="text-md font-bold text-white">
+                <CardTitle className="text-md font-bold text-inherit">
                   Clinic Copilot
                 </CardTitle>
-                <p className="text-xs text-blue-200 mt-1">
+                <p className="mt-1 text-xs text-white/85">
                   Ask questions or generate reports
                 </p>
               </div>
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-white hover:bg-white/10 h-10 w-10 -mr-2"
+                className="-mr-2 h-10 w-10 text-inherit hover:bg-white/15"
                 onClick={() => setIsChatOpen(false)}
               >
                 <X size={22} />
               </Button>
             </CardHeader>
 
-            <CardContent className="flex-1 min-h-0 p-4 overflow-y-auto flex flex-col gap-3">
+            <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
               {messages.map((message, i) => (
                 <div
                   key={i}
-                  className={`p-4 rounded-2xl text-sm shadow-sm max-w-[85%] leading-6 ${
+                  className={`max-w-[85%] rounded-2xl p-4 text-sm leading-6 shadow-sm ${
                     message.role === "user"
-                      ? "bg-[#A0CE66] text-white self-end rounded-br-none whitespace-pre-wrap"
-                      : "bg-slate-100 text-slate-700 self-start rounded-bl-none"
+                      ? "self-end rounded-br-none bg-button-primary text-white whitespace-pre-wrap [&_p]:text-inherit"
+                      : "self-start rounded-bl-none border border-border bg-card text-foreground [&_p]:text-inherit"
                   }`}
                 >
                   {message.type === "report" ? (
@@ -578,7 +583,7 @@ export default function Summary() {
                 </div>
               ))}
               {isLoading && (
-                <div className="bg-slate-100 p-4 rounded-2xl text-base text-slate-500 self-start">
+                <div className="self-start rounded-2xl border border-border bg-muted p-4 text-sm text-muted-foreground">
                   Clinic Copilot is working...
                 </div>
               )}
@@ -624,10 +629,10 @@ export default function Summary() {
               </div>
 
               <form className="flex gap-4 items-center" onSubmit={handleSend}>
-                <div className="relative flex-1 border border-sidebar dark:border-foreground rounded-md overflow-hidden">
+                <div className="relative flex-1 overflow-hidden rounded-md border border-border">
                   <Input
                     placeholder="Ask a question or type a patient name (e.g. Chad Wick)"
-                    className="bg-transparent h-12 text-foreground border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                    className="h-12 border-none bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     disabled={isLoading}
@@ -637,7 +642,7 @@ export default function Summary() {
                   type="submit"
                   size="icon"
                   disabled={isLoading || !query.trim()}
-                  className="h-12 w-12 bg-[#A0CE66] hover:bg-[#A0CE66]/80 text-white shrink-0 shadow-sm"
+                  className="h-12 w-12 shrink-0 bg-button-primary text-white shadow-sm hover:bg-button-primary-foreground"
                 >
                   <Send size={20} />
                 </Button>
@@ -650,8 +655,8 @@ export default function Summary() {
           onClick={() => setIsChatOpen(!isChatOpen)}
           className={`h-16 w-16 rounded-full shadow-lg transition-all duration-300 ${
             isChatOpen
-              ? "bg-slate-200 text-slate-600 rotate-90"
-              : "bg-[#7AC242] text-white hover:bg-[#7AC242]/90 scale-110"
+              ? "rotate-90 bg-muted text-foreground hover:bg-muted/80"
+              : "scale-110 bg-button-primary text-white hover:bg-button-primary-foreground"
           }`}
         >
           {isChatOpen ? <X size={28} /> : <MessageCircle size={28} />}
@@ -663,48 +668,29 @@ export default function Summary() {
 
 function StatCard({ title, value, icon, trend }) {
   return (
-    <Card className="border-sidebar shadow-sm hover:shadow-md transition-shadow bg-primary/10">
+    <Card className="border-border bg-card shadow-sm transition-shadow hover:shadow-md">
       <CardContent className="pt-8 px-6 pb-6">
         <div className="flex items-center justify-between mb-4">
-          <div className="p-3 bg-blue-100 rounded-xl">
-            {React.cloneElement(icon, { size: 24, color: "#002D58" })}
+          <div className="rounded-xl bg-muted p-3 text-button-primary">
+            {React.cloneElement(icon, { size: 24, className: "text-current" })}
           </div>
-          <div className="flex items-center text-sm font-semibold text-green-600 bg-green-50 px-2 py-1 rounded-md">
+          <div className="flex items-center rounded-md bg-status-checked-in/25 px-2 py-1 text-sm font-semibold text-status-checked-in-foreground">
             {trend} <ArrowUpRight size={16} className="ml-1" />
           </div>
         </div>
-        <h3 className="text-md font-medium text-primary uppercase tracking-wider text-xs">
+        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
           {title}
         </h3>
-        <p className="text-3xl font-bold text-primary mt-1">{value}</p>
+        <p className="mt-1 text-3xl font-bold text-foreground">{value}</p>
       </CardContent>
     </Card>
   );
 }
 
 function StatusBadge({ status }) {
-  const normalized = String(status || "").toLowerCase();
-  const isCompleted = normalized === "completed";
-  const isCancelled = normalized === "cancelled";
-  const isInProgress = normalized === "in progress";
-  const isRequested = normalized === "requested";
-  const isConfirmed = normalized === "confirmed";
-
   return (
     <span
-      className={`text-sm py-1.5 rounded-full font-semibold inline-flex items-center justify-center min-w-24 px-3 ${
-        isCompleted
-          ? "bg-green-700 text-primary"
-          : isCancelled
-          ? "bg-red-100 text-red-600"
-          : isInProgress
-          ? "bg-blue-100 text-blue-700"
-          : isRequested
-          ? "bg-yellow-100 text-yellow-700"
-          : isConfirmed
-          ? "bg-purple-100 text-purple-700"
-          : "bg-yellow-100 text-red-600"
-      }`}
+      className={`inline-flex min-w-24 items-center justify-center rounded-full px-3 py-1.5 text-sm font-semibold ${getHistoryStatusBadgeClasses(status)}`}
     >
       {status}
     </span>
@@ -720,7 +706,7 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
         <div>
           <p className="font-bold text-base">{report.title || "Daily Report"}</p>
           {report.reportDate && (
-            <p className="text-xs text-slate-500 mt-1">{report.reportDate}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{report.reportDate}</p>
           )}
         </div>
 
@@ -752,7 +738,7 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
               {report.practitionerBreakdown.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between text-sm bg-white rounded-lg px-3 py-2 border border-slate-200"
+                  className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm"
                 >
                   <span>{item.practitionerName}</span>
                   <span className="font-semibold">{item.appointmentCount}</span>
@@ -793,7 +779,7 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
         <div>
           <p className="font-bold text-base">{report.title || "Patient Report"}</p>
           {report.patientName && (
-            <p className="text-sm text-slate-600 mt-1">Patient: {report.patientName}</p>
+            <p className="mt-1 text-sm text-muted-foreground">Patient: {report.patientName}</p>
           )}
         </div>
 
@@ -832,7 +818,7 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
               {report.recentAppointments.map((appt, index) => (
                 <div
                   key={index}
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] leading-5 space-y-1"
+                  className="space-y-1 rounded-lg border border-border bg-muted/50 px-3 py-2 text-[11px] leading-5"
                 >
                   <p className="font-semibold">{appt.type}</p>
                   <p>{formatAiDate(appt.date)}</p>
@@ -868,9 +854,9 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
 
 function MiniMetric({ label, value }) {
   return (
-    <div className="rounded-lg bg-white border border-slate-200 px-2 py-2 min-w-0">
-      <p className="text-slate-500 text-[11px] leading-4 break-words">{label}</p>
-      <p className="font-bold text-sm mt-1">{value ?? 0}</p>
+    <div className="min-w-0 rounded-lg border border-border bg-muted/40 px-2 py-2">
+      <p className="break-words text-[11px] leading-4 text-muted-foreground">{label}</p>
+      <p className="mt-1 text-sm font-bold text-foreground">{value ?? 0}</p>
     </div>
   );
 }

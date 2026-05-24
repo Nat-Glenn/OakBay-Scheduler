@@ -401,7 +401,7 @@ function getDisplayedPatient(patient) {
                             <TableCell>{patient.age}</TableCell>
                             <TableCell>{patient.lastVisit}</TableCell>
                             <TableCell>
-                              <Badge className={`border-none w-24 justify-center ${patient.status === "Active" ? "bg-green-500 text-black" : "bg-slate-800 text-slate-100"}`}>
+                              <Badge className={`w-24 justify-center border-none ${patient.status === "Active" ? "bg-status-checked-in text-status-checked-in-foreground" : "bg-muted text-muted-foreground"}`}>
                                 {patient.status}
                               </Badge>
                             </TableCell>
