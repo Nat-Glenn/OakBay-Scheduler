@@ -20,6 +20,7 @@ import {
 import { getShiftsBetween } from "@/lib/shifts/availability";
 import { serializeShift } from "@/lib/shifts/serialize";
 import { ClinicDbRole, SCHEDULER_STAFF_ROLES } from "@/lib/auth/constants";
+import { isClinicOpenOnDate } from "@/lib/clinic/officeHours.js";
 
 export const GET = withAuthSimple(async (req) => {
   try {
@@ -84,6 +85,10 @@ export const PUT = withRoles([AppRole.ADMIN], async (req, user) => {
 
     if (!working) {
       return Response.json({ working: false, providerId, date });
+    }
+
+    if (!isClinicOpenOnDate(date)) {
+      return badRequest("The clinic is closed on this day.");
     }
 
     const defaults = defaultShiftBounds(parts);

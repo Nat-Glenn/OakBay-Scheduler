@@ -2,6 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { DarkModeProvider } from "@/utils/DarkModeProvider";
 import { NavBarProvider } from "@/utils/NavBarProvider";
+import { SessionProvider } from "@/utils/SessionProvider";
+import { PendingRequestProvider } from "@/utils/PendingRequestProvider";
 import AuthSessionSync from "@/components/AuthSessionSync";
 import DevAuthBanner from "@/components/DevAuthBanner";
 import { Toaster } from "@/components/ui/sonner";
@@ -54,10 +56,14 @@ export default function RootLayout({ children }) {
       <body className={`${montserrat.className} antialiased`}>
         <NavBarProvider>
           <DarkModeProvider>
-            <DevAuthBanner />
-            <AuthSessionSync />
-            <Toaster />
-            {children}
+            <SessionProvider>
+              <PendingRequestProvider>
+                <DevAuthBanner />
+                <AuthSessionSync />
+                <Toaster />
+                {children}
+              </PendingRequestProvider>
+            </SessionProvider>
           </DarkModeProvider>
         </NavBarProvider>
       </body>

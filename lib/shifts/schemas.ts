@@ -4,10 +4,11 @@
 
 import { z } from "zod";
 import {
-  DEFAULT_SHIFT_END_CLOCK,
-  DEFAULT_SHIFT_START_CLOCK,
-  SHIFT_CLOCK_PATTERN,
-} from "./constants";
+  getDefaultShiftClocksForDate,
+  isClinicOpenOnDate,
+  isShiftWithinOfficeHours,
+} from "@/lib/clinic/officeHours.js";
+import { SHIFT_CLOCK_PATTERN } from "./constants";
 
 const clinicDate = z
   .string()
@@ -29,11 +30,19 @@ export const setProviderDaySchema = z
   .refine(
     (data) => {
       if (!data.working) return true;
-      const start = data.startClock ?? DEFAULT_SHIFT_START_CLOCK;
-      const end = data.endClock ?? DEFAULT_SHIFT_END_CLOCK;
-      return end > start;
+      if (!isClinicOpenOnDate(data.date)) {
+        return false;
+      }
+      const start = data.startClock;
+      const end = data.endClock;
+      if (!start || !end) return false;
+      return end > start && isShiftWithinOfficeHours(data.date, start, end);
     },
-    { message: "end time must be after start time", path: ["endClock"] },
+    {
+      message:
+        "Shift must be on an open clinic day and within office hours",
+      path: ["endClock"],
+    },
   );
 
 export const shiftRangeQuerySchema = z.object({

@@ -24,7 +24,15 @@ const datePickerVariants = cva("", {
   },
 });
 
-function DatePicker({ date, setDate, variant = "default" }) {
+function DatePicker({
+  date,
+  setDate,
+  variant = "default",
+  menuClassName,
+  disabled,
+  fromDate,
+  toDate,
+}) {
   const [open, setOpen] = useState(false);
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
@@ -52,7 +60,10 @@ function DatePicker({ date, setDate, variant = "default" }) {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        className="w-auto h-63 p-0 scrollbar-rounded"
+        className={cn(
+          "w-auto h-63 p-0 scrollbar-rounded",
+          menuClassName,
+        )}
         align="start"
       >
         {/* Close button */}
@@ -70,6 +81,9 @@ function DatePicker({ date, setDate, variant = "default" }) {
           selected={date}
           fromYear={new Date().getFullYear()}
           toYear={new Date().getFullYear() + 1}
+          disabled={disabled}
+          fromDate={fromDate}
+          toDate={toDate}
           onSelect={(day) => {
             if (day) setDate(day);
             setOpen(false);

@@ -10,7 +10,7 @@ import { isAuthSkipped } from "@/lib/authConfig";
 /** Must match SESSION_COOKIE_NAME in lib/authGuard.ts */
 const SESSION_COOKIE_NAME = "__session";
 
-const PUBLIC_PAGE_PREFIXES = ["/Login"];
+const PUBLIC_PAGE_PREFIXES = ["/Login", "/book"];
 
 const PUBLIC_API_PREFIXES = ["/api/auth/session"];
 
@@ -20,7 +20,16 @@ function isPublicPage(pathname: string) {
   );
 }
 
-function isPublicApi(pathname: string) {
+function isPublicApi(pathname: string, method: string) {
+  if (pathname === "/api/booking-requests" && method === "POST") {
+    return true;
+  }
+  if (
+    pathname === "/api/booking-requests/availability" &&
+    method === "GET"
+  ) {
+    return true;
+  }
   return PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
@@ -48,7 +57,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  if (isPublicPage(pathname) || isPublicApi(pathname)) {
+  if (isPublicPage(pathname) || isPublicApi(pathname, request.method)) {
     return NextResponse.next();
   }
 

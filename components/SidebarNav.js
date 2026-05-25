@@ -26,9 +26,11 @@ import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/utils/DarkModeProvider";
 import { isNavActive, NAV_ITEMS, filterNavItems } from "@/lib/navigation";
 import { useSessionUser } from "@/utils/useSessionUser";
+import { usePendingRequestCount } from "@/utils/usePendingRequestCount";
 
 const NAV_ICONS = {
   "/": GrScorecard,
+  "/Requests": GrTask,
   "/StaffSchedule": GrCalendar,
   "/Billing": GrMoney,
   "/Practitioners": GrUserManager,
@@ -60,6 +62,9 @@ export default function SidebarNav({ onNavigate, showThemeToggle = true }) {
   const router = useRouter();
   const { session } = useSessionUser();
   const navItems = filterNavItems(session?.allowedRoutes);
+  const canSeeRequests = navItems.some((item) => item.href === "/Requests");
+  const { count: pendingRequestCount } = usePendingRequestCount();
+  const requestBadgeCount = canSeeRequests ? pendingRequestCount : 0;
 
   const handleSignOut = async () => {
     try {
@@ -92,6 +97,8 @@ export default function SidebarNav({ onNavigate, showThemeToggle = true }) {
       <nav className="flex flex-1 flex-col gap-1 overflow-y-auto py-4">
         {navItems.map(({ href, label }) => {
           const Icon = NAV_ICONS[href];
+          const showRequestBadge =
+            href === "/Requests" && requestBadgeCount > 0;
           return (
             <Link
               key={href}
@@ -99,8 +106,28 @@ export default function SidebarNav({ onNavigate, showThemeToggle = true }) {
               onClick={onNavigate}
               className={linkClass(href)}
             >
-              {Icon ? <Icon size={18} /> : null}
-              {label}
+              {Icon ? (
+                <span className="relative shrink-0">
+                  <Icon size={18} />
+                  {showRequestBadge ? (
+                    <span
+                      className="absolute -right-1 -top-1 size-2 rounded-full bg-destructive ring-2 ring-background"
+                      aria-hidden
+                    />
+                  ) : null}
+                </span>
+              ) : null}
+              <span className="min-w-0 flex-1 truncate">{label}</span>
+              {showRequestBadge ? (
+                <span
+                  className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold leading-none text-white"
+                  aria-label={`${requestBadgeCount} pending ${
+                    requestBadgeCount === 1 ? "request" : "requests"
+                  }`}
+                >
+                  {requestBadgeCount > 99 ? "99+" : requestBadgeCount}
+                </span>
+              ) : null}
             </Link>
           );
         })}

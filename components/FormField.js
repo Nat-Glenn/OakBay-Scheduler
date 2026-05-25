@@ -17,14 +17,22 @@ import { Check, ChevronDownIcon, Search, X } from "lucide-react";
 import { Input } from "./ui/input";
 import { useRef } from "react";
 import { toast } from "sonner";
+import { formatNorthAmericanPhone } from "@/lib/formatting/phone";
 
 function PractitionerDropdownOption({ item, displayText, setItemSearch, setSearch }) {
   const handleSelect = (event) => {
     if (item.disabled) {
       event.preventDefault();
-      toast.warning("This chiropractor is not on shift for the selected time.", {
-        position: "top-right",
-      });
+      if (item.booked) {
+        toast.warning(
+          "This chiropractor already has an appointment at this time.",
+          { position: "top-right" },
+        );
+      } else {
+        toast.warning("This chiropractor is not on shift for the selected time.", {
+          position: "top-right",
+        });
+      }
       return;
     }
     setItemSearch(item.name);
@@ -52,12 +60,17 @@ function PractitionerDropdownOption({ item, displayText, setItemSearch, setSearc
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
         <span className="flex flex-wrap items-center gap-2 font-medium">
           {item.name}
-          {item.onShift === true ? (
+          {item.booked ? (
+            <span className="rounded-md bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive">
+              Booked
+            </span>
+          ) : null}
+          {!item.booked && item.onShift === true ? (
             <span className="rounded-md bg-status-checked-in/35 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-status-checked-in-foreground">
               On shift
             </span>
           ) : null}
-          {item.onShift === false ? (
+          {!item.booked && item.onShift === false ? (
             <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
               Off
             </span>
@@ -74,7 +87,9 @@ function PractitionerDropdownOption({ item, displayText, setItemSearch, setSearc
 }
 
 function renderDropdownOptions(itemsArray, displayText, setItemSearch, setSearch) {
-  const hasShiftMeta = itemsArray.some((item) => item.onShift !== undefined);
+  const hasShiftMeta = itemsArray.some(
+    (item) => item.onShift !== undefined || item.booked,
+  );
 
   return itemsArray.map((item) =>
     hasShiftMeta ? (
@@ -125,15 +140,6 @@ export default function FormField({
   maxLength,
 }) {
   const inputRef = useRef(null);
-  
-  function formatPhone(value) {
-    const digits = value.replace(/\D/g, "").slice(0, 10);
-
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
 
   function formatCard(value) {
     const digits = value.replace(/\D/g, "").slice(0, 16);
@@ -225,7 +231,7 @@ export default function FormField({
             let formatted = rawValue;
 
             // Apply mask
-            if (mask === "phone") formatted = formatPhone(rawValue);
+            if (mask === "phone") formatted = formatNorthAmericanPhone(rawValue);
             if (mask === "ahc") formatted = formatAHC(rawValue);
             if (mask === "card") formatted = formatCard(rawValue);
             if (mask === "exp") formatted = formatEXP(rawValue);

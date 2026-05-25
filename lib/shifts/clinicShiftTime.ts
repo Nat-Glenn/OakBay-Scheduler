@@ -22,6 +22,7 @@ import {
   DEFAULT_SHIFT_END_CLOCK,
   DEFAULT_SHIFT_START_CLOCK,
 } from "./constants";
+import { getDefaultShiftClocksForDate } from "@/lib/clinic/officeHours.js";
 
 export function clinicDatePartsFromParam(
   dateParam: string,
@@ -53,10 +54,20 @@ export function clinicClockToUtc(
 }
 
 export function defaultShiftBounds(parts: ClinicDateParts) {
+  const dateIso = `${parts.year}-${String(parts.month).padStart(2, "0")}-${String(parts.day).padStart(2, "0")}`;
+  const clocks = getDefaultShiftClocksForDate(dateIso);
+  if (!clocks) {
+    return {
+      startTime: clinicClockToUtc(parts, DEFAULT_SHIFT_START_CLOCK),
+      endTime: clinicClockToUtc(parts, DEFAULT_SHIFT_END_CLOCK),
+      startClock: DEFAULT_SHIFT_START_CLOCK,
+      endClock: DEFAULT_SHIFT_END_CLOCK,
+    };
+  }
   return {
-    startTime: clinicClockToUtc(parts, DEFAULT_SHIFT_START_CLOCK),
-    endTime: clinicClockToUtc(parts, DEFAULT_SHIFT_END_CLOCK),
-    startClock: DEFAULT_SHIFT_START_CLOCK,
-    endClock: DEFAULT_SHIFT_END_CLOCK,
+    startTime: clinicClockToUtc(parts, clocks.startClock),
+    endTime: clinicClockToUtc(parts, clocks.endClock),
+    startClock: clocks.startClock,
+    endClock: clocks.endClock,
   };
 }

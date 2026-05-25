@@ -14,6 +14,7 @@ const ALL_STAFF: AppRoleValue[] = [
 const ROUTE_ROLES: Record<string, AppRoleValue[]> = {
   "/": ALL_STAFF,
   "/Billing": ALL_STAFF,
+  "/Requests": ALL_STAFF,
   "/StaffSchedule": ALL_STAFF,
   "/Practitioners": [AppRole.ADMIN],
   "/Patients": ALL_STAFF,

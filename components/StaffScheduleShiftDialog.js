@@ -22,6 +22,10 @@ import {
   DEFAULT_SHIFT_END_CLOCK,
   DEFAULT_SHIFT_START_CLOCK,
 } from "@/lib/shifts/constants";
+import {
+  getDefaultShiftClocksForDate,
+  formatOfficeHoursForDate,
+} from "@/lib/clinic/officeHours.js";
 import { normalizeShiftClock } from "@/lib/shifts/clinicShiftTime";
 
 export default function StaffScheduleShiftDialog({
@@ -41,16 +45,21 @@ export default function StaffScheduleShiftDialog({
 
   useEffect(() => {
     if (!open) return;
+    const defaults = getDefaultShiftClocksForDate(dateIso);
     if (initialShift) {
       setWorking(true);
       setStartClock(normalizeShiftClock(initialShift.startClock));
       setEndClock(normalizeShiftClock(initialShift.endClock));
+    } else if (defaults) {
+      setWorking(true);
+      setStartClock(normalizeShiftClock(defaults.startClock));
+      setEndClock(normalizeShiftClock(defaults.endClock));
     } else {
       setWorking(false);
       setStartClock(normalizeShiftClock(DEFAULT_SHIFT_START_CLOCK));
       setEndClock(normalizeShiftClock(DEFAULT_SHIFT_END_CLOCK));
     }
-  }, [open, initialShift]);
+  }, [open, initialShift, dateIso]);
 
   const handleSave = () => {
     onSave({
@@ -70,7 +79,8 @@ export default function StaffScheduleShiftDialog({
             {providerName} — {dateLabel}
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Set whether this chiropractor is working and their hours for this day.
+            Office hours: {formatOfficeHoursForDate(dateIso)}. Shift times must
+            stay within these hours.
           </AlertDialogDescription>
         </AlertDialogHeader>
 

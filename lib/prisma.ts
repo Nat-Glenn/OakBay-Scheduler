@@ -46,8 +46,40 @@ function createPrismaClient(): PrismaClient {
   return new PrismaClient({ log });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+/** Recreate client in dev after schema migrations (avoids stale global cache). */
+function clientHasBookingRequests(client: PrismaClient): boolean {
+  return (
+    typeof (
+      client as PrismaClient & {
+        appointmentRequest?: { count?: unknown };
+      }
+    ).appointmentRequest?.count === "function"
+  );
 }
+
+function getPrismaClient(): PrismaClient {
+  const cached = globalForPrisma.prisma;
+  if (cached && clientHasBookingRequests(cached)) {
+    return cached;
+  }
+
+  if (cached) {
+    globalForPrisma.prisma = undefined;
+  }
+
+  const client = createPrismaClient();
+
+  if (!clientHasBookingRequests(client)) {
+    throw new Error(
+      "Prisma client is missing booking request models. Run `npx prisma generate` and restart the dev server.",
+    );
+  }
+
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = client;
+  }
+
+  return client;
+}
+
+export const prisma = getPrismaClient();

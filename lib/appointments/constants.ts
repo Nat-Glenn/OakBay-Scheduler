@@ -69,34 +69,5 @@ export function dbStatusToUi(
   }
 }
 
-/** Clinic schedule time slots (15-minute increments). */
-export const CLINIC_TIME_SLOTS = [
-  "9:00",
-  "9:15",
-  "9:30",
-  "9:45",
-  "10:00",
-  "10:15",
-  "10:30",
-  "10:45",
-  "11:00",
-  "11:15",
-  "11:30",
-  "11:45",
-  "14:00",
-  "14:15",
-  "14:30",
-  "14:45",
-  "15:00",
-  "15:15",
-  "15:30",
-  "15:45",
-  "16:00",
-  "16:15",
-  "16:30",
-  "16:45",
-  "17:00",
-  "17:15",
-  "17:30",
-  "17:45",
-] as const;
+/** Clinic schedule time slots — union of all office-hour increments. */
+export { CLINIC_TIME_SLOTS } from "@/lib/clinic/officeHours.js";

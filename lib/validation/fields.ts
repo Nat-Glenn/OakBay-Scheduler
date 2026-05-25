@@ -19,7 +19,11 @@ export const personNameSchema = z
 export const phoneSchema = z
   .string()
   .trim()
-  .regex(phoneRegex, "Invalid phone number format");
+  .regex(phoneRegex, "Invalid phone number format")
+  .refine((value) => {
+    const digits = value.replace(/\D/g, "");
+    return digits.length === 10;
+  }, "Enter a 10-digit phone number");
 
 export const emailSchema = z
   .string()

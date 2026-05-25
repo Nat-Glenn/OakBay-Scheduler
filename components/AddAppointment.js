@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertDialog,
@@ -29,7 +29,11 @@ import { DatePicker } from "./DatePicker";
 import FormField from "@/components/FormField";
 import { Plus } from "lucide-react";
 import { apiFetch } from "@/utils/apiFetch";
-import { dbStatusToUi, APPOINTMENT_TYPE_OPTIONS, CLINIC_TIME_SLOT_OPTIONS } from "@/lib/appointments/status";
+import { dbStatusToUi, APPOINTMENT_TYPE_OPTIONS } from "@/lib/appointments/status";
+import {
+  getOfficeTimeSlotsForDate,
+  toFormOptions,
+} from "@/lib/clinic/officeHours.js";
 import { formatPickerDateForApi } from "@/lib/appointments/clinicTime.js";
 import {
   buildPractitionerDropdownItems,
@@ -64,7 +68,14 @@ export default function AddAppointment({
     const [validationError, setValidationError] = useState("");
 
   const types = APPOINTMENT_TYPE_OPTIONS;
-  const time = CLINIC_TIME_SLOT_OPTIONS;
+  const dateIso = useMemo(
+    () => (date ? formatPickerDateForApi(date) : ""),
+    [date],
+  );
+  const time = useMemo(
+    () => toFormOptions(getOfficeTimeSlotsForDate(dateIso)),
+    [dateIso],
+  );
 
   useEffect(() => {
     if (open !== undefined) setIsOpen(open);
@@ -157,8 +168,6 @@ export default function AddAppointment({
 
     loadPractitioners();
   }, []);
-
-  const dateIso = formatPickerDateForApi(date);
 
   useEffect(() => {
     if (!scheduleEnforced || !formTime || !formPractitioner) return;

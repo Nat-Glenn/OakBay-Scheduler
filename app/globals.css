@@ -152,6 +152,79 @@ html, body {
   --status-requested-foreground: oklch(0.35 0.11 85);
 }
 
+/**
+ * Public patient booking (/book) — always light, readable on oakbaychiro.ca-style pages.
+ * Resets theme tokens so dark-mode staff app does not wash out labels/inputs here.
+ */
+.public-booking {
+  color-scheme: light;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.18 0.04 130);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.04 130);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 130);
+  --primary: oklch(0.28 0.08 130);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.02 130);
+  --secondary-foreground: oklch(0.22 0.06 130);
+  --muted: oklch(0.95 0.015 130);
+  --muted-foreground: oklch(0.42 0.04 130);
+  --accent: oklch(0.94 0.03 130);
+  --accent-foreground: oklch(0.22 0.06 130);
+  --border: oklch(0.86 0.025 130);
+  --input: oklch(0.99 0.005 130);
+  --ring: oklch(0.52 0.12 130);
+  --destructive: oklch(0.48 0.18 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  background-color: oklch(0.98 0.012 130);
+  color: oklch(0.18 0.04 130);
+}
+
+.public-booking h1,
+.public-booking h2,
+.public-booking legend {
+  color: oklch(0.28 0.08 130);
+}
+
+.public-booking label,
+.public-booking [data-slot="label"] {
+  color: oklch(0.22 0.06 130);
+  font-weight: 600;
+}
+
+.public-booking input,
+.public-booking textarea,
+.public-booking select,
+.public-booking [data-slot="select-trigger"],
+.public-booking button[data-slot="button"] {
+  color: oklch(0.18 0.04 130);
+}
+
+.dark .public-booking [data-slot="input"],
+.dark .public-booking [data-slot="textarea"],
+.dark .public-booking [data-slot="select-trigger"] {
+  background-color: var(--input);
+  color: var(--foreground);
+}
+
+/** Radix portals render outside .public-booking — force light surfaces for booking dropdowns. */
+.public-portal-surface {
+  color-scheme: light;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.18 0.04 130);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.18 0.04 130);
+  --accent: oklch(0.94 0.03 130);
+  --accent-foreground: oklch(0.22 0.06 130);
+  --border: oklch(0.86 0.025 130);
+  --muted: oklch(0.95 0.015 130);
+  --muted-foreground: oklch(0.42 0.04 130);
+  background-color: oklch(1 0 0);
+  color: oklch(0.18 0.04 130);
+  border-color: oklch(0.86 0.025 130);
+}
+
 .dark {
   --background: oklch(18% 0.04 277.1);
   --foreground: oklch(95% 0.02 109.5);

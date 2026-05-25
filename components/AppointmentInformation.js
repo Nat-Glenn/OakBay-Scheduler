@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
 import {
@@ -10,8 +10,9 @@ import {
 import { apiFetch } from "@/utils/apiFetch";
 import {
   APPOINTMENT_TYPE_OPTIONS,
-  CLINIC_TIME_SLOT_OPTIONS,
+  getOfficeTimeSlotsForDate,
 } from "@/lib/appointments/status";
+import { toFormOptions } from "@/lib/clinic/officeHours.js";
 import { formatPickerDateForApi } from "@/lib/appointments/clinicTime.js";
 import {
   buildPractitionerDropdownItems,
@@ -80,7 +81,14 @@ export default function AppointmentInformation({
   const small = useMediaQuery("(max-width: 768px)");
 
   const types = APPOINTMENT_TYPE_OPTIONS;
-  const time = CLINIC_TIME_SLOT_OPTIONS;
+  const editDateIso = useMemo(
+    () => (editDate ? formatPickerDateForApi(editDate) : ""),
+    [editDate],
+  );
+  const time = useMemo(
+    () => toFormOptions(getOfficeTimeSlotsForDate(editDateIso)),
+    [editDateIso],
+  );
 
   useEffect(() => {
     async function loadPractitioners() {
@@ -124,8 +132,6 @@ export default function AppointmentInformation({
 
   const selectedAppointment = appointment || active;
   const scheduleEnforced = dayShifts.length > 0;
-  const editDateIso = editDate ? formatPickerDateForApi(editDate) : null;
-
   useEffect(() => {
     if (!scheduleEnforced || !editTime || !editPractitioner || !editDateIso) {
       return;

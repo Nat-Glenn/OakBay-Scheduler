@@ -7,6 +7,11 @@ import { prisma } from "@/lib/prisma";
 import { findPatientOverlap, findProviderOverlap } from "@/lib/appointments";
 import { isProviderScheduledForRange } from "@/lib/shifts/availability";
 import {
+  formatClinicClockTime,
+  formatClinicDateIso,
+} from "@/lib/appointments/clinicTime";
+import { isClockWithinOfficeHours } from "@/lib/clinic/officeHours.js";
+import {
   AppointmentStatus,
   type AppointmentStatusValue,
 } from "@/lib/appointments/constants";
@@ -40,6 +45,54 @@ export async function getAppointmentsAtStartTime(
   });
 }
 
+/** Provider IDs with a blocking appointment overlapping the slot window. */
+export async function getUnavailableProviderIdsForSlot(
+  startTime: Date,
+  endTime: Date,
+  excludeAppointmentId?: number,
+) {
+  const overlapping = await prisma.appointment.findMany({
+    where: {
+      status: { in: SLOT_BLOCKING_STATUSES },
+      providerId: { not: null },
+      startTime: { lt: endTime },
+      endTime: { gt: startTime },
+      ...(excludeAppointmentId ? { NOT: { id: excludeAppointmentId } } : {}),
+    },
+    select: { providerId: true },
+  });
+
+  return [
+    ...new Set(
+      overlapping
+        .map((row) => row.providerId)
+        .filter((id): id is number => id != null),
+    ),
+  ];
+}
+
+export async function getSlotAvailabilitySummary(
+  startTime: Date,
+  endTime: Date,
+  excludeAppointmentId?: number,
+) {
+  const atTime = await getAppointmentsAtStartTime(
+    startTime,
+    excludeAppointmentId,
+  );
+  const unavailableProviderIds = await getUnavailableProviderIdsForSlot(
+    startTime,
+    endTime,
+    excludeAppointmentId,
+  );
+
+  return {
+    appointmentsAtTime: atTime.length,
+    clinicFull: atTime.length >= MAX_CLINIC_SLOTS_PER_TIME,
+    unavailableProviderIds,
+  };
+}
+
 export function pickNextClinicSlot(
   existing: Array<{ slot: number }>,
 ): number | null {
@@ -64,6 +117,15 @@ export async function validateClinicSlotBooking(opts: {
     return {
       ok: false,
       error: "Please assign a chiropractor for this appointment.",
+    };
+  }
+
+  const dateIso = formatClinicDateIso(startTime);
+  const clock = formatClinicClockTime(startTime);
+  if (!isClockWithinOfficeHours(dateIso, clock)) {
+    return {
+      ok: false,
+      error: "This time is outside clinic office hours.",
     };
   }
 
