@@ -1,20 +1,18 @@
 import { prisma } from "@/lib/prisma";
 import { hasProfanity, cleanField } from "@/lib/profanity";
-import { encryptField, decryptField } from "@/lib/encrypt";
 import { withAuthSimple } from "@/lib/withAuth";
 import { badRequest, serverError } from "@/lib/api";
 import { createPatientSchema } from "@/lib/patients/schemas";
 import { parseBody } from "@/lib/validation/parseBody";
 import { redactPatientForRole } from "@/lib/auth/redact";
 import { AppointmentStatus } from "@/lib/appointments/constants";
-import { syncOverdueAppointmentStatuses } from "@/lib/appointments/lifecycle";
-
-function decryptPatient<T extends { ahcNumber: string | null }>(patient: T): T {
-  return {
-    ...patient,
-    ahcNumber: decryptField(patient.ahcNumber),
-  };
-}
+import {
+  decryptPatientSensitiveFields,
+  encryptAhcForStorage,
+  encryptPatientNotesForStorage,
+} from "@/lib/patients/sensitiveFields";
+import { AuditAction } from "@/lib/audit/constants";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export const POST = withAuthSimple(async (req, user) => {
   try {
@@ -47,15 +45,23 @@ export const POST = withAuthSimple(async (req, user) => {
         lastName,
         phone,
         email: email || null,
-        ahcNumber: ahcNumber ? encryptField(ahcNumber) : null,
+        ahcNumber: encryptAhcForStorage(ahcNumber),
         dob: dob || null,
         reminderOptIn,
-        notes,
+        notes: encryptPatientNotesForStorage(notes),
       },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.PATIENT_CREATE,
+      patientId: patient.id,
+      resourceId: `patient:${patient.id}`,
+    });
+
     return Response.json(
-      redactPatientForRole(decryptPatient(patient), user.role),
+      redactPatientForRole(decryptPatientSensitiveFields(patient), user.role),
       { status: 201 },
     );
   } catch (err) {
@@ -66,8 +72,6 @@ export const POST = withAuthSimple(async (req, user) => {
 
 export const GET = withAuthSimple(async (req, user) => {
   try {
-    await syncOverdueAppointmentStatuses();
-
     const { searchParams } = new URL(req.url);
     const search = (searchParams.get("search") ?? "").trim();
 
@@ -86,32 +90,33 @@ export const GET = withAuthSimple(async (req, user) => {
         : undefined,
       orderBy: [{ id: "asc" }],
       take: 25,
-      include: {
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        email: true,
+        dob: true,
+        reminderOptIn: true,
         appointments: {
           where: {
             status: AppointmentStatus.COMPLETED,
             payment: { isNot: null },
           },
-          orderBy: {
-            startTime: "desc",
-          },
+          orderBy: { startTime: "desc" },
           take: 1,
-          select: {
-            startTime: true,
-          },
+          select: { startTime: true },
         },
       },
     });
 
     return Response.json(
       patients.map((patient) => {
-        const decryptedPatient = decryptPatient(patient);
+        const { appointments, ...rest } = patient;
         return {
-          ...redactPatientForRole(decryptedPatient, user.role),
+          ...rest,
           lastVisit:
-            patient.appointments.length > 0
-              ? patient.appointments[0].startTime
-              : null,
+            appointments.length > 0 ? appointments[0].startTime : null,
         };
       }),
     );

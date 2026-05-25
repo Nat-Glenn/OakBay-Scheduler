@@ -4,6 +4,8 @@ import { ok, created, badRequest, notFound, conflict, serverError } from "@/lib/
 import { withAuthSimple } from "@/lib/withAuth";
 import { AppointmentStatus } from "@/lib/appointments/constants";
 import { PAYMENT_METHOD_OPTIONS } from "@/lib/billing/constants";
+import { AuditAction } from "@/lib/audit/constants";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export const GET = withAuthSimple(async (req) => {
     try {
@@ -41,7 +43,7 @@ export const GET = withAuthSimple(async (req) => {
     }
 });
 
-export const POST = withAuthSimple(async (req) => {
+export const POST = withAuthSimple(async (req, user) => {
     try {
         const body = await req.json();
 
@@ -122,6 +124,19 @@ export const POST = withAuthSimple(async (req) => {
                 data: { status: AppointmentStatus.COMPLETED },
             }),
         ]);
+
+        await logAuditEvent({
+            req,
+            user,
+            action: AuditAction.PAYMENT_CREATE,
+            patientId: payment.appointment.patientId,
+            resourceId: `payment:${payment.id}`,
+            metadata: {
+                appointmentId,
+                amount,
+                paymentType,
+            },
+        });
 
         return created(payment);
     } catch (err) {

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { withAuthSimple } from "@/lib/withAuth";
+import { AuditAction } from "@/lib/audit/constants";
+import { logAuditEvent } from "@/lib/audit/log";
 
 function normalizeLast4(value: unknown) {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -12,7 +14,7 @@ function parseOptionalInt(value: unknown) {
   return Number.isInteger(n) ? n : null;
 }
 
-export const GET = withAuthSimple(async (req) => {
+export const GET = withAuthSimple(async (req, user) => {
   try {
     const { searchParams } = new URL(req.url);
     const patientIdParam = searchParams.get("patientId");
@@ -32,6 +34,15 @@ export const GET = withAuthSimple(async (req) => {
       orderBy: { createdAt: "desc" },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.CARD_LIST,
+      patientId,
+      resourceId: `patient:${patientId}:cards`,
+      metadata: { count: cards.length },
+    });
+
     return Response.json(cards);
   } catch (error) {
     console.error("GET /api/cards error:", error);
@@ -39,7 +50,7 @@ export const GET = withAuthSimple(async (req) => {
   }
 });
 
-export const POST = withAuthSimple(async (req) => {
+export const POST = withAuthSimple(async (req, user) => {
   try {
     const body = await req.json();
 
@@ -80,6 +91,15 @@ export const POST = withAuthSimple(async (req) => {
       },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.CARD_CREATE,
+      patientId,
+      resourceId: `card:${card.id}`,
+      metadata: { brand, last4 },
+    });
+
     return Response.json(card, { status: 201 });
   } catch (error) {
     console.error("POST /api/cards error:", error);
@@ -87,7 +107,7 @@ export const POST = withAuthSimple(async (req) => {
   }
 });
 
-export const PATCH = withAuthSimple(async (req) => {
+export const PATCH = withAuthSimple(async (req, user) => {
   try {
     const body = await req.json();
 
@@ -111,7 +131,7 @@ export const PATCH = withAuthSimple(async (req) => {
 
     const existing = await prisma.card.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, patientId: true },
     });
 
     if (!existing) {
@@ -128,6 +148,15 @@ export const PATCH = withAuthSimple(async (req) => {
       },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.CARD_UPDATE,
+      patientId: existing.patientId,
+      resourceId: `card:${id}`,
+      metadata: { brand, last4 },
+    });
+
     return Response.json(updated);
   } catch (error) {
     console.error("PATCH /api/cards error:", error);
@@ -135,7 +164,7 @@ export const PATCH = withAuthSimple(async (req) => {
   }
 });
 
-export const DELETE = withAuthSimple(async (req) => {
+export const DELETE = withAuthSimple(async (req, user) => {
   try {
     const { searchParams } = new URL(req.url);
     const idParam = searchParams.get("id");
@@ -147,7 +176,7 @@ export const DELETE = withAuthSimple(async (req) => {
 
     const existing = await prisma.card.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, patientId: true },
     });
 
     if (!existing) {
@@ -156,6 +185,14 @@ export const DELETE = withAuthSimple(async (req) => {
 
     await prisma.card.delete({
       where: { id },
+    });
+
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.CARD_DELETE,
+      patientId: existing.patientId,
+      resourceId: `card:${id}`,
     });
 
     return Response.json({ success: true });

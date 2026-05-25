@@ -179,3 +179,22 @@ model Card {
 
   @@index([patientId])
 }
+
+/// Staff access to patient PHI and billing records (HIA accountability).
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  action     String
+  userId     Int?
+  userEmail  String?
+  userRole   String?
+  patientId  Int?
+  resourceId String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([patientId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+}

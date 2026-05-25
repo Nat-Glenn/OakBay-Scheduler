@@ -1,10 +1,16 @@
 import { prisma } from "@/lib/prisma";
 import { badRequest, notFound, serverError } from "@/lib/api";
-import { encryptField, decryptField } from "@/lib/encrypt";
 import { withAuth } from "@/lib/withAuth";
 import { patchPatientSchema } from "@/lib/patients/schemas";
 import { parseBody } from "@/lib/validation/parseBody";
 import { redactPatientForRole } from "@/lib/auth/redact";
+import {
+  decryptPatientSensitiveFields,
+  encryptAhcForStorage,
+  encryptPatientNotesForStorage,
+} from "@/lib/patients/sensitiveFields";
+import { AuditAction } from "@/lib/audit/constants";
+import { logAuditEvent } from "@/lib/audit/log";
 
 export const GET = withAuth(async (_req, context, user) => {
   try {
@@ -21,14 +27,16 @@ export const GET = withAuth(async (_req, context, user) => {
 
     if (!patient) return notFound("Patient not found");
 
+    await logAuditEvent({
+      req: _req,
+      user,
+      action: AuditAction.PATIENT_VIEW,
+      patientId: patient.id,
+      resourceId: `patient:${patient.id}`,
+    });
+
     return Response.json(
-      redactPatientForRole(
-        {
-          ...patient,
-          ahcNumber: decryptField(patient.ahcNumber),
-        },
-        user.role,
-      ),
+      redactPatientForRole(decryptPatientSensitiveFields(patient), user.role),
     );
   } catch (err) {
     console.error(err);
@@ -60,20 +68,27 @@ export const PATCH = withAuth(async (req, context, user) => {
         ...(phone !== undefined ? { phone } : {}),
         ...(email !== undefined ? { email: email || null } : {}),
         ...(ahcNumber !== undefined
-          ? { ahcNumber: ahcNumber ? encryptField(ahcNumber) : null }
+          ? { ahcNumber: encryptAhcForStorage(ahcNumber) }
           : {}),
         ...(dob !== undefined ? { dob: dob || null } : {}),
-        ...(notes !== undefined ? { notes: notes || null } : {}),
+        ...(notes !== undefined
+          ? { notes: encryptPatientNotesForStorage(notes) }
+          : {}),
         ...(reminderOptIn !== undefined ? { reminderOptIn } : {}),
       },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.PATIENT_UPDATE,
+      patientId: updatedPatient.id,
+      resourceId: `patient:${updatedPatient.id}`,
+    });
+
     return Response.json(
       redactPatientForRole(
-        {
-          ...updatedPatient,
-          ahcNumber: decryptField(updatedPatient.ahcNumber),
-        },
+        decryptPatientSensitiveFields(updatedPatient),
         user.role,
       ),
     );

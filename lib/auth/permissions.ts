@@ -52,6 +52,7 @@ export function canViewBilling(role: AppRoleValue): boolean {
   return ALL_STAFF.includes(role);
 }
 
+/** Alberta Health Care numbers — chiropractors and admins only (HIA access control). */
 export function canViewFullAhc(role: AppRoleValue): boolean {
-  return ALL_STAFF.includes(role);
+  return role === AppRole.ADMIN || role === AppRole.CHIROPRACTOR;
 }

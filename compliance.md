@@ -27,7 +27,7 @@ Key principles: consent, limiting collection, accuracy, safeguards, and accounta
 | phone | Patient | Personal information | Plaintext (needed for search) |
 | email | Patient | Personal information | Plaintext (needed for reminders) |
 | ahcNumber | Patient | Protected health information | AES-256-GCM encrypted |
-| notes | Patient | Health information | Profanity filtered |
+| notes | Patient | Health information | AES-256-GCM encrypted |
 | password | User | Credential | bcrypt hashed (cost 12) |
 | amount, paymentType | Payment | Financial | Plaintext |
 | last4, brand, expiry | Card | Partial card data | Plaintext (last4 only — no full PAN) |
@@ -36,17 +36,32 @@ Key principles: consent, limiting collection, accuracy, safeguards, and accounta
 
 ## Implemented Security Measures
 
-### Field-Level Encryption (lib/encrypt.ts)
-- Algorithm: AES-256-GCM (authenticated encryption)
-- Applied to: ahcNumber — Alberta Health Care number
-- Key storage: 256-bit key in ENCRYPTION_KEY environment variable, never in code
-- Each record gets a unique random IV — no two encryptions are the same
+### Authentication & route protection
+- Firebase session cookie (`__session`) verified on staff pages and API routes via `middleware.ts`
+- API handlers wrapped with `withAuth` / `withAuthSimple` (`lib/withAuth.ts`)
+- Public exceptions: login/session exchange, `/book`, booking request POST, availability GET, `/api/health`
 
-### Password Hashing (lib/hash.ts)
+### Field-Level Encryption (`lib/encrypt.ts`)
+- Algorithm: AES-256-GCM (authenticated encryption)
+- Applied to: `ahcNumber`, `notes`
+- Key storage: 256-bit key in `ENCRYPTION_KEY` environment variable, never in code
+- Each record gets a unique random IV — no two encryptions are the same
+- Legacy plaintext values (no `enc:` prefix) still decrypt for backwards compatibility
+
+### Role-based redaction (`lib/auth/redact.ts`)
+- Receptionists see `ahcNumber: "Restricted"` — chiropractors and administrators see full values
+- Enforced on patient list, create, and detail API responses
+
+### Audit log (`AuditLog` model, `lib/audit/log.ts`)
+- Records staff access to patient records, payments, and cards on file
+- Fields: action, user id/email/role, patient id, resource id, IP, timestamp
+- See `docs/reliability-and-trust.md` for monitored actions
+
+### Password Hashing (`lib/hash.ts`)
 - Algorithm: bcrypt, cost factor 12 (OWASP minimum recommendation)
 - Applied to all User.password fields on creation and seeding
 
-### Input Sanitization (lib/profanity.ts)
+### Input Sanitization (`lib/profanity.ts`)
 - Library: leo-profanity
 - Free-text fields (notes, requestMessage, adminNotes) are cleaned before saving
 - Patient names are rejected outright if they contain flagged words
@@ -55,30 +70,54 @@ Key principles: consent, limiting collection, accuracy, safeguards, and accounta
 - Only last 4 digits, brand, and expiry stored — never full card numbers
 - No external payment processor — clinic processes cards in person
 
+### Public booking safeguards
+- Honeypot field, rate limit (5 requests/hour per email), one pending request per email
+- Returning patients matched by email; new patients cannot reuse an existing email
+
 ---
 
-## Known Gaps (Recommended Future Improvements)
+## Operational reliability
 
-| Gap | Risk | Recommended Fix |
+See **`docs/reliability-and-trust.md`** for health checks, Neon connection guidance, and deployment checklist.
+
+---
+
+## Remaining gaps (future)
+
+| Gap | Risk | Recommended fix |
 |-----|------|----------------|
-| notes field not encrypted | May contain health information | Encrypt using lib/encrypt.ts |
-| No audit log | HIA s.63 requires access tracking | Add AuditLog Prisma model |
-| authGuard.ts built but not applied to routes | API routes have no auth protection until frontend sends Bearer token | Apply verifyAuth middleware once frontend sends Firebase token in Authorization header |
-| No role-based field filtering | Receptionists can see AHC numbers | Redact AHC from receptionist responses |
+| No audit log UI for administrators | Harder to review access | Admin page to query `AuditLog` with date filters |
+| Notes visible to all staff roles | Reception may not need clinical notes | Optional `canViewPatientNotes` role gate |
+| AI copilot may receive patient context | Third-party processing | Document in privacy policy; restrict copilot to authorized roles |
 
 ---
 
 ## How to Generate an Encryption Key
 
-Run once, store result in .env.local and Vercel environment variables:
+Run once, store result in `.env.local` and production environment variables:
 ```bash
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
 ```
 
-Add to .env.local:
+Add to `.env.local`:
+```
 ENCRYPTION_KEY=<64-character-hex-string>
+```
 
 Never commit this key to Git.
+
+After enabling encryption for notes, existing plaintext notes continue to work until re-saved (decrypt treats non-`enc:` values as plaintext).
+
+---
+
+## Database migrations
+
+Apply in production after each release (loads `.env.local`):
+```bash
+npm run db:migrate:deploy
+```
+
+Includes `AuditLog` table (`20260526120000_add_audit_log`).
 
 ---
 
@@ -87,5 +126,5 @@ Never commit this key to Git.
 Patients may request access to or correction of their personal health information.
 These requests should be handled by the clinic administrator directly in the system.
 
-*Last updated: April 2026*
+*Last updated: May 2026*
 *Prepared for Oak Bay Family Chiropractic — SAIT Capstone Project (G6 SAITMafia)*
