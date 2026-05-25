@@ -3,6 +3,7 @@ import { parseNonEmptyString } from "@/lib/validate";
 import { ok, created, badRequest, notFound, conflict, serverError } from "@/lib/api";
 import { withAuthSimple } from "@/lib/withAuth";
 import { AppointmentStatus } from "@/lib/appointments/constants";
+import { PAYMENT_METHOD_OPTIONS } from "@/lib/billing/constants";
 
 export const GET = withAuthSimple(async (req) => {
     try {
@@ -48,7 +49,7 @@ export const POST = withAuthSimple(async (req) => {
         const paymentType = parseNonEmptyString(body.paymentType)?.toLowerCase().trim(); //Converts to lowercase and trims whitespace for better filtering
         const amount = Math.round(Number(body.amount) * 100) / 100; // Rounds to 2 decimal places
 
-        const allowedPaymentTypes = ["mastercard", "visa", "debit", "cash"];
+        const allowedPaymentTypes = PAYMENT_METHOD_OPTIONS.map((o) => o.value);
 
         // Validate inputs before proceeding with database operations
         if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
@@ -56,7 +57,7 @@ export const POST = withAuthSimple(async (req) => {
         }
         if (!paymentType || !allowedPaymentTypes.includes(paymentType)) {
             return badRequest("Missing or invalid paymentType", {
-                accepted: ["mastercard", "visa", "debit", "cash"],
+                accepted: allowedPaymentTypes,
             });
         }
         // Validate amount is a positive number. No negative or zero.

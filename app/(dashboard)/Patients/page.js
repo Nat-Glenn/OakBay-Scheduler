@@ -469,6 +469,11 @@ function getDisplayedPatient(patient) {
                     </div>
                     <div className="pt-4 mt-auto space-y-2">
                       <Button variant="default" className="w-full font-bold" onClick={() => openEditModal(selectedPatient)}><Pencil size={14} className="mr-2" /> Edit Patient</Button>
+                      <Link href={`/Billing?patientId=${selectedPatient.id}`} className="block w-full">
+                        <Button variant="secondary" className="w-full font-bold">
+                          Billing & cards
+                        </Button>
+                      </Link>
                       <Link href={`/?fromPatient=true&patientId=${selectedPatient.id}`} className="block w-full"><Button variant="secondary" className="w-full font-bold">Schedule Appointment</Button></Link>
                     </div>
                   </CardContent>

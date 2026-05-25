@@ -1,12 +1,42 @@
+/**
+ * Billing & cards — payment history, cards on file, and patient search.
+ */
+
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { apiFetch } from "@/utils/apiFetch";
+import { parseApiError } from "@/utils/parseApiError";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CreditCard, PencilLine, Plus, Search, User, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  CreditCard,
+  Eye,
+  EyeOff,
+  History,
+  PencilLine,
+  Plus,
+  Search,
+  User,
+  Users,
+} from "lucide-react";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import {
+  CARD_BRAND_OPTIONS,
+  isCardExpired,
+  paymentTypeLabel,
+} from "@/lib/billing/constants";
+import { unwrapApiList } from "@/lib/billing/apiData";
+import { formatCurrencyDisplay } from "@/lib/formatting/currency";
 import EmptyState from "@/components/EmptyState";
 import {
   Select,
@@ -69,11 +99,15 @@ function formatExpiry(expMonth, expYear) {
 
 export default function Billing() {
   const small = useMediaQuery("(max-width: 768px)");
+  const searchParams = useSearchParams();
 
   const [patientSearch, setPatientSearch] = useState("");
   const [patientResults, setPatientResults] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [loadingPatients, setLoadingPatients] = useState(false);
+
+  const [payments, setPayments] = useState([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   const [cards, setCards] = useState([]);
   const [loadingCards, setLoadingCards] = useState(false);
@@ -89,6 +123,7 @@ export default function Billing() {
   const [manageBrand, setManageBrand] = useState("Visa");
   const [manageLast4, setManageLast4] = useState("");
   const [manageExp, setManageExp] = useState("");
+  const [showManageLast4, setShowManageLast4] = useState(false);
 
   const selectedPatientName = useMemo(() => {
     if (!selectedPatient) return "";
@@ -169,11 +204,68 @@ export default function Billing() {
     };
   }, [selectedPatient]);
 
+  useEffect(() => {
+    if (!selectedPatient?.id) {
+      setPayments([]);
+      return;
+    }
+
+    let ignore = false;
+
+    async function loadPayments() {
+      try {
+        setLoadingPayments(true);
+        const res = await apiFetch(
+          `/api/patients/${selectedPatient.id}/payments`,
+        );
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(parseApiError(data, "Failed to load payment history"));
+        }
+        if (!ignore) {
+          setPayments(unwrapApiList(data));
+        }
+      } catch (err) {
+        console.error(err);
+        if (!ignore) setPayments([]);
+      } finally {
+        if (!ignore) setLoadingPayments(false);
+      }
+    }
+
+    loadPayments();
+    return () => {
+      ignore = true;
+    };
+  }, [selectedPatient?.id]);
+
   function handleSelectPatient(patient) {
     setSelectedPatient(patient);
     setPatientSearch(`${patient.firstName} ${patient.lastName}`);
     setPatientResults([]);
   }
+
+  const openPatientById = useCallback(async (patientId) => {
+    try {
+      const res = await apiFetch(`/api/patients/${patientId}`);
+      const data = await res.json();
+      if (!res.ok) return;
+      const patient = data?.data ?? data;
+      if (patient?.id) {
+        handleSelectPatient(patient);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const param = searchParams.get("patientId");
+    if (!param || selectedPatient) return;
+    const id = Number(param);
+    if (!Number.isInteger(id) || id <= 0) return;
+    openPatientById(id);
+  }, [searchParams, openPatientById, selectedPatient]);
 
   async function handleAddCard() {
     if (!selectedPatient?.id) return;
@@ -225,6 +317,7 @@ export default function Billing() {
     setManageBrand(card.brand || "Visa");
     setManageLast4(card.last4 || "");
     setManageExp(formatExpiry(card.expMonth, card.expYear));
+    setShowManageLast4(false);
     setIsManageOpen(true);
   }
 
@@ -298,8 +391,8 @@ export default function Billing() {
     <>
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
         <PageHeader
-          title="Billing"
-          description="Store payment cards on file for patients"
+          title="Billing & cards"
+          description="Payment history and cards on file for each patient"
         />
         <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
           <Card>
@@ -398,11 +491,70 @@ export default function Billing() {
             </Card>
 
             <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <History className="h-5 w-5" />
+                  Payment history
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Completed checkouts for this patient
+                </p>
+              </CardHeader>
+              <CardContent>
+                {!selectedPatient ? (
+                  <p className="text-sm text-muted-foreground">
+                    Select a patient to view payments.
+                  </p>
+                ) : loadingPayments ? (
+                  <p className="text-sm text-muted-foreground">Loading…</p>
+                ) : payments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No payments recorded yet.
+                  </p>
+                ) : (
+                  <ul className="max-h-56 space-y-2 overflow-y-auto">
+                    {payments.map((payment) => {
+                      const appt = payment.appointment;
+                      const when = appt?.startTime
+                        ? new Date(appt.startTime).toLocaleString("en-CA", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                          })
+                        : new Date(payment.createdAt).toLocaleString("en-CA");
+                      return (
+                        <li
+                          key={payment.id}
+                          className="flex items-start justify-between gap-3 rounded-md border border-border/80 px-3 py-2 text-sm"
+                        >
+                          <div className="min-w-0">
+                            <p className="font-medium">
+                              {formatCurrencyDisplay(payment.amount)}
+                            </p>
+                            <p className="text-muted-foreground">
+                              {paymentTypeLabel(payment.paymentType)}
+                              {appt?.type ? ` · ${appt.type}` : ""}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {when}
+                              {appt?.provider?.name
+                                ? ` · ${appt.provider.name}`
+                                : ""}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5" />
-                    Cards on File
+                    Cards on file
                   </CardTitle>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Saved cards for the selected patient
@@ -435,12 +587,14 @@ export default function Billing() {
                             <SelectValue placeholder="Select card type" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Visa">Visa</SelectItem>
-                            <SelectItem value="Mastercard">
-                              Mastercard
-                            </SelectItem>
-                            <SelectItem value="Amex">Amex</SelectItem>
-                            <SelectItem value="Debit">Debit</SelectItem>
+                            {CARD_BRAND_OPTIONS.map((option) => (
+                              <SelectItem
+                                key={option.value}
+                                value={option.value}
+                              >
+                                {option.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                       </div>
@@ -453,6 +607,7 @@ export default function Billing() {
                           value={number}
                           onChange={(e) => setNumber(e.target.value)}
                           mask="card"
+                          secret
                         />
                       </div>
 
@@ -516,7 +671,14 @@ export default function Billing() {
                       className="flex items-center justify-between rounded-xl border p-4"
                     >
                       <div>
-                        <div className="font-medium">{card.brand}</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium">{card.brand}</span>
+                          {isCardExpired(card.expMonth, card.expYear) ? (
+                            <Badge variant="outline" className="text-[10px]">
+                              Expired
+                            </Badge>
+                          ) : null}
+                        </div>
                         <div className="text-sm text-muted-foreground">
                           {maskCard(card.last4)}
                         </div>
@@ -558,24 +720,46 @@ export default function Billing() {
                   <SelectValue placeholder="Select card type" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Visa">Visa</SelectItem>
-                  <SelectItem value="Mastercard">Mastercard</SelectItem>
-                  <SelectItem value="Amex">Amex</SelectItem>
-                  <SelectItem value="Debit">Debit</SelectItem>
+                  {CARD_BRAND_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
               <Label>Card Number (Last 4)</Label>
-              <Input
-                value={manageLast4}
-                onChange={(e) =>
-                  setManageLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
-                }
-                inputMode="numeric"
-                placeholder="1234"
-              />
+              <InputGroup className="border-foreground bg-background">
+                <InputGroupInput
+                  value={manageLast4}
+                  onChange={(e) =>
+                    setManageLast4(e.target.value.replace(/\D/g, "").slice(0, 4))
+                  }
+                  type={showManageLast4 ? "text" : "password"}
+                  inputMode="numeric"
+                  placeholder="1234"
+                  autoComplete="off"
+                />
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    type="button"
+                    aria-label={
+                      showManageLast4
+                        ? "Hide last four digits"
+                        : "Show last four digits"
+                    }
+                    onClick={() => setShowManageLast4((v) => !v)}
+                  >
+                    {showManageLast4 ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </InputGroupButton>
+                </InputGroupAddon>
+              </InputGroup>
             </div>
 
             <div className="space-y-2">

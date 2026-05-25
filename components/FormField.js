@@ -1,4 +1,10 @@
+/**
+ * Reusable form fields — text, masked inputs, and searchable dropdowns.
+ */
+
 "use client";
+
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
@@ -13,11 +19,11 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "./ui/input-group";
-import { Check, ChevronDownIcon, Search, X } from "lucide-react";
+import { Check, ChevronDownIcon, Eye, EyeOff, Search, X } from "lucide-react";
 import { Input } from "./ui/input";
-import { useRef } from "react";
 import { toast } from "sonner";
 import { formatNorthAmericanPhone } from "@/lib/formatting/phone";
+import { formatCurrencyInput } from "@/lib/formatting/currency";
 
 function PractitionerDropdownOption({ item, displayText, setItemSearch, setSearch }) {
   const handleSelect = (event) => {
@@ -138,8 +144,11 @@ export default function FormField({
   name,
   mask,
   maxLength,
+  /** When true, input can be toggled hidden (e.g. card number entry). */
+  secret = false,
 }) {
   const inputRef = useRef(null);
+  const [revealed, setRevealed] = useState(false);
 
   function formatCard(value) {
     const digits = value.replace(/\D/g, "").slice(0, 16);
@@ -213,44 +222,81 @@ export default function FormField({
         </DropdownMenu>
       )}
 
-      {variant === "add" && (
-        <Input
-          ref={inputRef}
-          className="border-foreground shadow-xs outline-none"
-          placeholder={placeholder}
-          type={mode ? mode : "text"}
-          inputMode={mask ? "numeric" : undefined}
-          value={value ?? ""}
-          name={name}
-          maxLength={maxLength}
-          onChange={(e) => {
-            const input = e.target;
-            const rawValue = input.value;
-            const cursorPos = input.selectionStart;
+      {variant === "add" && (() => {
+        const handleMaskedChange = (e) => {
+          const input = e.target;
+          const rawValue = input.value;
+          const cursorPos = input.selectionStart;
 
-            let formatted = rawValue;
+          let formatted = rawValue;
 
-            // Apply mask
-            if (mask === "phone") formatted = formatNorthAmericanPhone(rawValue);
-            if (mask === "ahc") formatted = formatAHC(rawValue);
-            if (mask === "card") formatted = formatCard(rawValue);
-            if (mask === "exp") formatted = formatEXP(rawValue);
-            const diff = formatted.length - rawValue.length;
+          if (mask === "phone") formatted = formatNorthAmericanPhone(rawValue);
+          if (mask === "ahc") formatted = formatAHC(rawValue);
+          if (mask === "card") formatted = formatCard(rawValue);
+          if (mask === "exp") formatted = formatEXP(rawValue);
+          if (mask === "currency") formatted = formatCurrencyInput(rawValue);
+          const diff = formatted.length - rawValue.length;
 
-            onChange({
-              target: { name, value: formatted },
+          onChange({
+            target: { name, value: formatted },
+          });
+
+          if (mask) {
+            requestAnimationFrame(() => {
+              const newPos = cursorPos + diff;
+              inputRef.current?.setSelectionRange(newPos, newPos);
             });
+          }
+        };
 
-            // Restore cursor
-            if (mask) {
-              requestAnimationFrame(() => {
-                const newPos = cursorPos + diff;
-                inputRef.current?.setSelectionRange(newPos, newPos);
-              });
-            }
-          }}
-        />
-      )}
+        const inputType = secret ? (revealed ? "text" : "password") : mode || "text";
+
+        if (secret) {
+          return (
+            <InputGroup className="border-foreground bg-background shadow-xs">
+              <InputGroupInput
+                ref={inputRef}
+                className="border-foreground outline-none"
+                placeholder={placeholder}
+                type={inputType}
+                inputMode={mask ? "numeric" : undefined}
+                value={value ?? ""}
+                name={name}
+                maxLength={maxLength}
+                autoComplete="off"
+                onChange={handleMaskedChange}
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  type="button"
+                  aria-label={revealed ? "Hide card number" : "Show card number"}
+                  onClick={() => setRevealed((v) => !v)}
+                >
+                  {revealed ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+          );
+        }
+
+        return (
+          <Input
+            ref={inputRef}
+            className="border-foreground shadow-xs outline-none"
+            placeholder={placeholder}
+            type={inputType}
+            inputMode={mask ? "numeric" : undefined}
+            value={value ?? ""}
+            name={name}
+            maxLength={maxLength}
+            onChange={handleMaskedChange}
+          />
+        );
+      })()}
 
       {variant === "select" && (
         <DropdownMenu>
