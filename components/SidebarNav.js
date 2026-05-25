@@ -24,7 +24,7 @@ import { toast } from "sonner";
 import { Moon, Sun } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { useDarkMode } from "@/utils/DarkModeProvider";
-import { isNavActive, NAV_ITEMS, filterNavItems } from "@/lib/navigation";
+import { isNavActive, filterNavItems } from "@/lib/navigation";
 import { useSessionUser } from "@/utils/useSessionUser";
 import { usePendingRequestCount } from "@/utils/usePendingRequestCount";
 

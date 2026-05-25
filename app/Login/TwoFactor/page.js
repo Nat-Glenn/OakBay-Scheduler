@@ -12,7 +12,6 @@ import { getPendingMfa, clearPendingMfa } from "./mfaStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import Link from "next/link";
 import { syncAuthSession } from "@/utils/authSession";
 
 export default function TwoFactorPage() {
@@ -35,7 +34,7 @@ export default function TwoFactorPage() {
       if (recaptchaRef.current) {
         recaptchaRef.current.clear();
       }
-    } catch (e) {
+    } catch {
       // ignore cleanup errors
     }
 

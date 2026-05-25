@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/hash";
 import { withAuthSimple, withRoles } from "@/lib/withAuth";
 import { AppRole } from "@/lib/auth/roles";
-import { badRequest, conflict, serverError } from "@/lib/api";
+import { conflict, serverError } from "@/lib/api";
 import { createPractitionerSchema } from "@/lib/practitioners/schemas";
 import { parseBody } from "@/lib/validation/parseBody";
 import {

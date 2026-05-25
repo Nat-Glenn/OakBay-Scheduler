@@ -24,10 +24,7 @@ import {
   isProviderWorkingOnDay,
   shiftMapKey,
 } from "@/lib/shifts/clientUtils";
-import {
-  formatOfficeHoursForDate,
-  isClinicOpenOnDate,
-} from "@/lib/clinic/officeHours.js";
+import { isClinicOpenOnDate } from "@/lib/clinic/officeHours.js";
 
 export default function StaffSchedulePage() {
   const { session } = useSessionUser();

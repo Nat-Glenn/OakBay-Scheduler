@@ -108,9 +108,6 @@ async function main() {
     },
   });
 
-  const providers = [brad, emily, michael, nina];
-  const staff = [sarah, michelle, karen];
-
   // =========================
   // PATIENTS
   // =========================

@@ -144,28 +144,42 @@ export default function PatientProfiles() {
   }
 
   useEffect(() => {
+    let ignore = false;
+
     async function loadPatients() {
       try {
         setLoading(true);
         setError("");
-        const res = await apiFetch(`/api/patients?search=${encodeURIComponent(searchTerm)}`);
+        const res = await apiFetch(
+          `/api/patients?search=${encodeURIComponent(searchTerm)}`,
+        );
         const data = await res.json();
-        
-        if (!res.ok) throw new Error(parseApiError(data, "Failed to load patients"));
-        
-        setPatients(data);
 
-        if (selectedPatient) {
-          const updatedSelected = data.find((p) => p.id === selectedPatient.id);
-          if (updatedSelected) setSelectedPatient(getDisplayedPatient(updatedSelected));
+        if (!res.ok) throw new Error(parseApiError(data, "Failed to load patients"));
+
+        if (!ignore) {
+          setPatients(data);
+
+          if (selectedPatient) {
+            const updatedSelected = data.find((p) => p.id === selectedPatient.id);
+            if (updatedSelected) {
+              setSelectedPatient(getDisplayedPatient(updatedSelected));
+            }
+          }
         }
       } catch (err) {
-        setError(err.message || "Failed to load patients");
+        if (!ignore) setError(err.message || "Failed to load patients");
       } finally {
-        setLoading(false);
+        if (!ignore) setLoading(false);
       }
     }
-    loadPatients();
+
+    const timer = setTimeout(loadPatients, searchTerm.trim() ? 300 : 0);
+
+    return () => {
+      ignore = true;
+      clearTimeout(timer);
+    };
   }, [searchTerm, reloadKey]);
 
   useEffect(() => {
@@ -237,19 +251,32 @@ function getDisplayedPatient(patient) {
   };
 }
 
-  function openEditModal(patient) {
+  async function openEditModal(patient) {
     setValidationError("");
-    setEditForm({
-      firstName: patient.firstName || "",
-      lastName: patient.lastName || "",
-      email: patient.email || "",
-      phone: patient.phone || "",
-      ahcNumber: patient.ahcNumber || "",
-      notes: patient.notes || "",
-    });
-    setEditDob(patient.dob && patient.dob !== "—" ? isoToMasked(patient.dob) : "");
-    setEditStat(patient.status || "Active");
     setEditOpen(true);
+
+    try {
+      const res = await apiFetch(`/api/patients/${patient.id}`);
+      const full = await res.json();
+      if (!res.ok) {
+        throw new Error(parseApiError(full, "Failed to load patient details"));
+      }
+
+      const row = getDisplayedPatient(full);
+      setEditForm({
+        firstName: full.firstName || "",
+        lastName: full.lastName || "",
+        email: full.email || "",
+        phone: full.phone || "",
+        ahcNumber: full.ahcNumber || "",
+        notes: full.notes || "",
+      });
+      setEditDob(full.dob && full.dob !== "—" ? isoToMasked(full.dob) : "");
+      setEditStat(row.status || "Active");
+    } catch (err) {
+      setEditOpen(false);
+      toast.error(err.message || "Failed to load patient details");
+    }
   }
 
   // Handles text input changes and triggers instant validation for blocked content

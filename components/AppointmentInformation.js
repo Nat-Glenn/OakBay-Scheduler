@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
 import { toast } from "sonner";
 import {
   formatDateDMY,
@@ -31,7 +30,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -40,26 +38,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSet,
 } from "@/components/ui/field";
-import {
-  Popover,
-  PopoverContent,
-  PopoverHeader,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { PopoverHeader } from "@/components/ui/popover";
 import { DatePicker } from "./DatePicker";
 import FormField from "@/components/FormField";
-import { Pencil, Settings } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { DeletePopUp } from "@/components/DeletePopUp";
 import { calculateAge } from "@/utils/date";

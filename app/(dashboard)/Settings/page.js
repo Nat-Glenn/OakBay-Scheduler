@@ -6,7 +6,6 @@ import { connectGoogleAccount, disconnectGoogleAccount } from "./connectAccount"
 import { User, ShieldCheck, Lock, Link as LinkIcon, Check, Trash2, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { toast } from "sonner";
 import { auth } from "@/app/Login/Firebase/firebase";
 import { onAuthStateChanged, getMultiFactorResolver, PhoneMultiFactorGenerator } from "firebase/auth";
@@ -112,7 +111,7 @@ export default function Settings() {
       setDisconnectingGoogle(true);
       await disconnectGoogleAccount();
       toast.success("Google disconnected.");
-    } catch (error) {
+    } catch {
       toast.error("Failed to disconnect.");
     } finally {
       setDisconnectingGoogle(false);
@@ -128,7 +127,7 @@ export default function Settings() {
       toast.info("Reset email sent.");
       // Security best practice: force re-login after password reset request
       router.push("/Login");
-    } catch (err) {
+    } catch {
       toast.error("Error sending reset email.");
     } finally {
       setResettingPassword(false);

@@ -16,12 +16,21 @@ npm install
 cp .env.example .env.local
 ```
 
-3. Set up the database:
+3. Set up the database (Prisma reads `.env.local` via the scripts below — the CLI alone only loads `.env`):
 
 ```bash
-npx prisma migrate dev
+npm run db:migrate:dev
+npm run db:generate
 npx prisma db seed
 ```
+
+Production / existing DB:
+
+```bash
+npm run db:migrate:deploy
+```
+
+Requires both `DATABASE_URL` (pooled Neon URL) and `DIRECT_URL` (non-pooler URL) in `.env.local` — see `.env.example`.
 
 4. Start the development server:
 
@@ -30,6 +39,11 @@ npm run dev
 ```
 
 Sign in at `/Login` with a Firebase account that has a verified email.
+
+### Operations & compliance
+
+- **Reliability / monitoring:** [docs/reliability-and-trust.md](docs/reliability-and-trust.md) — health check (`GET /api/health`), Neon DB, deploy checklist
+- **Privacy & security:** [compliance.md](compliance.md) — HIA/PIPEDA, encryption, audit log, role redaction
 
 ### Temporary: skip auth while waiting for Firebase access
 

@@ -19,7 +19,7 @@ import {
 } from "@/lib/shifts/clinicShiftTime";
 import { getShiftsBetween } from "@/lib/shifts/availability";
 import { serializeShift } from "@/lib/shifts/serialize";
-import { ClinicDbRole, SCHEDULER_STAFF_ROLES } from "@/lib/auth/constants";
+import { SCHEDULER_STAFF_ROLES } from "@/lib/auth/constants";
 import { isClinicOpenOnDate } from "@/lib/clinic/officeHours.js";
 
 export const GET = withAuthSimple(async (req) => {

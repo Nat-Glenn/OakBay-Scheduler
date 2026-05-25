@@ -155,7 +155,6 @@ export default function Appointments() {
     loadDayShifts();
   }, [date, reloadKey]);
 
-  const dateStrForShifts = formatPickerDateForApi(date);
   const workingNamesForBooking = useMemo(() => {
     const names = new Set();
     for (const shift of dayShifts) {
