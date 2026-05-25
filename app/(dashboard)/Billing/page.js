@@ -241,7 +241,11 @@ export default function Billing() {
 
   function handleSelectPatient(patient) {
     setSelectedPatient(patient);
-    setPatientSearch(`${patient.firstName} ${patient.lastName}`);
+  }
+
+  function handleClearPatient() {
+    setSelectedPatient(null);
+    setPatientSearch("");
     setPatientResults([]);
   }
 
@@ -408,7 +412,10 @@ export default function Billing() {
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-60" />
                 <Input
                   value={patientSearch}
-                  onChange={(e) => setPatientSearch(e.target.value)}
+                  onChange={(e) => {
+                    setPatientSearch(e.target.value);
+                    if (selectedPatient) setSelectedPatient(null);
+                  }}
                   placeholder="Search by name or phone"
                   className="pl-9"
                 />
@@ -424,6 +431,37 @@ export default function Billing() {
                       />
                     ))}
                   </div>
+                ) : selectedPatient &&
+                  (patientSearch.trim() === "" ||
+                    !patientResults.some((p) => p.id === selectedPatient.id)) ? (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectPatient(selectedPatient)}
+                      className="w-full rounded-lg border border-primary/40 bg-primary/5 p-3 text-left"
+                    >
+                      <div className="font-medium">
+                        {selectedPatient.firstName} {selectedPatient.lastName}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {selectedPatient.phone}
+                      </div>
+                      {selectedPatient.email ? (
+                        <div className="text-sm text-muted-foreground">
+                          {selectedPatient.email}
+                        </div>
+                      ) : null}
+                    </button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={handleClearPatient}
+                    >
+                      Search for a different patient
+                    </Button>
+                  </div>
                 ) : patientSearch.trim() === "" ? (
                   <EmptyState
                     icon={Search}
@@ -437,26 +475,31 @@ export default function Billing() {
                     description="Try a different spelling or search by phone."
                   />
                 ) : (
-                  patientResults.map((patient) => (
-                    <button
-                      key={patient.id}
-                      type="button"
-                      onClick={() => handleSelectPatient(patient)}
-                      className="w-full rounded-lg border p-3 text-left transition hover:bg-muted"
-                    >
-                      <div className="font-medium">
-                        {patient.firstName} {patient.lastName}
-                      </div>
-                      <div className="text-sm text-muted-foreground">
-                        {patient.phone}
-                      </div>
-                      {patient.email && (
-                        <div className="text-sm text-muted-foreground">
-                          {patient.email}
+                  patientResults.map((patient) => {
+                    const isSelected = selectedPatient?.id === patient.id;
+                    return (
+                      <button
+                        key={patient.id}
+                        type="button"
+                        onClick={() => handleSelectPatient(patient)}
+                        className={`w-full rounded-lg border p-3 text-left transition hover:bg-muted ${
+                          isSelected ? "border-primary/40 bg-primary/5" : ""
+                        }`}
+                      >
+                        <div className="font-medium">
+                          {patient.firstName} {patient.lastName}
                         </div>
-                      )}
-                    </button>
-                  ))
+                        <div className="text-sm text-muted-foreground">
+                          {patient.phone}
+                        </div>
+                        {patient.email ? (
+                          <div className="text-sm text-muted-foreground">
+                            {patient.email}
+                          </div>
+                        ) : null}
+                      </button>
+                    );
+                  })
                 )}
               </div>
             </CardContent>
