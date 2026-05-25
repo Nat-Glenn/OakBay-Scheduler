@@ -2,7 +2,7 @@ import { AppointmentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { serverError } from "@/lib/api";
 import { withAuthSimple } from "@/lib/withAuth";
-import { syncOverdueAppointmentStatuses } from "@/lib/appointments/lifecycle";
+import { syncOverdueAppointmentStatusesThrottled } from "@/lib/appointments/syncThrottle";
 
 function parseStatusFilter(value: string): AppointmentStatus | undefined {
   const upper = value.trim().toUpperCase();
@@ -14,7 +14,7 @@ function parseStatusFilter(value: string): AppointmentStatus | undefined {
 
 export const GET = withAuthSimple(async (req) => {
   try {
-    await syncOverdueAppointmentStatuses();
+    await syncOverdueAppointmentStatusesThrottled();
 
     const { searchParams } = new URL(req.url);
 

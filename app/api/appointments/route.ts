@@ -9,7 +9,7 @@ import {
   getClinicDayBounds,
   parseClinicDateParam,
 } from "@/lib/appointments/clinicTime";
-import { syncOverdueAppointmentStatuses } from "@/lib/appointments/lifecycle";
+import { syncOverdueAppointmentStatusesThrottled } from "@/lib/appointments/syncThrottle";
 import { reserveClinicSlot } from "@/lib/appointments/clinicSlots";
 
 const appointmentInclude = {
@@ -27,7 +27,7 @@ const appointmentInclude = {
 
 export const GET = withAuthSimple(async (req) => {
   try {
-    await syncOverdueAppointmentStatuses();
+    await syncOverdueAppointmentStatusesThrottled();
 
     const { searchParams } = new URL(req.url);
     const dayParts = parseClinicDateParam(searchParams.get("date"));
