@@ -1,68 +1,29 @@
 import { AppointmentStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-
-function startOfToday() {
-  const now = new Date();
-  const d = new Date(now);
-  d.setHours(0, 0, 0, 0);
-  return d;
-}
-
-function endOfToday() {
-  const now = new Date();
-  const d = new Date(now);
-  d.setHours(23, 59, 59, 999);
-  return d;
-}
+import {
+  getClinicMonthBounds,
+  getClinicTodayBounds,
+  getClinicWeekToDateBounds,
+  getClinicYearBounds,
+} from "@/lib/summary/clinicPeriods";
 
 function getRangeDates(range: string) {
   const now = new Date();
 
   if (range === "daily") {
-    const start = new Date(now);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
-
-    return { start, end };
+    return getClinicTodayBounds(now);
   }
 
   if (range === "weekly") {
-    const current = new Date(now);
-    const day = current.getDay();
-    const diff = current.getDate() - day;
-
-    const start = new Date(current);
-    start.setDate(diff);
-    start.setHours(0, 0, 0, 0);
-
-    const end = new Date(now);
-    end.setHours(23, 59, 59, 999);
-
-    return { start, end };
+    return getClinicWeekToDateBounds(now);
   }
 
   if (range === "monthly") {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
-      999
-    );
-
-    return { start, end };
+    return getClinicMonthBounds(now);
   }
 
   if (range === "yearly") {
-    const start = new Date(now.getFullYear(), 0, 1);
-    const end = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
-
-    return { start, end };
+    return getClinicYearBounds(now);
   }
 
   return {
@@ -216,8 +177,7 @@ export async function getPatientSummary(patientName: string) {
 }
 
 export async function getPractitionerDailySummary(practitionerName?: string) {
-  const todayStart = startOfToday();
-  const todayEnd = endOfToday();
+  const { start: todayStart, end: todayEnd } = getClinicTodayBounds();
 
   const whereClause = practitionerName
     ? {
@@ -284,8 +244,7 @@ export async function getPractitionerDailySummary(practitionerName?: string) {
 }
 
 export async function getDailyOperationsReportData() {
-  const todayStart = startOfToday();
-  const todayEnd = endOfToday();
+  const { start: todayStart, end: todayEnd } = getClinicTodayBounds();
 
   const appointments = await prisma.appointment.findMany({
     where: {

@@ -1,19 +1,25 @@
+/**
+ * Practice overview — clinic stats, morning briefing, latest appointments, and reports.
+ */
+
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import SummarySkeleton from "@/components/SummarySkeleton";
 import EmptyState from "@/components/EmptyState";
+import PageHeader from "@/components/PageHeader";
 import { apiFetch } from "@/utils/apiFetch";
 import {
   Users,
   DollarSign,
   Calendar,
-  TrendingUp,
-  ArrowUpRight,
-  MessageCircle,
-  Send,
-  X,
   Search,
+  Sparkles,
+  FileText,
+  ArrowRight,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,29 +32,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useMediaQuery } from "@/utils/UseMediaQuery";
-import Link from "next/link";
 import { getHistoryStatusBadgeClasses } from "@/lib/ui/appointmentStatusStyles";
 
 export default function Summary() {
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [query, setQuery] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [messages, setMessages] = useState([
-    {
-      role: "assistant",
-      content: "Hello! How can I help you manage your practice today?",
-      type: "text",
-    },
-  ]);
-
   const [summaryData, setSummaryData] = useState(null);
   const [summaryLoading, setSummaryLoading] = useState(true);
   const [summaryError, setSummaryError] = useState("");
-
   const [tableSearch, setTableSearch] = useState("");
 
-  const small = useMediaQuery("(max-width: 768px)");
+  const [reportLoading, setReportLoading] = useState(false);
+  const [reportMessage, setReportMessage] = useState(null);
+  const [patientQuery, setPatientQuery] = useState("");
 
   useEffect(() => {
     async function loadSummary() {
@@ -72,618 +66,482 @@ export default function Summary() {
     loadSummary();
   }, []);
 
-  const stats = summaryData?.stats || {
+  const stats = summaryData?.stats ?? {
     totalPatients: 0,
     monthlyRevenue: 0,
     weeklyRevenue: 0,
     yearlyRevenue: 0,
+    allTimeRevenue: 0,
     todaysAppointments: 0,
+    priorWeekRevenue: 0,
+    weeklyRevenueChangePct: null,
+    weeklyPaymentCount: 0,
+    monthlyPaymentCount: 0,
+    yearlyPaymentCount: 0,
+    revenueSpansMatch: false,
+    todayCompleted: 0,
   };
 
-  const recentVisits = useMemo(() => {
-    return summaryData?.recentVisits || [];
-  }, [summaryData]);
+  const briefing = summaryData?.briefing;
+  const latestAppointments = summaryData?.latestAppointments ?? [];
 
-  const filteredVisits = useMemo(() => {
-    return recentVisits.filter((visit) => {
-      const patient = String(visit.patient || "").toLowerCase();
-      const type = String(visit.type || "").toLowerCase();
-      const search = tableSearch.toLowerCase();
-      return patient.includes(search) || type.includes(search);
+  const filteredAppointments = useMemo(() => {
+    const q = tableSearch.toLowerCase();
+    return latestAppointments.filter((row) => {
+      const patient = String(row.patient || "").toLowerCase();
+      const type = String(row.type || "").toLowerCase();
+      const provider = String(row.providerName || "").toLowerCase();
+      return (
+        patient.includes(q) || type.includes(q) || provider.includes(q)
+      );
     });
-  }, [recentVisits, tableSearch]);
+  }, [latestAppointments, tableSearch]);
 
-  async function handleSend(e) {
-    e.preventDefault();
-    const trimmed = query.trim();
-    if (!trimmed || isLoading) return;
-
-    const nextMessages = [
-      ...messages,
-      { role: "user", content: trimmed, type: "text" },
-    ];
-    setMessages(nextMessages);
-    setQuery("");
-    setIsLoading(true);
+  async function runCopilot(body) {
+    setReportLoading(true);
+    setReportMessage(null);
 
     try {
       const res = await apiFetch("/api/ai/copilot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode: "chat",
-          prompt: trimmed,
-        }),
+        body: JSON.stringify(body),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to get AI response");
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            data.reply ||
-            data.error ||
-            "Sorry, I couldn’t process that request.",
-          type: "text",
-        },
-      ]);
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Error occurred.",
-          type: "text",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleDailyReport() {
-    if (isLoading) return;
-
-    setIsLoading(true);
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: "Generate today's daily operations report.",
-        type: "text",
-      },
-    ]);
-
-    try {
-      const res = await apiFetch("/api/ai/copilot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode: "daily_report",
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to generate daily report");
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          type: "report",
-          reportKind: "daily",
-          report: data.report,
-        },
-      ]);
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Failed to generate daily report.",
-          type: "text",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handlePatientReport() {
-    const trimmed = query.trim();
-    if (!trimmed || isLoading) return;
-
-    setIsLoading(true);
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: `Generate patient report: ${trimmed}`,
-        type: "text",
-      },
-    ]);
-    setQuery("");
-
-    try {
-      const res = await apiFetch("/api/ai/copilot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          mode: "patient_report",
-          prompt: trimmed,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to generate patient report");
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          type: "report",
-          reportKind: "patient",
-          report: data.report,
-        },
-      ]);
-    } catch (error) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Failed to generate patient report.",
-          type: "text",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  async function handleRangeReport(range) {
-    if (isLoading) return;
-
-    setIsLoading(true);
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: `Generate ${range} report`,
-        type: "text",
-      },
-    ]);
-
-    try {
-      const res = await apiFetch("/api/ai/copilot", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          mode: "range_report",
-          range,
-        }),
-      });
-
-      const data = await res.json();
-
       if (!res.ok) {
         throw new Error(data.error || "Failed to generate report");
       }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
+      if (data.report) {
+        setReportMessage({
           type: "report",
-          reportKind: "daily",
+          reportKind: body.mode === "patient_report" ? "patient" : "daily",
           report: data.report,
-        },
-      ]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Failed to generate report.",
+        });
+      } else {
+        setReportMessage({
           type: "text",
-        },
-      ]);
+          content: data.reply || "No response.",
+        });
+      }
+    } catch (err) {
+      setReportMessage({
+        type: "text",
+        content: err.message || "Failed to generate report.",
+      });
     } finally {
-      setIsLoading(false);
+      setReportLoading(false);
     }
   }
 
-  function formatCurrency(amount) {
-    return new Intl.NumberFormat("en-CA", {
-      style: "currency",
-      currency: "CAD",
-      maximumFractionDigits: 2,
-    }).format(Number(amount || 0));
-  }
-
-  function formatVisitDate(dateValue) {
-    if (!dateValue) return "—";
-    const date = new Date(dateValue);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString("en-CA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  }
-
-  function formatAiDate(dateValue) {
-    if (!dateValue) return "—";
-
-    const date = new Date(dateValue);
-    if (Number.isNaN(date.getTime())) return String(dateValue);
-
-    return date.toLocaleString("en-CA", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "numeric",
-      minute: "2-digit",
-    });
-  }
-
-  function normalizeStatus(status) {
-    if (!status) return "Pending";
-    const lower = String(status).toLowerCase();
-
-    if (
-      lower === "checked-out" ||
-      lower === "checked_out" ||
-      lower === "completed" ||
-      lower === "complete"
-    )
-      return "Completed";
-    if (lower === "checked-in" || lower === "checked_in")
-      return "In Progress";
-    if (lower === "cancelled" || lower === "canceled") return "Cancelled";
-    if (lower === "requested") return "Requested";
-    if (lower === "confirmed") return "Confirmed";
-
-    return String(status)
-      .replace(/[-_]/g, " ")
-      .replace(/\b\w/g, (char) => char.toUpperCase());
-  }
-
   if (summaryLoading) {
-    return (        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
-          <header className="hidden py-4 md:block">
-            <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-          </header>
-          <SummarySkeleton />
-        </div>
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
+        <PageHeader
+          title="Practice overview"
+          description="Loading clinic activity…"
+        />
+        <SummarySkeleton />
+      </div>
     );
   }
 
   if (summaryError) {
-    return (        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
-          <header className="hidden py-4 md:block">
-            <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-          </header>
-          <EmptyState
-            title="Could not load summary"
-            description={summaryError}
-          />
-        </div>
+    return (
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
+        <PageHeader title="Practice overview" />
+        <EmptyState
+          title="Could not load overview"
+          description={summaryError}
+        />
+      </div>
     );
   }
 
+  const weekTrend =
+    stats.weeklyRevenueChangePct === null
+      ? "Week to date"
+      : `${stats.weeklyRevenueChangePct >= 0 ? "+" : ""}${stats.weeklyRevenueChangePct}% vs last week`;
+
   return (
-    <>
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-4">
-        <header className="hidden py-4 md:block">
-          <h1 className="text-3xl font-bold text-foreground">Summary</h1>
-        </header>
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 pb-6">
+      <PageHeader
+        title="Practice overview"
+        description="Revenue and activity for Oak Bay Family Chiropractic"
+      />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-4 mt-4">
-          <StatCard
-            title="Total Patients"
-            value={stats.totalPatients}
-            icon={<Users />}
-            trend="Live"
-          />
-          <StatCard
-            title="Weekly Revenue"
-            value={formatCurrency(stats.weeklyRevenue)}
-            icon={<TrendingUp />}
-            trend="Live"
-          />
-          <StatCard
-            title="Monthly Revenue"
-            value={formatCurrency(stats.monthlyRevenue)}
-            icon={<DollarSign />}
-            trend="Live"
-          />
-          <StatCard
-            title="Yearly Revenue"
-            value={formatCurrency(stats.yearlyRevenue)}
-            icon={<DollarSign />}
-            trend="Live"
-          />
-        </div>
+      <p className="-mt-2 mb-4 text-xs text-muted-foreground">
+        {summaryData?.asOfLabel}
+        {summaryData?.revenueNote ? ` · ${summaryData.revenueNote}` : ""}
+      </p>
 
-        <div className="pb-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <Card className="lg:col-span-2 border-border shadow-sm">
-            <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between py-6 px-8 gap-4">
-              <CardTitle className="text-xl font-bold">
-                Recent Patient Visits
-              </CardTitle>
-              <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-end">
-                <div className="relative w-full overflow-hidden rounded-md border border-border md:w-48">
-                  <Search
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
-                    size={14}
-                  />
-                  <Input
-                    placeholder="Search by Name"
-                    className="pl-8 bg-muted/50 border-none h-10 text-sm w-full focus-visible:ring-0"
-                    value={tableSearch}
-                    onChange={(e) => setTableSearch(e.target.value)}
-                  />
-                </div>
-                <Link href="/Summary/history">
-                  <Button
-                    variant="secondary"
-                    className="h-10 font-semibold whitespace-nowrap"
-                  >
-                    View History
-                  </Button>
-                </Link>
-              </div>
-            </CardHeader>
+      {stats.revenueSpansMatch ? (
+        <p className="mb-4 rounded-lg border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+          Week, month, and year show the same total because every checkout in the
+          system was recorded in the same period ({stats.yearlyPaymentCount}{" "}
+          payment{stats.yearlyPaymentCount === 1 ? "" : "s"},{" "}
+          {formatCurrency(stats.allTimeRevenue)} all time). As you record more
+          checkouts over time, these numbers will diverge.
+        </p>
+      ) : null}
 
-            <CardContent className="px-8 pb-8 overflow-x-auto">
-              <Table className="text-base min-w-[500px]">
-                <TableHeader>
-                  <TableRow className="hover:bg-transparent border-b">
-                    <TableHead className="py-4 font-semibold text-muted-foreground">
-                      Patient
-                    </TableHead>
-                    <TableHead className="py-4 font-semibold text-muted-foreground">
-                      Date
-                    </TableHead>
-                    <TableHead className="py-4 font-semibold text-muted-foreground">
-                      Type
-                    </TableHead>
-                    <TableHead className="py-4 text-center font-semibold text-muted-foreground">
-                      Status
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredVisits.length > 0 ? (
-                    filteredVisits.map((visit) => (
-                      <TableRow
-                        key={visit.id}
-                        className="border-b last:border-0 hover:bg-muted/30 transition-colors"
-                      >
-                        <TableCell className="font-bold text-foreground py-5">
-                          {visit.patient}
-                        </TableCell>
-                        <TableCell className="font-medium text-foreground py-5">
-                          {formatVisitDate(visit.date)}
-                        </TableCell>
-                        <TableCell className="font-medium text-foreground py-5">
-                          {visit.type || "—"}
-                        </TableCell>
-                        <TableCell className="py-5 text-center">
-                          <StatusBadge status={normalizeStatus(visit.status)} />
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={4} className="p-0">
-                        <EmptyState
-                          title="No recent visits"
-                          description="Completed appointments will appear here."
-                        />
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border shadow-sm">
-            <CardHeader className="py-6 px-8">
-              <CardTitle className="text-xl font-bold flex items-center gap-2">
-                <Calendar size={20} className="text-button-primary" />
-                Today's Appointments
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-8 pb-8">
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center justify-between rounded-xl border border-border bg-muted/40 p-4">
-                  <span className="text-muted-foreground font-medium">
-                    Scheduled
-                  </span>
-                  <span className="text-3xl font-bold text-primary">
-                    {stats.todaysAppointments}
-                  </span>
-                </div>
-                <Link href="/" className="block w-full">
-                  <Button variant="secondary" className="w-full font-semibold">
-                    View Schedule
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="grid grid-cols-1 gap-4 pb-4 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total patients"
+          value={stats.totalPatients}
+          caption="Registered in system"
+          icon={<Users />}
+        />
+        <StatCard
+          title="Weekly revenue"
+          value={formatCurrency(stats.weeklyRevenue)}
+          caption={`${weekTrend} · ${stats.weeklyPaymentCount} checkout${stats.weeklyPaymentCount === 1 ? "" : "s"}`}
+          icon={<DollarSign />}
+        />
+        <StatCard
+          title="Monthly revenue"
+          value={formatCurrency(stats.monthlyRevenue)}
+          caption={`Clinic month (MTD) · ${stats.monthlyPaymentCount} checkout${stats.monthlyPaymentCount === 1 ? "" : "s"}`}
+          icon={<DollarSign />}
+        />
+        <StatCard
+          title="Yearly revenue"
+          value={formatCurrency(stats.yearlyRevenue)}
+          caption={`Calendar year (YTD) · ${stats.yearlyPaymentCount} checkout${stats.yearlyPaymentCount === 1 ? "" : "s"}`}
+          icon={<DollarSign />}
+        />
       </div>
 
-      <div className="fixed bottom-8 right-8 flex flex-col items-end z-10">
-        {isChatOpen && (
-          <Card className="w-[380px] lg:w-[430px] h-[560px] max-h-[78vh] mb-2 shadow-2xl overflow-hidden p-0 animate-in slide-in-from-bottom-5 duration-300 flex flex-col bg-background">
-            <CardHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 bg-button-primary p-5 text-white">
-              <div className="flex flex-col">
-                <CardTitle className="text-md font-bold text-inherit">
-                  Clinic Copilot
-                </CardTitle>
-                <p className="mt-1 text-xs text-white/85">
-                  Ask questions or generate reports
-                </p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="-mr-2 h-10 w-10 text-inherit hover:bg-white/15"
-                onClick={() => setIsChatOpen(false)}
-              >
-                <X size={22} />
-              </Button>
-            </CardHeader>
+      <div className="grid grid-cols-1 gap-4 pb-4 lg:grid-cols-3">
+        <BriefingCard briefing={briefing} className="lg:col-span-2" />
 
-            <CardContent className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto p-4">
-              {messages.map((message, i) => (
-                <div
-                  key={i}
-                  className={`max-w-[85%] rounded-2xl p-4 text-sm leading-6 shadow-sm ${
-                    message.role === "user"
-                      ? "self-end rounded-br-none bg-button-primary text-white whitespace-pre-wrap [&_p]:text-inherit"
-                      : "self-start rounded-bl-none border border-border bg-card text-foreground [&_p]:text-inherit"
-                  }`}
-                >
-                  {message.type === "report" ? (
-                    <ReportMessage
-                      reportKind={message.reportKind}
-                      report={message.report}
-                      formatAiDate={formatAiDate}
-                    />
-                  ) : (
-                    <div className="whitespace-pre-wrap">{message.content}</div>
-                  )}
-                </div>
-              ))}
-              {isLoading && (
-                <div className="self-start rounded-2xl border border-border bg-muted p-4 text-sm text-muted-foreground">
-                  Clinic Copilot is working...
-                </div>
-              )}
-            </CardContent>
-
-            <div className="p-4">
-              <div className="flex flex-wrap gap-2 mb-3">
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleDailyReport}
-                  disabled={isLoading}
-                >
-                  Daily Report
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={handlePatientReport}
-                  disabled={isLoading || !query.trim()}
-                >
-                  Patient Report
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleRangeReport("monthly")}
-                  disabled={isLoading}
-                >
-                  Monthly Report
-                </Button>
-
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => handleRangeReport("yearly")}
-                  disabled={isLoading}
-                >
-                  Yearly Report
-                </Button>
-              </div>
-
-              <form className="flex gap-4 items-center" onSubmit={handleSend}>
-                <div className="relative flex-1 overflow-hidden rounded-md border border-border">
-                  <Input
-                    placeholder="Ask a question or type a patient name (e.g. Chad Wick)"
-                    className="h-12 border-none bg-transparent text-foreground focus-visible:ring-0 focus-visible:ring-offset-0"
-                    value={query}
-                    onChange={(e) => setQuery(e.target.value)}
-                    disabled={isLoading}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={isLoading || !query.trim()}
-                  className="h-12 w-12 shrink-0 bg-button-primary text-white shadow-sm hover:bg-button-primary-foreground"
-                >
-                  <Send size={20} />
-                </Button>
-              </form>
+        <Card className="border-border shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Calendar className="h-5 w-5 text-button-primary" />
+              Today&apos;s schedule
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-xl border border-border bg-muted/40 p-4">
+              <p className="text-sm text-muted-foreground">Appointments today</p>
+              <p className="mt-1 text-3xl font-bold text-foreground">
+                {stats.todaysAppointments}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {stats.todayCompleted} completed · clinic day (Alberta time)
+              </p>
             </div>
-          </Card>
-        )}
-
-        <Button
-          onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`h-16 w-16 rounded-full shadow-lg transition-all duration-300 ${
-            isChatOpen
-              ? "rotate-90 bg-muted text-foreground hover:bg-muted/80"
-              : "scale-110 bg-button-primary text-white hover:bg-button-primary-foreground"
-          }`}
-        >
-          {isChatOpen ? <X size={28} /> : <MessageCircle size={28} />}
-        </Button>
+            <Link href="/" className="block">
+              <Button variant="secondary" className="w-full font-semibold">
+                Open scheduler
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
-    </>
+
+      <Card className="mb-4 border-border shadow-sm">
+        <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <CardTitle className="text-lg font-semibold">
+              Latest appointments
+            </CardTitle>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Most recent visits by appointment date (all statuses)
+            </p>
+          </div>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="relative w-full sm:w-52">
+              <Search
+                className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                placeholder="Search…"
+                className="h-10 pl-9"
+                value={tableSearch}
+                onChange={(e) => setTableSearch(e.target.value)}
+              />
+            </div>
+            <Button variant="outline" className="font-semibold" asChild>
+              <Link href="/Summary/history">Visit history</Link>
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="overflow-x-auto pb-6">
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Patient</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Provider</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAppointments.length > 0 ? (
+                filteredAppointments.map((row) => (
+                  <TableRow key={row.id} className="hover:bg-muted/30">
+                    <TableCell className="font-medium">
+                      <Link
+                        href={`/Patients?patientId=${row.patientId}`}
+                        className="text-button-primary hover:underline"
+                      >
+                        {row.patient}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{formatVisitDate(row.date)}</TableCell>
+                    <TableCell>{row.type || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {row.providerName}
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <StatusBadge status={normalizeStatus(row.status)} />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="p-0">
+                    <EmptyState
+                      title="No appointments"
+                      description="Scheduled visits will appear here."
+                    />
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card className="border-border shadow-sm">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+            <FileText className="h-5 w-5 text-button-primary" />
+            Detailed reports (Copilot)
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Structured reports from live clinic data. Requires Azure OpenAI in
+            production.
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={reportLoading}
+              onClick={() => runCopilot({ mode: "daily_report" })}
+            >
+              Today&apos;s operations
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={reportLoading}
+              onClick={() => runCopilot({ mode: "range_report", range: "monthly" })}
+            >
+              Monthly summary
+            </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={reportLoading}
+              onClick={() => runCopilot({ mode: "range_report", range: "yearly" })}
+            >
+              Yearly summary
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
+            <Input
+              placeholder="Patient name for report (e.g. first and last name)"
+              value={patientQuery}
+              onChange={(e) => setPatientQuery(e.target.value)}
+              disabled={reportLoading}
+              className="flex-1"
+            />
+            <Button
+              variant="outline"
+              disabled={reportLoading || !patientQuery.trim()}
+              onClick={() =>
+                runCopilot({
+                  mode: "patient_report",
+                  prompt: patientQuery.trim(),
+                })
+              }
+            >
+              Patient report
+            </Button>
+          </div>
+
+          {reportLoading ? (
+            <p className="text-sm text-muted-foreground">Generating report…</p>
+          ) : null}
+
+          {reportMessage ? (
+            <div className="rounded-lg border border-border bg-muted/30 p-4 text-sm">
+              {reportMessage.type === "report" ? (
+                <ReportMessage
+                  reportKind={reportMessage.reportKind}
+                  report={reportMessage.report}
+                  formatAiDate={formatAiDate}
+                />
+              ) : (
+                <p className="whitespace-pre-wrap">{reportMessage.content}</p>
+              )}
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
-function StatCard({ title, value, icon, trend }) {
+function BriefingCard({ briefing, className = "" }) {
   return (
-    <Card className="border-border bg-card shadow-sm transition-shadow hover:shadow-md">
-      <CardContent className="pt-8 px-6 pb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="rounded-xl bg-muted p-3 text-button-primary">
-            {React.cloneElement(icon, { size: 24, className: "text-current" })}
-          </div>
-          <div className="flex items-center rounded-md bg-status-checked-in/25 px-2 py-1 text-sm font-semibold text-status-checked-in-foreground">
-            {trend} <ArrowUpRight size={16} className="ml-1" />
-          </div>
-        </div>
-        <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-          {title}
-        </h3>
-        <p className="mt-1 text-3xl font-bold text-foreground">{value}</p>
+    <Card className={`border-border shadow-sm ${className}`}>
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+          <Sparkles className="h-5 w-5 text-button-primary" />
+          Today&apos;s briefing
+        </CardTitle>
+        {briefing?.clinicDate ? (
+          <p className="text-sm text-muted-foreground">
+            Clinic date {briefing.clinicDate} (Alberta)
+          </p>
+        ) : null}
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {briefing?.items?.length ? (
+          briefing.items.map((item) => (
+            <div
+              key={item.id}
+              className={`flex gap-3 rounded-lg border px-3 py-3 text-sm ${
+                item.tone === "attention"
+                  ? "border-amber-500/40 bg-amber-500/10"
+                  : item.tone === "positive"
+                    ? "border-emerald-500/30 bg-emerald-500/10"
+                    : "border-border bg-muted/30"
+              }`}
+            >
+              {item.tone === "attention" ? (
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+              ) : item.tone === "positive" ? (
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+              ) : (
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              )}
+              <div className="min-w-0 flex-1">
+                <p className="leading-relaxed">{item.message}</p>
+                {item.link ? (
+                  <Link
+                    href={item.link.href}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-button-primary hover:underline"
+                  >
+                    {item.link.label}
+                    <ArrowRight className="h-3 w-3" />
+                  </Link>
+                ) : null}
+              </div>
+            </div>
+          ))
+        ) : (
+          <p className="text-sm text-muted-foreground">
+            Briefing will appear when clinic data is available.
+          </p>
+        )}
       </CardContent>
     </Card>
   );
 }
 
+function StatCard({ title, value, caption, icon }) {
+  return (
+    <Card className="border-border bg-card shadow-sm">
+      <CardContent className="px-5 pb-5 pt-6">
+        <div className="mb-3 flex items-start justify-between">
+          <div className="rounded-lg bg-muted p-2.5 text-button-primary">
+            {React.cloneElement(icon, { size: 20, className: "text-current" })}
+          </div>
+        </div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {title}
+        </p>
+        <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
+        {caption ? (
+          <p className="mt-1 text-xs text-muted-foreground">{caption}</p>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
+
+function formatCurrency(amount) {
+  return new Intl.NumberFormat("en-CA", {
+    style: "currency",
+    currency: "CAD",
+    maximumFractionDigits: 2,
+  }).format(Number(amount || 0));
+}
+
+function formatVisitDate(dateValue) {
+  if (!dateValue) return "—";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-CA", {
+    timeZone: "America/Edmonton",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
+function formatAiDate(dateValue) {
+  if (!dateValue) return "—";
+  const date = new Date(dateValue);
+  if (Number.isNaN(date.getTime())) return String(dateValue);
+  return date.toLocaleString("en-CA", {
+    timeZone: "America/Edmonton",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function normalizeStatus(status) {
+  if (!status) return "Pending";
+  const lower = String(status).toLowerCase();
+
+  if (
+    lower === "checked-out" ||
+    lower === "checked_out" ||
+    lower === "completed" ||
+    lower === "complete"
+  ) {
+    return "Completed";
+  }
+  if (lower === "checked-in" || lower === "checked_in") {
+    return "In Progress";
+  }
+  if (lower === "cancelled" || lower === "canceled") return "Cancelled";
+  if (lower === "requested") return "Requested";
+  if (lower === "confirmed") return "Confirmed";
+
+  return String(status)
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 function StatusBadge({ status }) {
   return (
     <span
-      className={`inline-flex min-w-24 items-center justify-center rounded-full px-3 py-1.5 text-sm font-semibold ${getHistoryStatusBadgeClasses(status)}`}
+      className={`inline-flex min-w-24 items-center justify-center rounded-full px-3 py-1 text-xs font-semibold ${getHistoryStatusBadgeClasses(status)}`}
     >
       {status}
     </span>
@@ -697,41 +555,43 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
     return (
       <div className="space-y-3">
         <div>
-          <p className="font-bold text-base">{report.title || "Daily Report"}</p>
-          {report.reportDate && (
-            <p className="mt-1 text-xs text-muted-foreground">{report.reportDate}</p>
-          )}
+          <p className="font-bold">{report.title || "Daily Report"}</p>
+          {report.reportDate ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              {report.reportDate}
+            </p>
+          ) : null}
         </div>
 
-        {report.summary && (
+        {report.summary ? (
           <div>
-            <p className="font-semibold text-sm mb-1">Summary</p>
-            <p className="text-sm leading-6">{report.summary}</p>
+            <p className="mb-1 font-semibold">Summary</p>
+            <p className="leading-relaxed">{report.summary}</p>
           </div>
-        )}
+        ) : null}
 
-        {report.metrics && (
+        {report.metrics ? (
           <div>
-            <p className="font-semibold text-sm mb-2">Metrics</p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <p className="mb-2 font-semibold">Metrics</p>
+            <div className="grid grid-cols-2 gap-2 text-xs sm:grid-cols-3">
               <MiniMetric label="Total" value={report.metrics.totalAppointments} />
               <MiniMetric label="Completed" value={report.metrics.completed} />
               <MiniMetric label="Cancelled" value={report.metrics.cancelled} />
-              <MiniMetric label="Checked In" value={report.metrics.checkedIn} />
+              <MiniMetric label="Checked in" value={report.metrics.checkedIn} />
               <MiniMetric label="Requested" value={report.metrics.requested} />
               <MiniMetric label="Confirmed" value={report.metrics.confirmed} />
             </div>
           </div>
-        )}
+        ) : null}
 
-        {!!report.practitionerBreakdown?.length && (
+        {!!report.practitionerBreakdown?.length ? (
           <div>
-            <p className="font-semibold text-sm mb-1">Practitioner Breakdown</p>
+            <p className="mb-1 font-semibold">By practitioner</p>
             <div className="space-y-1">
               {report.practitionerBreakdown.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm"
+                  className="flex justify-between rounded-md border border-border bg-background px-3 py-2"
                 >
                   <span>{item.practitionerName}</span>
                   <span className="font-semibold">{item.appointmentCount}</span>
@@ -739,29 +599,29 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
               ))}
             </div>
           </div>
-        )}
+        ) : null}
 
-        {!!report.highlights?.length && (
+        {!!report.highlights?.length ? (
           <div>
-            <p className="font-semibold text-sm mb-1">Highlights</p>
-            <ul className="list-disc pl-5 text-sm space-y-1">
+            <p className="mb-1 font-semibold">Highlights</p>
+            <ul className="list-disc space-y-1 pl-5">
               {report.highlights.map((item, index) => (
                 <li key={index}>{item}</li>
               ))}
             </ul>
           </div>
-        )}
+        ) : null}
 
-        {!!report.recommendedActions?.length && (
+        {!!report.recommendedActions?.length ? (
           <div>
-            <p className="font-semibold text-sm mb-1">Recommended Actions</p>
-            <ul className="list-disc pl-5 text-sm space-y-1">
+            <p className="mb-1 font-semibold">Recommended actions</p>
+            <ul className="list-disc space-y-1 pl-5">
               {report.recommendedActions.map((item, index) => (
                 <li key={index}>{item}</li>
               ))}
             </ul>
           </div>
-        )}
+        ) : null}
       </div>
     );
   }
@@ -770,74 +630,55 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
     return (
       <div className="space-y-3">
         <div>
-          <p className="font-bold text-base">{report.title || "Patient Report"}</p>
-          {report.patientName && (
-            <p className="mt-1 text-sm text-muted-foreground">Patient: {report.patientName}</p>
-          )}
+          <p className="font-bold">{report.title || "Patient Report"}</p>
+          {report.patientName ? (
+            <p className="mt-1 text-muted-foreground">
+              Patient: {report.patientName}
+            </p>
+          ) : null}
         </div>
 
-        {report.summary && (
+        {report.summary ? (
           <div>
-            <p className="font-semibold text-sm mb-1">Summary</p>
-            <p className="text-sm leading-6">{report.summary}</p>
+            <p className="mb-1 font-semibold">Summary</p>
+            <p className="leading-relaxed">{report.summary}</p>
           </div>
-        )}
+        ) : null}
 
-        {report.contact && (
-          <div>
-            <p className="font-semibold text-sm mb-2">Contact</p>
-            <div className="space-y-1 text-sm">
-              <p>Email: {report.contact.email || "—"}</p>
-              <p>Phone: {report.contact.phone || "—"}</p>
-            </div>
+        {report.contact ? (
+          <div className="space-y-1 text-sm">
+            <p className="font-semibold">Contact</p>
+            <p>Email: {report.contact.email || "—"}</p>
+            <p>Phone: {report.contact.phone || "—"}</p>
           </div>
-        )}
+        ) : null}
 
-        {report.totals && (
-          <div>
-            <p className="font-semibold text-sm mb-2">Totals</p>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <MiniMetric label="Appointments" value={report.totals.totalAppointments} />
-              <MiniMetric label="Completed" value={report.totals.completed} />
-              <MiniMetric label="Cancelled" value={report.totals.cancelled} />
-            </div>
+        {report.totals ? (
+          <div className="grid grid-cols-3 gap-2 text-xs">
+            <MiniMetric label="Appointments" value={report.totals.totalAppointments} />
+            <MiniMetric label="Completed" value={report.totals.completed} />
+            <MiniMetric label="Cancelled" value={report.totals.cancelled} />
           </div>
-        )}
+        ) : null}
 
-        {!!report.recentAppointments?.length && (
+        {!!report.recentAppointments?.length ? (
           <div>
-            <p className="font-semibold text-sm mb-1">Recent Appointments</p>
+            <p className="mb-1 font-semibold">Recent appointments</p>
             <div className="space-y-2">
               {report.recentAppointments.map((appt, index) => (
                 <div
                   key={index}
-                  className="space-y-1 rounded-lg border border-border bg-muted/50 px-3 py-2 text-[11px] leading-5"
+                  className="rounded-md border border-border bg-background px-3 py-2 text-xs"
                 >
                   <p className="font-semibold">{appt.type}</p>
                   <p>{formatAiDate(appt.date)}</p>
                   <p>Status: {appt.status}</p>
                   <p>Provider: {appt.providerName}</p>
-                  {appt.paymentAmount !== null && (
-                    <p>
-                      Payment: ${appt.paymentAmount} {appt.paymentMethod || ""}
-                    </p>
-                  )}
                 </div>
               ))}
             </div>
           </div>
-        )}
-
-        {!!report.recommendedActions?.length && (
-          <div>
-            <p className="font-semibold text-sm mb-1">Recommended Actions</p>
-            <ul className="list-disc pl-5 text-sm space-y-1">
-              {report.recommendedActions.map((item, index) => (
-                <li key={index}>{item}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+        ) : null}
       </div>
     );
   }
@@ -847,9 +688,9 @@ function ReportMessage({ reportKind, report, formatAiDate }) {
 
 function MiniMetric({ label, value }) {
   return (
-    <div className="min-w-0 rounded-lg border border-border bg-muted/40 px-2 py-2">
-      <p className="break-words text-[11px] leading-4 text-muted-foreground">{label}</p>
-      <p className="mt-1 text-sm font-bold text-foreground">{value ?? 0}</p>
+    <div className="rounded-md border border-border bg-background px-2 py-2">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-sm font-bold">{value ?? 0}</p>
     </div>
   );
 }

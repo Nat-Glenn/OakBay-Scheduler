@@ -1,112 +1,185 @@
+/**
+ * Practice overview stats — clinic timezone revenue, today's volume, briefing, latest appointments.
+ */
+
 import { prisma } from "@/lib/prisma";
 import { serverError } from "@/lib/api";
 import { withAuthSimple } from "@/lib/withAuth";
+import { buildClinicBriefing } from "@/lib/summary/briefing";
+import {
+  getClinicMonthBounds,
+  getClinicPriorWeekBounds,
+  getClinicTodayBounds,
+  getClinicTodayParts,
+  getClinicWeekToDateBounds,
+  getClinicYearBounds,
+} from "@/lib/summary/clinicPeriods";
+
+function formatClinicDateLabel(at: Date = new Date()) {
+  const parts = getClinicTodayParts(at);
+  const { start } = getClinicTodayBounds(at);
+  return start.toLocaleDateString("en-CA", {
+    timeZone: "America/Edmonton",
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
 
 export const GET = withAuthSimple(async () => {
   try {
     const now = new Date();
-
-    // Calgary timezone — handles MDT (UTC-6) and MST (UTC-7) automatically
-    const CALGARY_TZ = "America/Edmonton";
-
-    // Determine Calgary's current UTC offset in milliseconds
-    const utcMs = new Date(now.toLocaleString("en-US", { timeZone: "UTC" })).getTime();
-    const calgaryMs = new Date(now.toLocaleString("en-US", { timeZone: CALGARY_TZ })).getTime();
-    const offsetMs = utcMs - calgaryMs;
-
-    // Get today's date in Calgary timezone
-    const calgaryDateStr = now.toLocaleDateString("en-CA", { timeZone: CALGARY_TZ });
-    const [year, month, day] = calgaryDateStr.split("-").map(Number);
-
-    // Start and end of today in Calgary, expressed as UTC
-    const startOfToday = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0) + offsetMs);
-    const endOfToday = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999) + offsetMs);
-
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const startOfNextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-    // Start of current week (Monday)
-    const startOfWeek = new Date(now);
-    const dayOfWeek = startOfWeek.getDay();
-    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    startOfWeek.setDate(startOfWeek.getDate() + diff);
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    // Start of current year
-    const startOfYear = new Date(now.getFullYear(), 0, 1);
-    const startOfNextYear = new Date(now.getFullYear() + 1, 0, 1);
+    const todayBounds = getClinicTodayBounds(now);
+    const weekBounds = getClinicWeekToDateBounds(now);
+    const priorWeekBounds = getClinicPriorWeekBounds(now);
+    const monthBounds = getClinicMonthBounds(now);
+    const yearBounds = getClinicYearBounds(now);
 
     const [
       totalPatients,
       todaysAppointments,
-      monthlyPayments,
-      weeklyPayments,
-      yearlyPayments,
-      recentAppointments,
+      weeklyRevenueAgg,
+      priorWeekRevenueAgg,
+      monthlyRevenueAgg,
+      yearlyRevenueAgg,
+      allTimeRevenueAgg,
+      weeklyPaymentCount,
+      monthlyPaymentCount,
+      yearlyPaymentCount,
+      latestAppointments,
+      briefing,
     ] = await Promise.all([
-
       prisma.patient.count(),
 
       prisma.appointment.count({
         where: {
           startTime: {
-            gte: startOfToday,
-            lte: endOfToday,
+            gte: todayBounds.start,
+            lte: todayBounds.end,
           },
         },
       }),
 
-      prisma.payment.findMany({
+      prisma.payment.aggregate({
         where: {
-          createdAt: { gte: startOfMonth, lt: startOfNextMonth },
+          createdAt: { gte: weekBounds.start, lte: weekBounds.end },
         },
-        select: { amount: true },
+        _sum: { amount: true },
       }),
 
-      // Weekly revenue — current Monday to end of today
-      prisma.payment.findMany({
+      prisma.payment.aggregate({
         where: {
-          createdAt: { gte: startOfWeek, lte: endOfToday },
+          createdAt: {
+            gte: priorWeekBounds.start,
+            lte: priorWeekBounds.end,
+          },
         },
-        select: { amount: true },
+        _sum: { amount: true },
       }),
 
-      // Yearly revenue — Jan 1 to end of year
-      prisma.payment.findMany({
+      prisma.payment.aggregate({
         where: {
-          createdAt: { gte: startOfYear, lt: startOfNextYear },
+          createdAt: { gte: monthBounds.start, lte: monthBounds.end },
         },
-        select: { amount: true },
+        _sum: { amount: true },
+      }),
+
+      prisma.payment.aggregate({
+        where: {
+          createdAt: { gte: yearBounds.start, lte: yearBounds.end },
+        },
+        _sum: { amount: true },
+      }),
+
+      prisma.payment.aggregate({
+        _sum: { amount: true },
+      }),
+
+      prisma.payment.count({
+        where: {
+          createdAt: { gte: weekBounds.start, lte: weekBounds.end },
+        },
+      }),
+
+      prisma.payment.count({
+        where: {
+          createdAt: { gte: monthBounds.start, lte: monthBounds.end },
+        },
+      }),
+
+      prisma.payment.count({
+        where: {
+          createdAt: { gte: yearBounds.start, lte: yearBounds.end },
+        },
       }),
 
       prisma.appointment.findMany({
         orderBy: { startTime: "desc" },
         take: 10,
-        include: { patient: true },
+        select: {
+          id: true,
+          startTime: true,
+          type: true,
+          status: true,
+          patient: {
+            select: { id: true, firstName: true, lastName: true },
+          },
+          provider: {
+            select: { name: true },
+          },
+        },
       }),
+
+      buildClinicBriefing(),
     ]);
 
-    const monthlyRevenue = monthlyPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-    const weeklyRevenue = weeklyPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-    const yearlyRevenue = yearlyPayments.reduce((sum, p) => sum + Number(p.amount), 0);
+    const weeklyRevenue = Number(weeklyRevenueAgg._sum.amount ?? 0);
+    const monthlyRevenue = Number(monthlyRevenueAgg._sum.amount ?? 0);
+    const yearlyRevenue = Number(yearlyRevenueAgg._sum.amount ?? 0);
+    const allTimeRevenue = Number(allTimeRevenueAgg._sum.amount ?? 0);
+    const priorWeekRevenue = Number(priorWeekRevenueAgg._sum.amount ?? 0);
+    const weeklyRevenueChangePct =
+      priorWeekRevenue > 0
+        ? Math.round(((weeklyRevenue - priorWeekRevenue) / priorWeekRevenue) * 100)
+        : null;
 
-    const recentVisits = recentAppointments.map((appointment) => ({
+    const revenueSpansMatch =
+      weeklyRevenue > 0 &&
+      weeklyRevenue === monthlyRevenue &&
+      monthlyRevenue === yearlyRevenue &&
+      yearlyRevenue === allTimeRevenue;
+
+    const latest = latestAppointments.map((appointment) => ({
       id: appointment.id,
+      patientId: appointment.patient.id,
       patient: `${appointment.patient.firstName} ${appointment.patient.lastName}`,
       date: appointment.startTime,
       type: appointment.type,
       status: appointment.status,
+      providerName: appointment.provider?.name ?? "—",
     }));
 
     return Response.json({
+      asOfLabel: formatClinicDateLabel(now),
+      revenueNote: "Revenue is based on checkout date (when payment was recorded).",
       stats: {
         totalPatients,
         todaysAppointments,
-        monthlyRevenue,
         weeklyRevenue,
+        priorWeekRevenue,
+        weeklyRevenueChangePct,
+        monthlyRevenue,
         yearlyRevenue,
+        allTimeRevenue,
+        weeklyPaymentCount,
+        monthlyPaymentCount,
+        yearlyPaymentCount,
+        revenueSpansMatch,
+        todayCompleted: briefing.today.completed,
       },
-      recentVisits,
+      briefing,
+      latestAppointments: latest,
     });
   } catch (err) {
     console.error("GET /api/summary error:", err);
