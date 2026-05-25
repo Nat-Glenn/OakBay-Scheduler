@@ -12,7 +12,7 @@ const SESSION_COOKIE_NAME = "__session";
 
 const PUBLIC_PAGE_PREFIXES = ["/Login", "/book"];
 
-const PUBLIC_API_PREFIXES = ["/api/auth/session"];
+const PUBLIC_API_PREFIXES = ["/api/auth/session", "/api/health"];
 
 function isPublicPage(pathname: string) {
   return PUBLIC_PAGE_PREFIXES.some(
