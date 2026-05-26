@@ -6,7 +6,19 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { apiFetch } from "@/utils/apiFetch";
+import { isAuthSkippedClient } from "@/utils/authConfig";
+
+function isPublicAppPath(pathname) {
+  if (!pathname) return false;
+  return (
+    pathname === "/Login" ||
+    pathname.startsWith("/Login/") ||
+    pathname === "/book" ||
+    pathname.startsWith("/book/")
+  );
+}
 
 const SessionContext = createContext({
   session: null,
@@ -15,6 +27,7 @@ const SessionContext = createContext({
 });
 
 export function SessionProvider({ children }) {
+  const pathname = usePathname();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -23,6 +36,15 @@ export function SessionProvider({ children }) {
     let ignore = false;
 
     async function load() {
+      if (isPublicAppPath(pathname) && !isAuthSkippedClient()) {
+        if (!ignore) {
+          setSession(null);
+          setError("");
+          setLoading(false);
+        }
+        return;
+      }
+
       setLoading(true);
       setError("");
 
@@ -49,7 +71,7 @@ export function SessionProvider({ children }) {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [pathname]);
 
   return (
     <SessionContext.Provider value={{ session, loading, error }}>

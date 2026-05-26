@@ -58,9 +58,6 @@ export async function resolveAppUser(
   });
 
   if (!dbUser) {
-    if (process.env.NODE_ENV !== "production") {
-      return loadBradSessionUser(authUser);
-    }
     return null;
   }
 

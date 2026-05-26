@@ -16,7 +16,8 @@ const ROUTE_ROLES: Record<string, AppRoleValue[]> = {
   "/Billing": ALL_STAFF,
   "/Requests": ALL_STAFF,
   "/StaffSchedule": ALL_STAFF,
-  "/Practitioners": [AppRole.ADMIN],
+  "/Team": ALL_STAFF,
+  "/Practitioners": ALL_STAFF,
   "/Patients": ALL_STAFF,
   "/Patients/AddPatient": ALL_STAFF,
   "/Summary": ALL_STAFF,
@@ -40,9 +41,13 @@ export function canAccessRoute(pathname: string, role: AppRoleValue): boolean {
   return true;
 }
 
-export function canManagePractitioners(role: AppRoleValue): boolean {
+/** Admin-only: add/edit team members (chiropractors and receptionists). */
+export function canManageTeam(role: AppRoleValue): boolean {
   return role === AppRole.ADMIN;
 }
+
+/** @deprecated Use canManageTeam */
+export const canManagePractitioners = canManageTeam;
 
 export function canManageStaffSchedule(role: AppRoleValue): boolean {
   return role === AppRole.ADMIN;

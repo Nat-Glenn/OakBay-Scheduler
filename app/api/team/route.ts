@@ -1,54 +1,54 @@
+/**
+ * Clinic team directory — list all staff (GET); create staff member (POST, admin).
+ * Scheduler booking continues to use GET /api/practitioners (chiropractors only).
+ */
+
 import { prisma } from "@/lib/prisma";
 import { hashPassword } from "@/lib/hash";
 import { withAuthSimple, withRoles } from "@/lib/withAuth";
 import { AppRole } from "@/lib/auth/roles";
-import { badRequest, conflict, serverError } from "@/lib/api";
-import { createPractitionerSchema } from "@/lib/practitioners/schemas";
+import { badRequest, conflict, created, serverError } from "@/lib/api";
+import { createTeamMemberSchema } from "@/lib/team/schemas";
 import { parseBody } from "@/lib/validation/parseBody";
 import {
   deleteStaffAuthUser,
   firebaseProvisionErrorMessage,
   provisionStaffAuthUser,
 } from "@/lib/firebase/provisionStaffUser";
-import {
-  ClinicDbRole,
-  SCHEDULER_STAFF_ROLES,
-} from "@/lib/auth/constants";
+
+const teamSelect = {
+  id: true,
+  name: true,
+  email: true,
+  phone: true,
+  role: true,
+} as const;
 
 export const GET = withAuthSimple(async () => {
   try {
-    const practitioners = await prisma.user.findMany({
-      where: {
-        role: { in: [...SCHEDULER_STAFF_ROLES] },
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        phone: true,
-      },
-      orderBy: {
-        id: "asc",
-      },
+    const members = await prisma.user.findMany({
+      select: teamSelect,
+      orderBy: [{ role: "asc" }, { name: "asc" }],
     });
 
-    return Response.json(practitioners);
+    return Response.json(members);
   } catch (err) {
-    console.error("Failed to fetch practitioners:", err);
-    return serverError("Failed to fetch practitioners");
+    console.error("Failed to fetch team:", err);
+    return serverError("Failed to fetch team");
   }
 });
 
 export const POST = withRoles([AppRole.ADMIN], async (req) => {
   try {
     const body = await req.json();
-    const parsed = parseBody(createPractitionerSchema, body);
+    const parsed = parseBody(createTeamMemberSchema, body);
     if (!parsed.ok) return parsed.response;
 
-    const { name, email, phone } = parsed.data;
+    const { name, email, phone, role } = parsed.data;
 
     const existingUser = await prisma.user.findUnique({
       where: { email },
+      select: { id: true },
     });
 
     if (existingUser) {
@@ -67,29 +67,25 @@ export const POST = withRoles([AppRole.ADMIN], async (req) => {
     const hashedPassword = await hashPassword("temp123");
 
     try {
-      const practitioner = await prisma.user.create({
+      const member = await prisma.user.create({
         data: {
           name,
           email,
           phone: phone || null,
-          role: ClinicDbRole.Chiropractor,
+          role,
           password: hashedPassword,
         },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          phone: true,
-        },
+        select: teamSelect,
       });
 
-      return Response.json(practitioner, { status: 201 });
+      return created(member);
     } catch (err) {
       await deleteStaffAuthUser(firebaseUid);
-      throw err;
+      console.error("Failed to create team member:", err);
+      return serverError("Failed to create team member");
     }
   } catch (err) {
-    console.error("Failed to create practitioner:", err);
-    return serverError("Failed to create practitioner");
+    console.error("Failed to create team member:", err);
+    return serverError("Failed to create team member");
   }
 });

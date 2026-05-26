@@ -33,6 +33,7 @@ const NAV_ICONS = {
   "/Requests": GrTask,
   "/StaffSchedule": GrCalendar,
   "/Billing": GrMoney,
+  "/Team": GrUserManager,
   "/Practitioners": GrUserManager,
   "/Patients": GrUser,
   "/Summary": GrTask,

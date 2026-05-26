@@ -13,7 +13,7 @@ export const AppRole = {
 export type AppRoleValue = (typeof AppRole)[keyof typeof AppRole];
 
 /** Clinic owner / lead — full access including team management. */
-const ADMIN_EMAILS = new Set(["brad.pritchard@oakbay.com"]);
+const ADMIN_EMAILS = new Set(["anatglenn@gmail.com"]);
 
 export function isAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false;

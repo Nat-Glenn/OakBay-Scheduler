@@ -18,7 +18,16 @@ export async function apiFetch(url, options = {}) {
     typeof window !== "undefined" &&
     !isAuthSkippedClient()
   ) {
-    window.location.href = "/Login";
+    const path = window.location.pathname;
+    const onPublicPage =
+      path === "/Login" ||
+      path.startsWith("/Login/") ||
+      path === "/book" ||
+      path.startsWith("/book/");
+
+    if (!onPublicPage) {
+      window.location.href = "/Login";
+    }
   }
 
   return res;

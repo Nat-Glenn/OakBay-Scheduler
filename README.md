@@ -38,7 +38,13 @@ Requires both `DATABASE_URL` (pooled Neon URL) and `DIRECT_URL` (non-pooler URL)
 npm run dev
 ```
 
-Sign in at `/Login` with a Firebase account that has a verified email.
+Sign in at `/Login` with a staff email that exists in the database (Team page).
+
+**Firebase (required for login):**
+
+1. Add client keys and `FIREBASE_SERVICE_ACCOUNT_PATH` (or `FIREBASE_SERVICE_ACCOUNT_JSON`) — see `.env.example`.
+2. Staff added under **Team** (admin) get a Firebase login automatically in demo mode (`DEMO_STAFF_PASSWORD`, default `123456`). No invite email is sent.
+3. Each person's Firebase email must match their row in the database.
 
 ### Operations & compliance
 
@@ -53,7 +59,7 @@ In `.env.local` (development only):
 NEXT_PUBLIC_SKIP_AUTH=true
 ```
 
-Restart `npm run dev`, then open `http://localhost:3000` directly. A yellow banner confirms auth is off. **Remove this line** once `FIREBASE_SERVICE_ACCOUNT_JSON` is configured — it has no effect in production builds.
+Restart `npm run dev`, then open `http://localhost:3000` directly. A yellow banner confirms auth is off. **Remove this line** once Firebase is configured — it has no effect in production builds.
 
 ### Optional: local AI code assistant
 

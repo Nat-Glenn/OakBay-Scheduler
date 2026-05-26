@@ -37,7 +37,8 @@ export async function POST(req: Request) {
       err instanceof Error ? err.message : "Failed to create session";
     const isConfig =
       message.includes("FIREBASE_SERVICE_ACCOUNT_JSON") ||
-      message.includes("service account");
+      message.includes("service account") ||
+      message.includes("not valid JSON");
     return Response.json(
       {
         error: isConfig

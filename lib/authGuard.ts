@@ -3,8 +3,20 @@
  * Verifies Bearer ID tokens or the __session HTTP-only cookie.
  */
 
+import { readFileSync } from "fs";
+import { resolve } from "path";
 import { getApps, initializeApp, cert, App } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
+import { getAuth, type Auth } from "firebase-admin/auth";
+
+function loadServiceAccountRaw(): string {
+  const filePath = process.env.FIREBASE_SERVICE_ACCOUNT_PATH?.trim();
+  if (filePath) {
+    const absolute = resolve(process.cwd(), filePath);
+    return readFileSync(absolute, "utf8");
+  }
+
+  return process.env.FIREBASE_SERVICE_ACCOUNT_JSON?.trim() ?? "";
+}
 
 export const SESSION_COOKIE_NAME = "__session";
 
@@ -19,18 +31,31 @@ export type AuthUser = {
 function getAdminApp(): App {
   if (getApps().length > 0) return getApps()[0];
 
-  const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+  const serviceAccount = loadServiceAccountRaw();
 
   if (!serviceAccount) {
     throw new Error(
-      "FIREBASE_SERVICE_ACCOUNT_JSON is not set. " +
-        "Download your service account key from Firebase Console > Project Settings > Service Accounts.",
+      "Firebase Admin is not configured. Set FIREBASE_SERVICE_ACCOUNT_PATH (path to downloaded JSON) or FIREBASE_SERVICE_ACCOUNT_JSON in .env.local.",
+    );
+  }
+
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(serviceAccount) as Record<string, unknown>;
+  } catch {
+    throw new Error(
+      "Firebase service account is not valid JSON. Use FIREBASE_SERVICE_ACCOUNT_PATH pointing at the downloaded key file, or paste the full JSON on one line in FIREBASE_SERVICE_ACCOUNT_JSON.",
     );
   }
 
   return initializeApp({
-    credential: cert(JSON.parse(serviceAccount)),
+    credential: cert(parsed),
   });
+}
+
+/** Firebase Admin Auth — used for session verification and staff provisioning. */
+export function getFirebaseAdminAuth(): Auth {
+  return getAuth(getAdminApp());
 }
 
 function getSessionFromCookieHeader(cookieHeader: string | null): string | null {

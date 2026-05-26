@@ -5,7 +5,7 @@
  */
 
 import { useEffect } from "react";
-import { onAuthStateChanged } from "firebase/auth";
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { auth } from "@/app/Login/Firebase/firebase";
 import { syncAuthSession } from "@/utils/authSession";
 import { isAuthSkippedClient } from "@/utils/authConfig";
@@ -22,6 +22,7 @@ export default function AuthSessionSync() {
               method: "DELETE",
               credentials: "include",
             });
+            await signOut(auth);
             return;
           }
         }

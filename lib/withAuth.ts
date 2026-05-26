@@ -31,7 +31,7 @@ async function authenticate(req: Request): Promise<AppSessionUser | Response> {
   const sessionUser = await resolveAppUser(authUser);
   if (!sessionUser) {
     return forbidden(
-      "Your account is not linked to a clinic user. Ask an administrator to add your email in Practitioners.",
+      "Your account is not linked to a clinic user. Ask an administrator to add your email under Team.",
     );
   }
 
