@@ -1,4 +1,10 @@
+/**
+ * Reusable form fields — text, masked inputs, and searchable dropdowns.
+ */
+
 "use client";
+
+import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
 import {
@@ -13,10 +19,114 @@ import {
   InputGroupButton,
   InputGroupInput,
 } from "./ui/input-group";
-import { Check, ChevronDownIcon, Search, X } from "lucide-react";
+import { Check, ChevronDownIcon, Eye, EyeOff, Search, X } from "lucide-react";
 import { Input } from "./ui/input";
-import { useRef } from "react";
 import { toast } from "sonner";
+import { formatNorthAmericanPhone } from "@/lib/formatting/phone";
+import { formatCurrencyInput } from "@/lib/formatting/currency";
+
+function PractitionerDropdownOption({ item, displayText, setItemSearch, setSearch }) {
+  const handleSelect = (event) => {
+    if (item.disabled) {
+      event.preventDefault();
+      if (item.booked) {
+        toast.warning(
+          "This chiropractor already has an appointment at this time.",
+          { position: "top-right" },
+        );
+      } else {
+        toast.warning("This chiropractor is not on shift for the selected time.", {
+          position: "top-right",
+        });
+      }
+      return;
+    }
+    setItemSearch(item.name);
+    if (setSearch) setSearch("");
+  };
+
+  return (
+    <DropdownMenuItem
+      key={item.id}
+      disabled={item.disabled}
+      onSelect={handleSelect}
+      className={`flex items-start gap-2 py-2 ${
+        item.disabled
+          ? "cursor-not-allowed opacity-60"
+          : "text-foreground"
+      }`}
+    >
+      <Check
+        className={
+          displayText === item.name
+            ? "mt-0.5 shrink-0 text-foreground opacity-100"
+            : "mt-0.5 shrink-0 text-foreground opacity-0"
+        }
+      />
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="flex flex-wrap items-center gap-2 font-medium">
+          {item.name}
+          {item.booked ? (
+            <span className="rounded-md bg-destructive/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-destructive">
+              Booked
+            </span>
+          ) : null}
+          {!item.booked && item.onShift === true ? (
+            <span className="rounded-md bg-status-checked-in/35 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-status-checked-in-foreground">
+              On shift
+            </span>
+          ) : null}
+          {!item.booked && item.onShift === false ? (
+            <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Off
+            </span>
+          ) : null}
+        </span>
+        {item.meta ? (
+          <span className="text-xs leading-snug text-muted-foreground">
+            {item.meta}
+          </span>
+        ) : null}
+      </div>
+    </DropdownMenuItem>
+  );
+}
+
+function renderDropdownOptions(itemsArray, displayText, setItemSearch, setSearch) {
+  const hasShiftMeta = itemsArray.some(
+    (item) => item.onShift !== undefined || item.booked,
+  );
+
+  return itemsArray.map((item) =>
+    hasShiftMeta ? (
+      <PractitionerDropdownOption
+        key={item.id}
+        item={item}
+        displayText={displayText}
+        setItemSearch={setItemSearch}
+        setSearch={setSearch}
+      />
+    ) : (
+      <DropdownMenuItem
+        key={item.id}
+        onSelect={() => {
+          setItemSearch(item.name);
+          if (setSearch) setSearch("");
+        }}
+        className="text-foreground"
+      >
+        <Check
+          className={
+            displayText === item.name
+              ? "mr-2 text-foreground opacity-100"
+              : "mr-2 text-foreground opacity-0"
+          }
+        />
+        {item.name}
+      </DropdownMenuItem>
+    ),
+  );
+}
 
 export default function FormField({
   fieldLabel,
@@ -34,17 +144,11 @@ export default function FormField({
   name,
   mask,
   maxLength,
+  /** When true, input can be toggled hidden (e.g. card number entry). */
+  secret = false,
 }) {
   const inputRef = useRef(null);
-  
-  function formatPhone(value) {
-    const digits = value.replace(/\D/g, "").slice(0, 10);
-
-    if (digits.length <= 3) return digits;
-    if (digits.length <= 6) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
-
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
+  const [revealed, setRevealed] = useState(false);
 
   function formatCard(value) {
     const digits = value.replace(/\D/g, "").slice(0, 16);
@@ -107,68 +211,92 @@ export default function FormField({
                 {emptyText}
               </div>
             ) : (
-              itemsArray.map((item) => (
-                <DropdownMenuItem
-                  key={item.id}
-                  onSelect={() => {
-                    setItemSearch(item.name);
-                    setSearch(""); // reset search
-                  }}
-                  className="text-foreground"
-                >
-                  <Check
-                    className={
-                      displayText === item.name
-                        ? "mr-2 text-foreground opacity-100"
-                        : "mr-2 text-foreground opacity-0"
-                    }
-                  />
-                  {item.name}
-                </DropdownMenuItem>
-              ))
+              renderDropdownOptions(
+                itemsArray,
+                displayText,
+                setItemSearch,
+                setSearch,
+              )
             )}
           </DropdownMenuContent>
         </DropdownMenu>
       )}
 
-      {variant === "add" && (
-        <Input
-          ref={inputRef}
-          className="border-foreground shadow-xs outline-none"
-          placeholder={placeholder}
-          type={mode ? mode : "text"}
-          inputMode={mask ? "numeric" : undefined}
-          value={value ?? ""}
-          name={name}
-          maxLength={maxLength}
-          onChange={(e) => {
-            const input = e.target;
-            const rawValue = input.value;
-            const cursorPos = input.selectionStart;
+      {variant === "add" && (() => {
+        const handleMaskedChange = (e) => {
+          const input = e.target;
+          const rawValue = input.value;
+          const cursorPos = input.selectionStart;
 
-            let formatted = rawValue;
+          let formatted = rawValue;
 
-            // Apply mask
-            if (mask === "phone") formatted = formatPhone(rawValue);
-            if (mask === "ahc") formatted = formatAHC(rawValue);
-            if (mask === "card") formatted = formatCard(rawValue);
-            if (mask === "exp") formatted = formatEXP(rawValue);
-            const diff = formatted.length - rawValue.length;
+          if (mask === "phone") formatted = formatNorthAmericanPhone(rawValue);
+          if (mask === "ahc") formatted = formatAHC(rawValue);
+          if (mask === "card") formatted = formatCard(rawValue);
+          if (mask === "exp") formatted = formatEXP(rawValue);
+          if (mask === "currency") formatted = formatCurrencyInput(rawValue);
+          const diff = formatted.length - rawValue.length;
 
-            onChange({
-              target: { name, value: formatted },
+          onChange({
+            target: { name, value: formatted },
+          });
+
+          if (mask) {
+            requestAnimationFrame(() => {
+              const newPos = cursorPos + diff;
+              inputRef.current?.setSelectionRange(newPos, newPos);
             });
+          }
+        };
 
-            // Restore cursor
-            if (mask) {
-              requestAnimationFrame(() => {
-                const newPos = cursorPos + diff;
-                inputRef.current?.setSelectionRange(newPos, newPos);
-              });
-            }
-          }}
-        />
-      )}
+        const inputType = secret ? (revealed ? "text" : "password") : mode || "text";
+
+        if (secret) {
+          return (
+            <InputGroup className="border-foreground bg-background shadow-xs">
+              <InputGroupInput
+                ref={inputRef}
+                className="border-foreground outline-none"
+                placeholder={placeholder}
+                type={inputType}
+                inputMode={mask ? "numeric" : undefined}
+                value={value ?? ""}
+                name={name}
+                maxLength={maxLength}
+                autoComplete="off"
+                onChange={handleMaskedChange}
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  type="button"
+                  aria-label={revealed ? "Hide card number" : "Show card number"}
+                  onClick={() => setRevealed((v) => !v)}
+                >
+                  {revealed ? (
+                    <EyeOff className="size-4" />
+                  ) : (
+                    <Eye className="size-4" />
+                  )}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+          );
+        }
+
+        return (
+          <Input
+            ref={inputRef}
+            className="border-foreground shadow-xs outline-none"
+            placeholder={placeholder}
+            type={inputType}
+            inputMode={mask ? "numeric" : undefined}
+            value={value ?? ""}
+            name={name}
+            maxLength={maxLength}
+            onChange={handleMaskedChange}
+          />
+        );
+      })()}
 
       {variant === "select" && (
         <DropdownMenu>
@@ -188,24 +316,7 @@ export default function FormField({
                 {emptyText}
               </div>
             ) : (
-              itemsArray.map((item) => (
-                <DropdownMenuItem
-                  onSelect={() => {
-                    setItemSearch(item.name);
-                  }}
-                  key={item.id}
-                  className="text-foreground"
-                >
-                  <Check
-                    className={
-                      displayText === item.name
-                        ? "mr-2 text-foreground opacity-100"
-                        : "mr-2 text-foreground opacity-0"
-                    }
-                  />
-                  {item.name}
-                </DropdownMenuItem>
-              ))
+              renderDropdownOptions(itemsArray, displayText, setItemSearch)
             )}
           </DropdownMenuContent>
         </DropdownMenu>

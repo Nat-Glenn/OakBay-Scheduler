@@ -1,5 +1,11 @@
+/**
+ * Check-in and checkout actions for a scheduler appointment.
+ * Checkout records payment and supports cards on file when available.
+ */
+
 "use client";
-import { useState } from "react";
+
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Item, ItemContent } from "@/components/ui/item";
 import { Button } from "@/components/ui/button";
@@ -12,21 +18,123 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectGroup,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import FormField from "./FormField";
+import { apiFetch } from "@/utils/apiFetch";
+import { parseApiError } from "@/utils/parseApiError";
+import { unwrapApiList } from "@/lib/billing/apiData";
+import {
+  PAYMENT_METHOD_OPTIONS,
+  paymentTypeFromCardBrand,
+  paymentTypeLabel,
+  isCardExpired,
+} from "@/lib/billing/constants";
+import { parseCurrencyAmount } from "@/lib/formatting/currency";
+
+function maskCardLast4(last4) {
+  const digits =
+    String(last4 || "")
+      .replace(/\D/g, "")
+      .slice(-4) || "••••";
+  return `•••• ${digits}`;
+}
+
+function buildCheckoutPaymentOptions(cards) {
+  const options = [];
+
+  for (const card of cards) {
+    if (isCardExpired(card.expMonth, card.expYear)) continue;
+    const paymentType = paymentTypeFromCardBrand(card.brand);
+    options.push({
+      value: `card:${card.id}`,
+      label: `${card.brand} ${maskCardLast4(card.last4)} (on file)`,
+      paymentType,
+    });
+  }
+
+  for (const method of PAYMENT_METHOD_OPTIONS) {
+    options.push({
+      value: `method:${method.value}`,
+      label: method.label,
+      paymentType: method.value,
+    });
+  }
+
+  return options;
+}
 
 export default function AppointmentButtons({
-  // Props coming into the component
   appointment,
   active,
   setAppointments,
   setActive,
 }) {
-  // Determines which appt to use
   const selectedAppointment = appointment || active;
   const [appointmentTotal, setAppointmentTotal] = useState("");
-  const [paymentType, setPaymentType] = useState("");
+  const [paymentSelection, setPaymentSelection] = useState("");
+  const [cardsOnFile, setCardsOnFile] = useState([]);
+  const [loadingCards, setLoadingCards] = useState(false);
 
-  // Updates the front end state after the backend succeeds
+  const checkoutOptions = useMemo(
+    () => buildCheckoutPaymentOptions(cardsOnFile),
+    [cardsOnFile],
+  );
+
+  const selectedPaymentOption = useMemo(
+    () => checkoutOptions.find((o) => o.value === paymentSelection),
+    [checkoutOptions, paymentSelection],
+  );
+
+  useEffect(() => {
+    if (!selectedAppointment?.patientId) {
+      setCardsOnFile([]);
+      setPaymentSelection("");
+      return;
+    }
+
+    let ignore = false;
+
+    async function loadCards() {
+      try {
+        setLoadingCards(true);
+        const res = await apiFetch(
+          `/api/cards?patientId=${selectedAppointment.patientId}`,
+        );
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(parseApiError(data, "Failed to load cards on file"));
+        }
+        if (!ignore) {
+          setCardsOnFile(unwrapApiList(data));
+        }
+      } catch {
+        if (!ignore) setCardsOnFile([]);
+      } finally {
+        if (!ignore) setLoadingCards(false);
+      }
+    }
+
+    loadCards();
+    return () => {
+      ignore = true;
+    };
+  }, [selectedAppointment?.patientId]);
+
+  useEffect(() => {
+    if (paymentSelection) return;
+    const cash = checkoutOptions.find((o) => o.value === "method:cash");
+    if (cash) setPaymentSelection(cash.value);
+  }, [checkoutOptions, paymentSelection]);
+
   const updateAppointmentStatus = (newStatus) => {
     if (!selectedAppointment) return false;
 
@@ -45,7 +153,6 @@ export default function AppointmentButtons({
     return true;
   };
 
-  // Function that runs when the user clicks check in
   const handleCheckIn = async () => {
     if (!selectedAppointment) return false;
 
@@ -64,22 +171,16 @@ export default function AppointmentButtons({
     }
 
     try {
-      // Request to backend
-      const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+      const res = await apiFetch(`/api/appointments/${selectedAppointment.id}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          status: "CHECKED_IN",
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: "CHECKED_IN" }),
       });
 
-      // Header of application / json lets the request process
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to check in appointment");
+        throw new Error(parseApiError(data, "Failed to check in appointment"));
       }
 
       updateAppointmentStatus("checked-in");
@@ -114,46 +215,42 @@ export default function AppointmentButtons({
   const handleConfirmCheckout = async () => {
     if (!selectedAppointment) return false;
 
-    if (!appointmentTotal || Number(appointmentTotal) <= 0) {
-      toast.warning("Please enter a valid appointment total.", {
+    const amount = parseCurrencyAmount(appointmentTotal);
+    if (amount == null) {
+      toast.warning("Enter a valid amount greater than zero.", {
         position: "top-right",
       });
       return false;
     }
 
-    if (!paymentType) {
-      toast.warning("Please select a payment type.", {
+    if (!selectedPaymentOption) {
+      toast.warning("Select a payment method.", {
         position: "top-right",
       });
       return false;
     }
 
     try {
-      const res = await fetch("/api/payments", {
+      const res = await apiFetch("/api/payments", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           appointmentId: selectedAppointment.id,
-          amount: Number(appointmentTotal),
-          paymentType,
+          amount,
+          paymentType: selectedPaymentOption.paymentType,
         }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || "Failed to record payment");
+        throw new Error(parseApiError(data, "Failed to record payment"));
       }
 
-      updateAppointmentStatus("checked-out", {
-        appointmentTotal: Number(appointmentTotal),
-        paymentType,
-      });
+      updateAppointmentStatus("checked-out");
 
       setAppointmentTotal("");
-      setPaymentType("");
+      setPaymentSelection("");
 
       toast.success("Appointment checked out.", {
         position: "top-right",
@@ -167,6 +264,13 @@ export default function AppointmentButtons({
       return false;
     }
   };
+
+  const cardsOnFileGroup = checkoutOptions.filter((o) =>
+    o.value.startsWith("card:"),
+  );
+  const otherMethodsGroup = checkoutOptions.filter((o) =>
+    o.value.startsWith("method:"),
+  );
 
   return (
     <Item>
@@ -190,35 +294,72 @@ export default function AppointmentButtons({
               </Button>
             </DialogTrigger>
             <DialogContent>
-              <DialogTitle>Checkout</DialogTitle>
-              <DialogDescription>
-                Enter Appointment&apos;s Cost
-              </DialogDescription>
-              <div className="flex flex-row gap-4">
+              <DialogHeader>
+                <DialogTitle>Checkout</DialogTitle>
+                <DialogDescription>
+                  Record payment for this visit. Amount is charged in clinic.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
                 <FormField
-                  fieldLabel="Total Cost"
-                  placeholder="00.00"
+                  fieldLabel="Amount (CAD)"
+                  placeholder="0.00"
                   variant="add"
                   value={appointmentTotal}
                   onChange={(e) => setAppointmentTotal(e.target.value)}
-                  maxLength={4}
+                  mask="currency"
+                  inputMode="decimal"
                 />
-                <FormField
-                  fieldLabel="Card Type"
-                  placeholder="Visa"
-                  variant="select"
-                  itemsArray={[
-                    { id: 1, name: "Visa" },
-                    { id: 2, name: "Mastercard" },
-                    { id: 3, name: "Debit" },
-                    { id: 4, name: "Cash" },
-                  ]}
-                  displayText={paymentType}
-                  setItemSearch={setPaymentType}
-                />
+                <div className="space-y-2">
+                  <Label>Payment method</Label>
+                  <Select
+                    value={paymentSelection}
+                    onValueChange={setPaymentSelection}
+                    disabled={loadingCards && checkoutOptions.length === 0}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select payment method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cardsOnFileGroup.length > 0 ? (
+                        <SelectGroup>
+                          <SelectLabel>Cards on file</SelectLabel>
+                          {cardsOnFileGroup.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      ) : null}
+                      <SelectGroup>
+                        <SelectLabel>
+                          {cardsOnFileGroup.length > 0
+                            ? "Other methods"
+                            : "Payment methods"}
+                        </SelectLabel>
+                        {otherMethodsGroup.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                  {loadingCards ? (
+                    <p className="text-xs text-muted-foreground">
+                      Loading cards on file…
+                    </p>
+                  ) : null}
+                  {selectedPaymentOption ? (
+                    <p className="text-xs text-muted-foreground">
+                      Recording as{" "}
+                      {paymentTypeLabel(selectedPaymentOption.paymentType)}
+                    </p>
+                  ) : null}
+                </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleConfirmCheckout}>Confirm</Button>
+                <Button onClick={handleConfirmCheckout}>Confirm checkout</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>

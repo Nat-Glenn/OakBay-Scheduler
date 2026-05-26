@@ -3,21 +3,71 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum ClinicRole {
+  Chiropractor
+  Receptionist
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+}
+
+enum AppointmentRequestStatus {
+  PENDING
+  DECLINED
+  SCHEDULED
+}
+
+/// Whether the public booking form was submitted as a first-time or returning patient.
+enum BookingPatientKind {
+  NEW
+  RETURNING
 }
 
 model User {
-  id                   Int           @id @default(autoincrement())
+  id                   Int             @id @default(autoincrement())
   name                 String
-  email                String        @unique
+  email                String          @unique
   phone                String?
   password             String
-  role                 String
-  createdAt            DateTime      @default(now())
-  updatedAt            DateTime      @updatedAt
-  providedAppointments Appointment[] @relation("ProviderAppointments")
-  createdAppointments  Appointment[] @relation("CreatorAppointments")
+  role                 ClinicRole
+  createdAt            DateTime        @default(now())
+  updatedAt            DateTime        @updatedAt
+  providedAppointments Appointment[]   @relation("ProviderAppointments")
+  createdAppointments  Appointment[]   @relation("CreatorAppointments")
+  providerShifts       ProviderShift[]       @relation("ProviderShifts")
+  shiftUpdates         ProviderShift[]       @relation("ShiftUpdatedBy")
+  reviewedRequests     AppointmentRequest[]  @relation("ReviewedRequests")
+
+  @@index([role])
+}
+
+/// Chiropractor working hours for a clinic calendar day (admin-maintained).
+model ProviderShift {
+  id              Int      @id @default(autoincrement())
+  providerId      Int
+  provider        User     @relation("ProviderShifts", fields: [providerId], references: [id], onDelete: Cascade)
+  shiftDate       DateTime @db.Date
+  startTime       DateTime
+  endTime         DateTime
+  notes           String?
+  updatedByUserId Int?
+  updatedBy       User?    @relation("ShiftUpdatedBy", fields: [updatedByUserId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([providerId, shiftDate])
+  @@index([shiftDate])
+  @@index([startTime, endTime])
 }
 
 model Patient {
@@ -34,11 +84,12 @@ model Patient {
   updatedAt       DateTime      @updatedAt
   appointments    Appointment[]
   cards           Card[]
+  bookingRequests AppointmentRequest[]
 }
 
 model Appointment {
-  id               Int       @id @default(autoincrement())
-  status           String
+  id               Int                @id @default(autoincrement())
+  status           AppointmentStatus
   type             String
   startTime        DateTime
   endTime          DateTime
@@ -56,6 +107,51 @@ model Appointment {
   reminderSent     Boolean   @default(false)
   reminderSentAt   DateTime?
   payment          Payment?
+  bookingRequest   AppointmentRequest?
+
+  @@index([startTime])
+  @@index([providerId, startTime])
+  @@index([patientId])
+  @@index([status, reminderSent])
+}
+
+/// Patient-submitted appointment request (public /book) awaiting reception review.
+model AppointmentRequest {
+  id                    Int                      @id @default(autoincrement())
+  status                AppointmentRequestStatus @default(PENDING)
+  patientKind           BookingPatientKind       @default(NEW)
+  firstName             String
+  lastName              String
+  email                 String
+  phone                 String
+  type                  String
+  message               String?
+  preferredProviderName String?
+  patientId             Int?
+  patient               Patient?                 @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  appointmentId         Int?                     @unique
+  appointment           Appointment?             @relation(fields: [appointmentId], references: [id], onDelete: SetNull)
+  reviewedByUserId      Int?
+  reviewedBy            User?                    @relation("ReviewedRequests", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
+  reviewedAt            DateTime?
+  declineReason         String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  preferences           AppointmentRequestPreference[]
+
+  @@index([status, createdAt])
+  @@index([email])
+}
+
+model AppointmentRequestPreference {
+  id        Int                @id @default(autoincrement())
+  requestId Int
+  request   AppointmentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  startTime DateTime
+  endTime   DateTime
+  sortOrder Int                @default(1)
+
+  @@index([requestId])
 }
 
 model Payment {
@@ -82,4 +178,23 @@ model Card {
   patient     Patient  @relation(fields: [patientId], references: [id])
 
   @@index([patientId])
+}
+
+/// Staff access to patient PHI and billing records (HIA accountability).
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  action     String
+  userId     Int?
+  userEmail  String?
+  userRole   String?
+  patientId  Int?
+  resourceId String?
+  metadata   Json?
+  ipAddress  String?
+  createdAt  DateTime @default(now())
+
+  @@index([patientId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
 }

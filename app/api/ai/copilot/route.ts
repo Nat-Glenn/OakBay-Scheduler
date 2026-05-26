@@ -12,6 +12,7 @@ import {
   patientSummaryReportSchema,
 } from "@/lib/ai/reportSchemas";
 import type { ChatCompletionMessageParam } from "openai/resources/chat/completions";
+import { withAuthSimple } from "@/lib/withAuth";
 
 type ToolCallArgs = Record<string, unknown>;
 
@@ -407,7 +408,7 @@ If no patient is found, reflect that clearly in the summary and recommended acti
   return JSON.parse(content);
 }
 
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req) => {
   try {
     const { prompt, mode, range } = await req.json();
 
@@ -452,4 +453,4 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
-}
+});

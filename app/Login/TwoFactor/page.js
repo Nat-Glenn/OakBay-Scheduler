@@ -12,7 +12,7 @@ import { getPendingMfa, clearPendingMfa } from "./mfaStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import Link from "next/link";
+import { syncAuthSession } from "@/utils/authSession";
 
 export default function TwoFactorPage() {
   const router = useRouter();
@@ -34,7 +34,7 @@ export default function TwoFactorPage() {
       if (recaptchaRef.current) {
         recaptchaRef.current.clear();
       }
-    } catch (e) {
+    } catch {
       // ignore cleanup errors
     }
 
@@ -268,6 +268,8 @@ export default function TwoFactorPage() {
 
       clearPendingMfa();
       clearRecaptcha();
+
+      await syncAuthSession();
 
       toast.success("2FA verified. Welcome!", { position: "top-right" });
       router.push(redirectTo);

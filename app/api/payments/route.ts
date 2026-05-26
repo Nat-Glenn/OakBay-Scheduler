@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { parseNonEmptyString } from "@/lib/validate";
 import { ok, created, badRequest, notFound, conflict, serverError } from "@/lib/api";
+import { withAuthSimple } from "@/lib/withAuth";
+import { AppointmentStatus } from "@/lib/appointments/constants";
+import { PAYMENT_METHOD_OPTIONS } from "@/lib/billing/constants";
+import { AuditAction } from "@/lib/audit/constants";
+import { logAuditEvent } from "@/lib/audit/log";
 
-export async function GET(req: Request) {
+export const GET = withAuthSimple(async (req) => {
     try {
         const { searchParams } = new URL(req.url);
         const appointmentIdStr = searchParams.get("appointmentId");
@@ -36,11 +41,9 @@ export async function GET(req: Request) {
         console.error(err);
         return serverError("Failed to fetch payments");
     }
-}
+});
 
-// POST /api/payments
-//records a new payment and marks the appointment as COMPLETED.
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req, user) => {
     try {
         const body = await req.json();
 
@@ -48,7 +51,7 @@ export async function POST(req: Request) {
         const paymentType = parseNonEmptyString(body.paymentType)?.toLowerCase().trim(); //Converts to lowercase and trims whitespace for better filtering
         const amount = Math.round(Number(body.amount) * 100) / 100; // Rounds to 2 decimal places
 
-        const allowedPaymentTypes = ["mastercard", "visa", "debit", "cash"];
+        const allowedPaymentTypes = PAYMENT_METHOD_OPTIONS.map((o) => o.value);
 
         // Validate inputs before proceeding with database operations
         if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
@@ -56,7 +59,7 @@ export async function POST(req: Request) {
         }
         if (!paymentType || !allowedPaymentTypes.includes(paymentType)) {
             return badRequest("Missing or invalid paymentType", {
-                accepted: ["mastercard", "visa", "debit", "cash"],
+                accepted: allowedPaymentTypes,
             });
         }
         // Validate amount is a positive number. No negative or zero.
@@ -75,8 +78,14 @@ export async function POST(req: Request) {
         }
 
         // Cancelled appointment wont be checked out.
-        if (appointment.status === "CANCELLED") {
+        if (appointment.status === AppointmentStatus.CANCELLED) {
             return badRequest("Cannot record payment for a cancelled appointment");
+        }
+
+        if (appointment.status !== AppointmentStatus.CHECKED_IN) {
+            return badRequest(
+                "Appointment must be checked in before checkout",
+            );
         }
 
         // Prevent duplicate payments for the same appointment
@@ -112,13 +121,26 @@ export async function POST(req: Request) {
             //Marks the appointment as completed once payment is recorded
             prisma.appointment.update({
                 where: { id: appointmentId },
-                data: { status: "COMPLETED" },
+                data: { status: AppointmentStatus.COMPLETED },
             }),
         ]);
+
+        await logAuditEvent({
+            req,
+            user,
+            action: AuditAction.PAYMENT_CREATE,
+            patientId: payment.appointment.patientId,
+            resourceId: `payment:${payment.id}`,
+            metadata: {
+                appointmentId,
+                amount,
+                paymentType,
+            },
+        });
 
         return created(payment);
     } catch (err) {
         console.error(err);
         return serverError("Failed to record payment");
     }
-}
+});

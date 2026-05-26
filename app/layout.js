@@ -1,29 +1,16 @@
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { DarkModeProvider } from "@/utils/DarkModeProvider";
 import { NavBarProvider } from "@/utils/NavBarProvider";
+import { SessionProvider } from "@/utils/SessionProvider";
+import { PendingRequestProvider } from "@/utils/PendingRequestProvider";
+import AuthSessionSync from "@/components/AuthSessionSync";
+import DevAuthBanner from "@/components/DevAuthBanner";
 import { Toaster } from "@/components/ui/sonner";
-import { Roboto } from "next/font/google";
 import { Montserrat } from "next/font/google";
-
-const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
-});
 
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["200", "300", "400", "500", "600", "700"],
-});
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
 });
 
 export const metadata = {
@@ -52,8 +39,14 @@ export default function RootLayout({ children }) {
       <body className={`${montserrat.className} antialiased`}>
         <NavBarProvider>
           <DarkModeProvider>
-            <Toaster />
-            {children}
+            <SessionProvider>
+              <PendingRequestProvider>
+                <DevAuthBanner />
+                <AuthSessionSync />
+                <Toaster />
+                {children}
+              </PendingRequestProvider>
+            </SessionProvider>
           </DarkModeProvider>
         </NavBarProvider>
       </body>

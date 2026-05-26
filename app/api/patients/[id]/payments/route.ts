@@ -1,13 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { ok, badRequest, notFound, serverError } from "@/lib/api";
-import { NextRequest } from "next/server";
+import { withAuth } from "@/lib/withAuth";
 
-// GET /api/patients/[id]/payments
-//Returns all payments for a specific patient
-export async function GET(
-    req: NextRequest,
-    context: { params: Promise<{id: string}>}
-) {
+export const GET = withAuth(async (_req, context) => {
     try {
         const {id} = await context.params;
         const patientId = Number(id);
@@ -49,14 +44,9 @@ export async function GET(
             orderBy: { createdAt: "desc" },
             //newest payments first
         });
-        // If no payments are found, return an empty array with a message instead of an error
-        if (payments.length ===0) {
-            return ok ({message: "No payments found for this patient", data: []});
-        }
-
         return ok(payments);
     } catch (err) {
         console.error(err);
         return serverError("Failed to fetch payments");
     }
-}
+});

@@ -1,4 +1,7 @@
 import { prisma } from "@/lib/prisma";
+import { withAuthSimple } from "@/lib/withAuth";
+import { AuditAction } from "@/lib/audit/constants";
+import { logAuditEvent } from "@/lib/audit/log";
 
 function normalizeLast4(value: unknown) {
   const digits = String(value ?? "").replace(/\D/g, "");
@@ -11,7 +14,7 @@ function parseOptionalInt(value: unknown) {
   return Number.isInteger(n) ? n : null;
 }
 
-export async function GET(req: Request) {
+export const GET = withAuthSimple(async (req, user) => {
   try {
     const { searchParams } = new URL(req.url);
     const patientIdParam = searchParams.get("patientId");
@@ -31,14 +34,23 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.CARD_LIST,
+      patientId,
+      resourceId: `patient:${patientId}:cards`,
+      metadata: { count: cards.length },
+    });
+
     return Response.json(cards);
   } catch (error) {
     console.error("GET /api/cards error:", error);
     return Response.json({ error: "Failed to fetch cards" }, { status: 500 });
   }
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withAuthSimple(async (req, user) => {
   try {
     const body = await req.json();
 
@@ -79,14 +91,23 @@ export async function POST(req: Request) {
       },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.CARD_CREATE,
+      patientId,
+      resourceId: `card:${card.id}`,
+      metadata: { brand, last4 },
+    });
+
     return Response.json(card, { status: 201 });
   } catch (error) {
     console.error("POST /api/cards error:", error);
     return Response.json({ error: "Failed to create card" }, { status: 500 });
   }
-}
+});
 
-export async function PATCH(req: Request) {
+export const PATCH = withAuthSimple(async (req, user) => {
   try {
     const body = await req.json();
 
@@ -110,7 +131,7 @@ export async function PATCH(req: Request) {
 
     const existing = await prisma.card.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, patientId: true },
     });
 
     if (!existing) {
@@ -127,14 +148,23 @@ export async function PATCH(req: Request) {
       },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.CARD_UPDATE,
+      patientId: existing.patientId,
+      resourceId: `card:${id}`,
+      metadata: { brand, last4 },
+    });
+
     return Response.json(updated);
   } catch (error) {
     console.error("PATCH /api/cards error:", error);
     return Response.json({ error: "Failed to update card" }, { status: 500 });
   }
-}
+});
 
-export async function DELETE(req: Request) {
+export const DELETE = withAuthSimple(async (req, user) => {
   try {
     const { searchParams } = new URL(req.url);
     const idParam = searchParams.get("id");
@@ -146,7 +176,7 @@ export async function DELETE(req: Request) {
 
     const existing = await prisma.card.findUnique({
       where: { id },
-      select: { id: true },
+      select: { id: true, patientId: true },
     });
 
     if (!existing) {
@@ -157,9 +187,17 @@ export async function DELETE(req: Request) {
       where: { id },
     });
 
+    await logAuditEvent({
+      req,
+      user,
+      action: AuditAction.CARD_DELETE,
+      patientId: existing.patientId,
+      resourceId: `card:${id}`,
+    });
+
     return Response.json({ success: true });
   } catch (error) {
     console.error("DELETE /api/cards error:", error);
     return Response.json({ error: "Failed to delete card" }, { status: 500 });
   }
-}
+});

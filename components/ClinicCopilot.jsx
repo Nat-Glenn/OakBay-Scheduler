@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { apiFetch } from "@/utils/apiFetch";
 
 export default function ClinicCopilot() {
   const [prompt, setPrompt] = useState("");
@@ -24,7 +25,7 @@ export default function ClinicCopilot() {
           ? { mode: "daily_report" }
           : { mode: selectedMode, prompt };
 
-      const res = await fetch("/api/ai/copilot", {
+      const res = await apiFetch("/api/ai/copilot", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

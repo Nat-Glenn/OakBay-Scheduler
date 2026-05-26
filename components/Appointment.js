@@ -1,56 +1,47 @@
 "use client";
 
-export default function Appointment({ appointment, active, setActive }) {
-  const manageActive = (appointment) => {
-    if (active?.id === appointment.id) {
+/**
+ * Single appointment block in the scheduler grid; colors follow status tokens.
+ */
+
+import { getSchedulerCellClasses } from "@/lib/ui/appointmentStatusStyles";
+
+export default function Appointment({
+  appointment,
+  active,
+  setActive,
+  showPractitioner = false,
+}) {
+  const manageActive = (item) => {
+    if (active?.id === item.id) {
       setActive(null);
     } else {
-      setActive(appointment);
+      setActive(item);
     }
   };
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "checked-in":
-        return "bg-[#A0CE66]";
-      case "checked-out":
-        return "bg-foreground";
-      default:
-        return "bg-[#002D58]";
-    }
-  };
-  const getStatusText = (status) => {
-    switch (status) {
-      case "checked-in":
-        return "text-foreground";
-      case "checked-out":
-        return "text-background";
-      default:
-        return "dark:text-foreground text-background";
-    }
-  };
+
+  const cellClass = getSchedulerCellClasses(appointment.status);
+
   return (
     <div
       onClick={() => {
-        if (appointment == active) {
-          return;
-        }
+        if (appointment === active) return;
         manageActive(appointment);
       }}
-      className={`${getStatusColor(
-        appointment.status,
-      )} hover:opacity-80 cursor-pointer flex h-full w-full text-left text-ellipsis overflow-hidden p-1 gap-2 flex-col rounded-lg`}
+      className={`${cellClass} flex h-full min-h-[3.25rem] w-full cursor-pointer flex-col justify-center gap-0.5 overflow-hidden rounded-md border border-black/10 p-1.5 text-left shadow-sm dark:border-white/10 [&_p]:text-inherit`}
     >
-      <p
-        className={`${getStatusText(
-          appointment.status,
-        )} font-extrabold text-sm`}
-      >
+      <p className="truncate text-sm font-semibold leading-tight">
         {appointment.name}
       </p>
-      <p className={`${getStatusText(appointment.status)} font-medium text-xs`}>
-        {`${appointment.time} AM`}
+      <p className="truncate text-xs font-medium leading-tight">
+        {appointment.time}
       </p>
-      <p className={`${getStatusText(appointment.status)} font-medium text-xs`}>
+      {showPractitioner ? (
+        <p className="truncate text-xs font-medium leading-tight">
+          {appointment.practitioner}
+        </p>
+      ) : null}
+      <p className="truncate text-xs font-medium leading-tight">
         {appointment.type}
       </p>
     </div>

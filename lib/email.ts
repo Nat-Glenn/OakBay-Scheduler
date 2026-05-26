@@ -162,3 +162,77 @@ ${CLINIC_NAME}`,
     `,
   });
 }
+
+export async function sendRequestReceivedEmail({
+  to,
+  patientName,
+  appointmentType,
+  preferenceLabels,
+}: {
+  to: string;
+  patientName: string;
+  appointmentType: string;
+  preferenceLabels: string[];
+}) {
+  return sendEmail({
+    to,
+    subject: `We received your appointment request — ${CLINIC_NAME}`,
+    text: `Hello ${patientName},
+
+Thank you for contacting ${CLINIC_NAME}. We have received your appointment request.
+
+Appointment type: ${appointmentType}
+
+Your preferred times:
+${preferenceLabels.map((t) => `• ${t}`).join("\n")}
+
+Our team will review your request and contact you to confirm a time. This email does not confirm an appointment.
+
+If you need immediate assistance, call us at (403) 251-0002.
+
+Thank you,
+${CLINIC_NAME}`,
+    html: `
+      <p>Hello <strong>${patientName}</strong>,</p>
+      <p>Thank you for contacting <strong>${CLINIC_NAME}</strong>. We have received your appointment request.</p>
+      <p><strong>Appointment type:</strong> ${appointmentType}</p>
+      <p><strong>Your preferred times:</strong></p>
+      <ul>${preferenceLabels.map((t) => `<li>${t}</li>`).join("")}</ul>
+      <p>Our team will review your request and contact you to confirm a time. <em>This email does not confirm an appointment.</em></p>
+      <p>If you need immediate assistance, call us at <a href="tel:4032510002">(403) 251-0002</a>.</p>
+      <br/>
+      <p>Thank you,<br/>${CLINIC_NAME}</p>
+    `,
+  });
+}
+
+export async function sendRequestDeclinedEmail({
+  to,
+  patientName,
+  declineReason,
+}: {
+  to: string;
+  patientName: string;
+  declineReason?: string | null;
+}) {
+  return sendEmail({
+    to,
+    subject: `Update on your appointment request — ${CLINIC_NAME}`,
+    text: `Hello ${patientName},
+
+We were unable to schedule your appointment request at this time.${declineReason ? `\n\nNote from our team: ${declineReason}` : ""}
+
+Please call us at (403) 251-0002 or submit a new request on our website.
+
+Thank you,
+${CLINIC_NAME}`,
+    html: `
+      <p>Hello <strong>${patientName}</strong>,</p>
+      <p>We were unable to schedule your appointment request at this time.</p>
+      ${declineReason ? `<p><strong>Note from our team:</strong> ${declineReason}</p>` : ""}
+      <p>Please call us at <a href="tel:4032510002">(403) 251-0002</a> or submit a new request on our website.</p>
+      <br/>
+      <p>Thank you,<br/>${CLINIC_NAME}</p>
+    `,
+  });
+}

@@ -1,7 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { ok, serverError } from "@/lib/api";
+import { withAuthSimple } from "@/lib/withAuth";
 
-export async function GET() {
+export const GET = withAuthSimple(async () => {
     try {
         // Get today's date and calculate what date was 6 months ago
         const today = new Date();
@@ -78,4 +79,4 @@ export async function GET() {
         console.error(err);
         return serverError("Failed to load recall list");
     }
-}
+});

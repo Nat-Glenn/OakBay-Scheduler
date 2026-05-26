@@ -1,12 +1,22 @@
 "use client";
-import { useState } from "react";
-import Image from "next/image";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   formatDateDMY,
   getAvailableSlot,
   parseDMYToDate,
 } from "@/components/RenderAppointment";
+import { apiFetch } from "@/utils/apiFetch";
+import {
+  APPOINTMENT_TYPE_OPTIONS,
+  getOfficeTimeSlotsForDate,
+} from "@/lib/appointments/status";
+import { toFormOptions } from "@/lib/clinic/officeHours.js";
+import { formatPickerDateForApi } from "@/lib/appointments/clinicTime.js";
+import {
+  buildPractitionerDropdownItems,
+  getWorkingProviderNamesForSlot,
+} from "@/lib/shifts/clientUtils";
 import {
   Item,
   ItemActions,
@@ -20,7 +30,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -29,26 +38,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
-import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSet,
 } from "@/components/ui/field";
-import {
-  Popover,
-  PopoverContent,
-  PopoverHeader,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { PopoverHeader } from "@/components/ui/popover";
 import { DatePicker } from "./DatePicker";
 import FormField from "@/components/FormField";
-import { Pencil, Settings } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { useMediaQuery } from "@/utils/UseMediaQuery";
 import { DeletePopUp } from "@/components/DeletePopUp";
 import { calculateAge } from "@/utils/date";
@@ -65,34 +64,75 @@ export default function AppointmentInformation({
   const [editTime, setEditTime] = useState("");
   const [editDate, setEditDate] = useState(null);
   const [search, setSearch] = useState("");
+  const [practitioners, setPractitioners] = useState([]);
+  const [dayShifts, setDayShifts] = useState([]);
   const small = useMediaQuery("(max-width: 768px)");
 
+  const types = APPOINTMENT_TYPE_OPTIONS;
+  const editDateIso = useMemo(
+    () => (editDate ? formatPickerDateForApi(editDate) : ""),
+    [editDate],
+  );
+  const time = useMemo(
+    () => toFormOptions(getOfficeTimeSlotsForDate(editDateIso)),
+    [editDateIso],
+  );
+
+  useEffect(() => {
+    async function loadPractitioners() {
+      try {
+        const res = await apiFetch("/api/practitioners");
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to load practitioners");
+        }
+        setPractitioners(data);
+      } catch (err) {
+        console.error(err);
+        toast.error("Failed to load practitioners for edit form.");
+      }
+    }
+
+    loadPractitioners();
+  }, []);
+
+  useEffect(() => {
+    async function loadDayShifts() {
+      if (!editDate) {
+        setDayShifts([]);
+        return;
+      }
+      try {
+        const dateStr = formatPickerDateForApi(editDate);
+        const res = await apiFetch(`/api/shifts/day?date=${dateStr}`);
+        const data = await res.json();
+        if (res.ok) {
+          setDayShifts(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.error(err);
+        setDayShifts([]);
+      }
+    }
+
+    loadDayShifts();
+  }, [editDate]);
+
   const selectedAppointment = appointment || active;
-
-  const practitioners = [
-    { id: 1, name: "Brad Pritchard" },
-    { id: 2, name: "Kyle James" },
-    { id: 3, name: "Daniel Topala" },
-  ];
-
-  const types = [
-    { id: 1, name: "Chiropractic Adjustment" },
-    { id: 2, name: "Massage" },
-    { id: 3, name: "Intense Massage" },
-  ];
-
-  const time = [
-    { id: 1, name: "9:00" },
-    { id: 2, name: "9:15" },
-    { id: 3, name: "9:30" },
-    { id: 4, name: "9:45" },
-    { id: 5, name: "10:00" },
-    { id: 6, name: "10:15" },
-    { id: 7, name: "10:30" },
-    { id: 8, name: "10:45" },
-    { id: 9, name: "11:00" },
-    { id: 10, name: "11:15" },
-  ];
+  const scheduleEnforced = dayShifts.length > 0;
+  useEffect(() => {
+    if (!scheduleEnforced || !editTime || !editPractitioner || !editDateIso) {
+      return;
+    }
+    const working = getWorkingProviderNamesForSlot(
+      dayShifts,
+      editDateIso,
+      editTime,
+    );
+    if (!working.has(editPractitioner)) {
+      setEditPractitioner("");
+    }
+  }, [scheduleEnforced, editTime, editPractitioner, dayShifts, editDateIso]);
 
   const filteredArray = (type) => {
     if (type == "types") {
@@ -101,9 +141,14 @@ export default function AppointmentInformation({
       );
     }
     if (type == "practitioners") {
-      return practitioners.filter((c) =>
-        c.name.toLowerCase().includes(search.toLowerCase()),
-      );
+      return buildPractitionerDropdownItems({
+        practitioners,
+        dayShifts,
+        scheduleEnforced,
+        dateIso: editDateIso ?? "",
+        clockTime: editTime || null,
+        search,
+      });
     }
     if (type == "time") {
       return time.filter((c) =>
@@ -116,7 +161,7 @@ export default function AppointmentInformation({
     if (!selectedAppointment) return false;
 
     try {
-      const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+      const res = await apiFetch(`/api/appointments/${selectedAppointment.id}`, {
         method: "DELETE",
       });
 
@@ -168,6 +213,9 @@ export default function AppointmentInformation({
   }
 
   const formattedDate = formatDateDMY(editDate);
+  const workingAtTime = scheduleEnforced
+    ? getWorkingProviderNamesForSlot(dayShifts, editDateIso, editTime)
+    : null;
 
   let slotToUse = active.slot;
 
@@ -175,15 +223,32 @@ export default function AppointmentInformation({
     editTime !== active.time ||
     editPractitioner !== selectedAppointment.practitioner
   ) {
+    if (
+      scheduleEnforced &&
+      editPractitioner &&
+      workingAtTime &&
+      !workingAtTime.has(editPractitioner)
+    ) {
+      toast.warning(
+        "This chiropractor is not scheduled to work at this time.",
+        { position: "top-right" },
+      );
+      return false;
+    }
+
     const availableSlot = getAvailableSlot(
       appointments.filter((a) => a.id !== selectedAppointment.id),
       formattedDate,
       editTime,
       editPractitioner,
+      selectedAppointment.patientId,
+      workingAtTime,
     );
 
     if (!availableSlot) {
-      toast.warning("No available slots for this time.", {
+      toast.warning(
+        "No available slot for this time (clinic full, off shift, or already booked).",
+        {
         position: "top-right",
       });
       return false;
@@ -218,7 +283,7 @@ if (editPractitioner !== selectedAppointment.practitioner) {
   endTime.setMinutes(endTime.getMinutes() + 15);
 
   try {
-    const res = await fetch(`/api/appointments/${selectedAppointment.id}`, {
+    const res = await apiFetch(`/api/appointments/${selectedAppointment.id}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
