@@ -2,7 +2,21 @@
 
 Web application for day-to-day operations at **Oak Bay Family Chiropractic** — scheduling, patients, billing, online booking, and role-based staff access.
 
-**Live demo:** _Add your Azure URL here after deploy_
+## Live demo
+
+**URL:** [https://oakbay-scheduler-egfbged9dwdwh0dy.canadacentral-01.azurewebsites.net](https://oakbay-scheduler-egfbged9dwdwh0dy.canadacentral-01.azurewebsites.net)
+
+**Sign in:** `/Login` → use **email + password** (not Google sign-in).
+
+Staging demo only — seeded data, no real patient information.
+
+| Role | Email | Password |
+|------|--------|----------|
+| Administrator | `anatglenn@gmail.com` | `123456` |
+| Receptionist | `natglenna@gmail.com` | `123456` |
+| Chiropractor | `logpaulll@gmail.com` | `123456` |
+
+**Try:** Appointments and Requests (receptionist), Team read-only vs admin edit, Staff schedule (view all; admin edits shifts), Practice overview.
 
 ## Features
 
